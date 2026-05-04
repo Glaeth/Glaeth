@@ -105,6 +105,7 @@ import org.json.JSONObject
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.LocalTime as JavaLocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
@@ -538,6 +539,8 @@ private fun DashboardScreen(data: AppData, onWaterChange: (Int) -> Unit, onOpen:
     val averageSleep = data.sleepEntries.mapNotNull { it.duration() }.averageOrZero()
     val nextHomework = data.homeworkEntries.minByOrNull { it.dueDate }
     val sleepReport = sleepStatus(averageSleep, data.profile.age)
+    val greeting = timeBasedGreeting(data.profile.name)
+    val skinDays = data.skinEntries.size
 
     LazyColumn(
         modifier = Modifier
@@ -557,8 +560,8 @@ private fun DashboardScreen(data: AppData, onWaterChange: (Int) -> Unit, onOpen:
         }
         item {
             HeroCard(
-                title = "${data.skinEntries.size.coerceAtLeast(441)} gündür devam",
-                subtitle = "Siyah glass tema aktif. Fotoğrafları aç, sağa kaydırıp sil, ritmi koru.",
+                title = greeting.first,
+                subtitle = "${greeting.second} Cilt takibinde $skinDays gün kayıt var.",
                 icon = Icons.Filled.Favorite,
             )
         }
@@ -570,7 +573,7 @@ private fun DashboardScreen(data: AppData, onWaterChange: (Int) -> Unit, onOpen:
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Cilt arşivi", "${data.skinEntries.size} gün", Icons.Filled.Face, Modifier.weight(1f))
+                StatCard("Cilt arşivi", "$skinDays gün", Icons.Filled.Face, Modifier.weight(1f))
                 StatCard("Ödev", "${data.homeworkEntries.size}", Icons.Filled.DateRange, Modifier.weight(1f))
             }
         }
@@ -1214,22 +1217,27 @@ private fun DismissibleItem(onDelete: () -> Unit, content: @Composable () -> Uni
     val actionWidth = 112.dp
     val actionWidthPx = with(LocalDensity.current) { actionWidth.toPx() }
     var offsetPx by remember { mutableStateOf(0f) }
+    val revealFraction = (-offsetPx / actionWidthPx).coerceIn(0f, 1f)
 
     Box(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .width(actionWidth)
-                .height(64.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFFE5484D))
-                .clickable { onDelete() },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color.White)
-            Spacer(Modifier.width(6.dp))
-            Text("Sil", color = Color.White, fontWeight = FontWeight.Black)
+        if (revealFraction > 0.02f) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(actionWidth * revealFraction)
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xFFE5484D).copy(alpha = revealFraction))
+                    .clickable(enabled = revealFraction > 0.7f) { onDelete() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                if (revealFraction > 0.55f) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color.White)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Sil", color = Color.White, fontWeight = FontWeight.Black)
+                }
+            }
         }
 
         Box(
@@ -1379,6 +1387,17 @@ private fun mealSuggestion(age: Int): String = when (age) {
     in 6..12 -> "Kahvaltıda yumurta/peynir, öğlen protein + tahıl, akşam sebze + yoğurt dengesi önerilir."
     in 13..18 -> "Ergenlik dönemi için protein, kompleks karbonhidrat, yeşillik, su ve şekeri azaltma cilt için önemli."
     else -> "Protein, lifli sebze, tam tahıl ve yeterli su dengesi takip edilmeli."
+}
+
+private fun timeBasedGreeting(name: String): Pair<String, String> {
+    val hour = LocalTime.now().hour
+    val cleanName = name.ifBlank { "Kardeşim" }
+    return when (hour) {
+        in 5..11 -> "Günaydın, $cleanName" to "Bugün nasıl hissediyorsun? Güne sakin başla, su içmeyi unutma."
+        in 12..17 -> "Merhaba, $cleanName" to "Günün nasıl geçiyor? Öğün, ödev ve cilt kaydını hızlıca kontrol edebilirsin."
+        in 18..23 -> "İyi akşamlar, $cleanName" to "Bugün nasılsın? Uyumadan önce yüz fotoğrafını ekleyip rutini tamamlayabilirsin."
+        else -> "İyi geceler, $cleanName" to "Geç oldu; uyku düzenini korumak için sakinleşme zamanı."
+    }
 }
 
 private fun SleepEntry.duration(): Double? {
