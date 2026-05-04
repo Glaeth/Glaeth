@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -1074,7 +1075,7 @@ private fun ProfileForm(profile: Profile, onSave: (Profile) -> Unit) {
     val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(profile.name) }
     var age by rememberSaveable { mutableStateOf(profile.age.toString()) }
-    var gender by rememberSaveable { mutableStateOf(profile.gender) }
+    var gender by rememberSaveable { mutableStateOf(profile.gender.takeIf { it != "Belirtilmedi" } ?: "Erkek") }
     var photoUri by rememberSaveable { mutableStateOf(profile.photoUri) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let {
@@ -1086,23 +1087,42 @@ private fun ProfileForm(profile: Profile, onSave: (Profile) -> Unit) {
     }
 
     FormShell(title = "Profil") {
-        Box(
-            modifier = Modifier
-                .size(104.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.10f))
-                .clickable { picker.launch(arrayOf("image/*")) },
-            contentAlignment = Alignment.Center,
-        ) {
-            if (photoUri.isNotBlank()) {
-                AsyncImage(photoUri, contentDescription = "Profil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            } else {
-                Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(44.dp))
+        GlassCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { picker.launch(arrayOf("image/*")) }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.10f))
+                        .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (photoUri.isNotBlank()) {
+                        AsyncImage(photoUri, contentDescription = "Profil fotoğrafı", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    } else {
+                        Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(44.dp))
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Profil fotoğrafı", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                    Text(
+                        if (photoUri.isBlank()) "Fotoğraf eklemek için dokun" else "Fotoğrafı değiştirmek için dokun",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
+                    )
+                }
             }
         }
         OutlinedTextField(name, { name = it }, label = { Text("İsim") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(age, { age = it.filter(Char::isDigit).take(2) }, label = { Text("Yaş") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-        OutlinedTextField(gender, { gender = it }, label = { Text("Cinsiyet") }, modifier = Modifier.fillMaxWidth())
+        Text("Cinsiyet", fontWeight = FontWeight.Bold)
+        ChipSelector(listOf("Erkek", "Kadın"), gender, { gender = it }) { it }
         Button(
             onClick = { onSave(Profile(name.ifBlank { "Kardeşim" }, age.toIntOrNull() ?: 16, gender.ifBlank { "Belirtilmedi" }, photoUri)) },
             modifier = Modifier.fillMaxWidth(),
@@ -1160,7 +1180,7 @@ private fun <T> ChipSelector(values: List<T>, selected: T, onSelected: (T) -> Un
 @Composable
 private fun ZoneSelector(selectedZones: MutableList<String>) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("Alın", "Çene", "Sol yanak", "Sağ yanak", "Bürün").forEach { zone ->
+        listOf("Alın", "Çene", "Sol yanak", "Sağ yanak", "Burun").forEach { zone ->
             FilterChip(
                 selected = zone in selectedZones,
                 onClick = { if (zone in selectedZones) selectedZones.remove(zone) else selectedZones.add(zone) },
@@ -1200,7 +1220,7 @@ private fun SectionList(
 private fun DismissibleItem(onDelete: () -> Unit, content: @Composable () -> Unit) {
     val state = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.StartToEnd || value == SwipeToDismissBoxValue.EndToStart) {
+            if (value == SwipeToDismissBoxValue.EndToStart) {
                 onDelete()
                 true
             } else {
@@ -1210,15 +1230,28 @@ private fun DismissibleItem(onDelete: () -> Unit, content: @Composable () -> Uni
     )
     SwipeToDismissBox(
         state = state,
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true,
         backgroundContent = {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(Color(0xFF7F1D1D)),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                Text("Sil", modifier = Modifier.padding(end = 24.dp), fontWeight = FontWeight.Black)
+                Row(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .height(64.dp)
+                        .width(104.dp)
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(Color(0xFFE5484D).copy(alpha = 0.94f)),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color.White)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Sil", color = Color.White, fontWeight = FontWeight.Black)
+                }
             }
         },
         content = { content() },
