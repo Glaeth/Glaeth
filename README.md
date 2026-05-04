@@ -6,14 +6,20 @@ Jetpack Compose ile tasarlandi.
 
 ## Ozellikler
 
-- Uyku gunlugu: uyuma/uyanma saati, otomatik toplam sure ve haftalik grafik.
-- Ogun takibi: tarih bazli sabah, ogle, aksam ve ara ogun kayitlari.
+- Uyku gunlugu: uyuma/uyanma saati, otomatik toplam sure, yas bazli yeterlilik
+  yorumu ve daha detayli grafik.
+- Ogun takibi: tarih bazli sabah, ogle, aksam ve ara ogun kayitlari; yasa gore
+  beslenme onerileri.
 - Cilt arsivi: tekli veya toplu fotograf secimi, kalici galeri izinleri,
-  time-lapse seridi, yuz bolgesi ve urun notlari.
-- Odev panosu: ders, odev adi, teslim tarihi, oncelik etiketi ve ek notu.
+  time-lapse seridi, gun numarasi, yuz bolgesi, urun notlari, fotograf onizleme
+  ve saga/sola kaydirarak silme.
+- Odev panosu: ders, odev adi, teslim tarihi, oncelik etiketi, ek notu ve silme.
 - Ana sayfa: motivasyon karti, su takibi, yaklasan odev geri sayimi ve hizli
   aksiyonlar.
-- Material 3, koyu mod uyumu, pastel renkler ve cam efektli kartlar.
+- Profil: sag ustten isim, yas, cinsiyet ve profil fotografi duzenleme.
+- Ayarlar: siyah/grafit/lacivert arka plan secimi.
+- SQLite tabanli lokal database, Material 3, siyah-gri glass tema ve cam efektli
+  kartlar.
 
 ## Calistirma
 
