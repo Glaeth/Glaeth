@@ -23,3 +23,8 @@ derlemek icin Android SDK ve Gradle wrapper hazir oldugunda:
 ```bash
 ./gradlew assembleDebug
 ```
+
+## APK
+
+Hazir debug APK dosyasi `downloads/Glaeth-debug.apk` altindadir. Android telefonda
+kurarken bilinmeyen kaynaklardan yuklemeye izin vermeniz gerekebilir.

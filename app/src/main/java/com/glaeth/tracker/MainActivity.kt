@@ -44,11 +44,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalDrink
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -127,10 +122,10 @@ private enum class Section(
     val actionLabel: String,
 ) {
     Dashboard("Ana Sayfa", Icons.Filled.Home, ""),
-    Sleep("Uyku", Icons.Filled.Timer, "Uyku ekle"),
-    Meals("Ogunler", Icons.Filled.Restaurant, "Ogun ekle"),
+    Sleep("Uyku", Icons.Filled.DateRange, "Uyku ekle"),
+    Meals("Ogunler", Icons.Filled.Favorite, "Ogun ekle"),
     Skin("Cilt", Icons.Filled.Face, "Fotograf ekle"),
-    Homework("Odev", Icons.Filled.School, "Odev ekle"),
+    Homework("Odev", Icons.Filled.DateRange, "Odev ekle"),
 }
 
 private enum class MealType(val label: String) {
@@ -464,14 +459,14 @@ private fun DashboardScreen(
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Ort. uyku", "${averageSleep.oneDecimal()} saat", Icons.Filled.Timer, Modifier.weight(1f))
+                StatCard("Ort. uyku", "${averageSleep.oneDecimal()} saat", Icons.Filled.DateRange, Modifier.weight(1f))
                 StatCard("Cilt arsivi", "$skinDays gun", Icons.Filled.Face, Modifier.weight(1f))
             }
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Ogun kaydi", "${data.mealEntries.size}", Icons.Filled.Restaurant, Modifier.weight(1f))
-                StatCard("Odev", "${data.homeworkEntries.size}", Icons.Filled.School, Modifier.weight(1f))
+                StatCard("Ogun kaydi", "${data.mealEntries.size}", Icons.Filled.Favorite, Modifier.weight(1f))
+                StatCard("Odev", "${data.homeworkEntries.size}", Icons.Filled.DateRange, Modifier.weight(1f))
             }
         }
         item {
@@ -539,7 +534,7 @@ private fun WaterCard(cups: Int, onChange: (Int) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.LocalDrink, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                Icon(Icons.Filled.Favorite, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
                 Spacer(Modifier.width(10.dp))
                 Text("Su ve cilt dengesi", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
@@ -609,7 +604,7 @@ private fun SleepScreen(entries: List<SleepEntry>) {
         subtitle = "Yatma, kalkma ve toplam sureyi detayli takip et.",
         header = {
             SleepChart(entries)
-            StatCard("Ortalama uyku", "${average.oneDecimal()} saat", Icons.Filled.Timer, Modifier.fillMaxWidth())
+            StatCard("Ortalama uyku", "${average.oneDecimal()} saat", Icons.Filled.DateRange, Modifier.fillMaxWidth())
         },
     ) {
         items(entries) { entry ->
@@ -662,7 +657,7 @@ private fun SleepEntryCard(entry: SleepEntry) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Icon(Icons.Filled.WbSunny, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+            Icon(Icons.Filled.DateRange, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
             Column(modifier = Modifier.weight(1f)) {
                 Text(entry.date, fontWeight = FontWeight.Bold)
                 Text("${entry.sleptAt} uyudu - ${entry.wokeAt} uyandi", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
@@ -678,7 +673,7 @@ private fun MealScreen(entries: List<MealEntry>) {
         title = "Ogunler",
         subtitle = "Sabah, ogle, aksam ve ara ogunleri gun gun kaydet.",
         header = {
-            HeroCard("Bugun ne yedi?", "Tost, cay, sut gibi ogeleri satir satir ekleyebilirsin.", Icons.Filled.Restaurant)
+            HeroCard("Bugun ne yedi?", "Tost, cay, sut gibi ogeleri satir satir ekleyebilirsin.", Icons.Filled.Favorite)
         },
     ) {
         items(entries.groupBy { it.date }.toList()) { (date, dayEntries) ->
@@ -772,7 +767,7 @@ private fun HomeworkScreen(entries: List<HomeworkEntry>) {
         title = "Odev panosu",
         subtitle = "Ders, odev adi, teslim tarihi, oncelik ve dosya notlarini ekle.",
         header = {
-            HeroCard("Darlayan widget modu", "Ana sayfada en yakin odev icin geri sayim karti gorunur.", Icons.Filled.School)
+            HeroCard("Darlayan widget modu", "Ana sayfada en yakin odev icin geri sayim karti gorunur.", Icons.Filled.DateRange)
         },
     ) {
         items(entries) { entry ->
