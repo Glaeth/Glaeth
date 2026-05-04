@@ -17,6 +17,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -54,14 +56,11 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -69,12 +68,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -92,10 +88,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -707,7 +706,7 @@ private fun SleepScreen(entries: List<SleepEntry>, profile: Profile, onDelete: (
     ) {
         items(entries) { entry ->
             DismissibleItem(onDelete = { onDelete(entry.id) }) {
-                SleepEntryCard(entry = entry, age = profile.age, onDelete = { onDelete(entry.id) })
+                SleepEntryCard(entry = entry, age = profile.age)
             }
         }
     }
@@ -765,7 +764,7 @@ private fun SleepChart(entries: List<SleepEntry>, age: Int) {
 }
 
 @Composable
-private fun SleepEntryCard(entry: SleepEntry, age: Int, onDelete: () -> Unit) {
+private fun SleepEntryCard(entry: SleepEntry, age: Int) {
     val hours = entry.duration().orZero()
     val status = sleepStatus(hours, age)
     GlassCard {
@@ -775,7 +774,6 @@ private fun SleepEntryCard(entry: SleepEntry, age: Int, onDelete: () -> Unit) {
                 Text("${entry.sleptAt} - ${entry.wokeAt}", fontWeight = FontWeight.Bold)
                 Text("${entry.date} | ${hours.oneDecimal()} saat | ${status.title}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
             }
-            DeleteButton(onDelete)
         }
     }
 }
@@ -798,7 +796,6 @@ private fun MealScreen(entries: List<MealEntry>, profile: Profile, onDelete: (St
                                     Text(meal.type.label, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                     Text(meal.foods.joinToString(separator = "\n"), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f))
                                 }
-                                DeleteButton { onDelete(meal.id) }
                             }
                         }
                         if (meal != dayEntries.last()) HorizontalDivider(color = Color.White.copy(alpha = 0.10f))
@@ -835,7 +832,6 @@ private fun SkinScreen(entries: List<SkinEntry>, onDelete: (String) -> Unit, onO
                 SkinEntryCard(
                     entry = entry,
                     dayNumber = indexed[entry.id] ?: 1,
-                    onDelete = { onDelete(entry.id) },
                     onOpenPhoto = { onOpenPhoto(entry.photoUri) },
                 )
             }
@@ -872,7 +868,7 @@ private fun TimeLapseStrip(entries: List<SkinEntry>, dayNumbers: Map<String, Int
 }
 
 @Composable
-private fun SkinEntryCard(entry: SkinEntry, dayNumber: Int, onDelete: () -> Unit, onOpenPhoto: () -> Unit) {
+private fun SkinEntryCard(entry: SkinEntry, dayNumber: Int, onOpenPhoto: () -> Unit) {
     GlassCard {
         Row(modifier = Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             AsyncImage(
@@ -891,7 +887,6 @@ private fun SkinEntryCard(entry: SkinEntry, dayNumber: Int, onDelete: () -> Unit
                 if (entry.products.isNotBlank()) Text("Ürün: ${entry.products}", maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (entry.notes.isNotBlank()) Text(entry.notes, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f), maxLines = 2)
             }
-            DeleteButton(onDelete)
         }
     }
 }
@@ -905,14 +900,14 @@ private fun HomeworkScreen(entries: List<HomeworkEntry>, onDelete: (String) -> U
     ) {
         items(entries) { entry ->
             DismissibleItem(onDelete = { onDelete(entry.id) }) {
-                HomeworkCard(entry = entry, onDelete = { onDelete(entry.id) })
+                HomeworkCard(entry = entry)
             }
         }
     }
 }
 
 @Composable
-private fun HomeworkCard(entry: HomeworkEntry, onDelete: () -> Unit) {
+private fun HomeworkCard(entry: HomeworkEntry) {
     GlassCard {
         Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Box(
@@ -927,7 +922,6 @@ private fun HomeworkCard(entry: HomeworkEntry, onDelete: () -> Unit) {
                 if (entry.attachment.isNotBlank()) Text("Ek: ${entry.attachment}", color = MaterialTheme.colorScheme.secondary)
             }
             AssistChip(onClick = {}, label = { Text(entry.priority.label) })
-            DeleteButton(onDelete)
         }
     }
 }
@@ -1215,67 +1209,70 @@ private fun SectionList(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DismissibleItem(onDelete: () -> Unit, content: @Composable () -> Unit) {
-    val state = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else {
-                false
-            }
-        },
-    )
-    SwipeToDismissBox(
-        state = state,
-        enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = true,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .height(64.dp)
-                        .width(104.dp)
-                        .clip(RoundedCornerShape(26.dp))
-                        .background(Color(0xFFE5484D).copy(alpha = 0.94f)),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color.White)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Sil", color = Color.White, fontWeight = FontWeight.Black)
-                }
-            }
-        },
-        content = { content() },
-    )
-}
+    val actionWidth = 112.dp
+    val actionWidthPx = with(LocalDensity.current) { actionWidth.toPx() }
+    var offsetPx by remember { mutableStateOf(0f) }
 
-@Composable
-private fun DeleteButton(onDelete: () -> Unit) {
-    IconButton(onClick = onDelete) {
-        Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color(0xFFFF7A7A))
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .width(actionWidth)
+                .height(64.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color(0xFFE5484D))
+                .clickable { onDelete() },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color.White)
+            Spacer(Modifier.width(6.dp))
+            Text("Sil", color = Color.White, fontWeight = FontWeight.Black)
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetPx.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            offsetPx = if (offsetPx < -actionWidthPx * 0.45f) -actionWidthPx else 0f
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetPx = (offsetPx + dragAmount).coerceIn(-actionWidthPx, 0f)
+                        },
+                    )
+                },
+        ) {
+            content()
+        }
     }
 }
 
 @Composable
 private fun GlassCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Card(
+    val shape = RoundedCornerShape(30.dp)
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(22.dp, RoundedCornerShape(30.dp), ambientColor = Color.Black.copy(alpha = 0.38f))
-            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(30.dp)),
-        shape = RoundedCornerShape(30.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.075f)),
-        content = { content() },
-    )
+            .shadow(22.dp, shape, ambientColor = Color.Black.copy(alpha = 0.38f))
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.105f),
+                        Color.White.copy(alpha = 0.055f),
+                    ),
+                ),
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.12f), shape),
+    ) {
+        content()
+    }
 }
 
 @Composable
