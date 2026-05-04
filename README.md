@@ -1,30 +1,30 @@
 # Glaeth
 
-Modern Android gunluk takip uygulamasi. Kardesinizin uyku saatlerini,
-ogunlerini, cilt fotograflarini ve odevlerini tek ekrandan takip etmek icin
-Jetpack Compose ile tasarlandi.
+Modern Android günlük takip uygulaması. Kardeşinizin uyku saatlerini,
+öğünlerini, cilt fotoğraflarını ve ödevlerini tek ekrandan takip etmek için
+Jetpack Compose ile tasarlandı.
 
-## Ozellikler
+## Özellikler
 
-- Uyku gunlugu: uyuma/uyanma saati, otomatik toplam sure, yas bazli yeterlilik
-  yorumu ve daha detayli grafik.
-- Ogun takibi: tarih bazli sabah, ogle, aksam ve ara ogun kayitlari; yasa gore
-  beslenme onerileri.
-- Cilt arsivi: tekli veya toplu fotograf secimi, kalici galeri izinleri,
-  time-lapse seridi, gun numarasi, yuz bolgesi, urun notlari, fotograf onizleme
-  ve saga/sola kaydirarak silme.
-- Odev panosu: ders, odev adi, teslim tarihi, oncelik etiketi, ek notu ve silme.
-- Ana sayfa: motivasyon karti, su takibi, yaklasan odev geri sayimi ve hizli
+- Uyku günlüğü: uyuma/uyanma saati, otomatik toplam süre, yaş bazlı yeterlilik
+  yorumu ve daha detaylı grafik.
+- Öğün takibi: tarih bazlı sabah, öğle, akşam ve ara öğün kayıtları; yaşa göre
+  beslenme önerileri.
+- Cilt arşivi: tekli veya toplu fotoğraf seçimi, kalıcı galeri izinleri,
+  time-lapse şeridi, gün numarası, yüz bölgesi, ürün notları, fotoğraf önizleme
+  ve sağa/sola kaydırarak silme.
+- Ödev panosu: ders, ödev adı, teslim tarihi, öncelik etiketi, ek notu ve silme.
+- Ana sayfa: motivasyon kartı, su takibi, yaklaşan ödev geri sayımı ve hızlı
   aksiyonlar.
-- Profil: sag ustten isim, yas, cinsiyet ve profil fotografi duzenleme.
-- Ayarlar: siyah/grafit/lacivert arka plan secimi.
-- SQLite tabanli lokal database, Material 3, siyah-gri glass tema ve cam efektli
+- Profil: sağ üstten isim, yaş, cinsiyet ve profil fotoğrafı düzenleme.
+- Ayarlar: siyah/grafit/lacivert arka plan seçimi.
+- SQLite tabanlı lokal database, Material 3, siyah-gri glass tema ve cam efektli
   kartlar.
 
-## Calistirma
+## Çalıştırma
 
-Android Studio ile projeyi acip `:app` modulunu calistirin. Komut satirindan
-derlemek icin Android SDK ve Gradle wrapper hazir oldugunda:
+Android Studio ile projeyi açıp `:app` modülünü çalıştırın. Komut satırından
+derlemek için Android SDK ve Gradle wrapper hazır olduğunda:
 
 ```bash
 ./gradlew assembleDebug
@@ -32,5 +32,5 @@ derlemek icin Android SDK ve Gradle wrapper hazir oldugunda:
 
 ## APK
 
-Hazir debug APK dosyasi `downloads/Glaeth-debug.apk` altindadir. Android telefonda
-kurarken bilinmeyen kaynaklardan yuklemeye izin vermeniz gerekebilir.
+Hazır debug APK dosyası `downloads/Glaeth-debug.apk` altındadır. Android telefonda
+kurarken bilinmeyen kaynaklardan yüklemeye izin vermeniz gerekebilir.

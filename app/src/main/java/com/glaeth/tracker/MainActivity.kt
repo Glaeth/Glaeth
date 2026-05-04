@@ -122,22 +122,22 @@ class MainActivity : ComponentActivity() {
 private enum class Section(val label: String, val icon: ImageVector, val actionLabel: String) {
     Dashboard("Ana", Icons.Filled.Home, ""),
     Sleep("Uyku", Icons.Filled.DateRange, "Uyku ekle"),
-    Meals("Ogun", Icons.Filled.Favorite, "Ogun ekle"),
-    Skin("Cilt", Icons.Filled.Face, "Fotograf ekle"),
-    Homework("Odev", Icons.Filled.DateRange, "Odev ekle"),
+    Meals("Öğün", Icons.Filled.Favorite, "Öğün ekle"),
+    Skin("Cilt", Icons.Filled.Face, "Fotoğraf ekle"),
+    Homework("Ödev", Icons.Filled.DateRange, "Ödev ekle"),
     Settings("Ayar", Icons.Filled.Settings, ""),
 }
 
 private enum class MealType(val label: String) {
     Morning("Sabah"),
-    Lunch("Ogle"),
-    Evening("Aksam"),
-    Snack("Ara Ogun"),
+    Lunch("Öğle"),
+    Evening("Akşam"),
+    Snack("Ara Öğün"),
 }
 
 private enum class Priority(val label: String, val color: Color) {
     Urgent("Acil", Color(0xFFFF5C5C)),
-    Important("Onemli", Color(0xFFFFB84D)),
+    Important("Önemli", Color(0xFFFFB84D)),
     Chill("Keyfi", Color(0xFF58D68D)),
 }
 
@@ -148,7 +148,7 @@ private enum class BackgroundStyle(val label: String, val top: Color, val bottom
 }
 
 private data class Profile(
-    val name: String = "Kardesim",
+    val name: String = "Kardeşim",
     val age: Int = 16,
     val gender: String = "Belirtilmedi",
     val photoUri: String = "",
@@ -276,7 +276,7 @@ private class AppRepository(context: Context) {
             waterCups = root.optInt("waterCups", 4),
             profile = root.optJSONObject("profile")?.let {
                 Profile(
-                    name = it.optString("name", "Kardesim"),
+                    name = it.optString("name", "Kardeşim"),
                     age = it.optInt("age", 16),
                     gender = it.optString("gender", "Belirtilmedi"),
                     photoUri = it.optString("photoUri"),
@@ -356,14 +356,14 @@ private fun demoData(): AppData {
             SleepEntry(newId(), today.toString(), "23:05", "07:25"),
         ),
         mealEntries = listOf(
-            MealEntry(newId(), today.toString(), MealType.Morning, listOf("Tost", "Cay", "Sut")),
-            MealEntry(newId(), today.toString(), MealType.Lunch, listOf("Borek", "Ayran")),
-            MealEntry(newId(), today.minusDays(1).toString(), MealType.Evening, listOf("Corba", "Pilav")),
+            MealEntry(newId(), today.toString(), MealType.Morning, listOf("Tost", "Çay", "Süt")),
+            MealEntry(newId(), today.toString(), MealType.Lunch, listOf("Börek", "Ayran")),
+            MealEntry(newId(), today.minusDays(1).toString(), MealType.Evening, listOf("Çorba", "Pilav")),
         ),
         skinEntries = emptyList(),
         homeworkEntries = listOf(
             HomeworkEntry(newId(), "Matematik", "Problemler testi", today.plusDays(1).toString(), Priority.Urgent, ""),
-            HomeworkEntry(newId(), "Turkce", "Kitap ozeti", today.plusDays(3).toString(), Priority.Important, ""),
+            HomeworkEntry(newId(), "Türkçe", "Kitap özeti", today.plusDays(3).toString(), Priority.Important, ""),
         ),
         waterCups = 4,
         profile = Profile(),
@@ -440,7 +440,7 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit) {
                 .background(appBackground(data.backgroundStyle))
                 .padding(padding),
         ) {
-            AnimatedContent(targetState = section, label = "section") { target ->
+            AnimatedContent(targetState = section, label = "seçtion") { target ->
                 when (target) {
                     Section.Dashboard -> DashboardScreen(
                         data = data,
@@ -550,15 +550,15 @@ private fun DashboardScreen(data: AppData, onWaterChange: (Int) -> Unit, onOpen:
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 72.dp)) {
                 Text("Glaeth", style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black))
                 Text(
-                    "${data.profile.name} icin uyku, cilt, ogun ve odev kontrol paneli.",
+                    "${data.profile.name} için uyku, cilt, öğün ve ödev kontrol paneli.",
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.66f),
                 )
             }
         }
         item {
             HeroCard(
-                title = "${data.skinEntries.size.coerceAtLeast(441)} gundur devam",
-                subtitle = "Siyah glass tema aktif. Fotograflari ac, saga kaydirip sil, ritmi koru.",
+                title = "${data.skinEntries.size.coerceAtLeast(441)} gündür devam",
+                subtitle = "Siyah glass tema aktif. Fotoğrafları aç, sağa kaydırıp sil, ritmi koru.",
                 icon = Icons.Filled.Favorite,
             )
         }
@@ -570,11 +570,11 @@ private fun DashboardScreen(data: AppData, onWaterChange: (Int) -> Unit, onOpen:
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Cilt arsivi", "${data.skinEntries.size} gun", Icons.Filled.Face, Modifier.weight(1f))
-                StatCard("Odev", "${data.homeworkEntries.size}", Icons.Filled.DateRange, Modifier.weight(1f))
+                StatCard("Cilt arşivi", "${data.skinEntries.size} gün", Icons.Filled.Face, Modifier.weight(1f))
+                StatCard("Ödev", "${data.homeworkEntries.size}", Icons.Filled.DateRange, Modifier.weight(1f))
             }
         }
-        item { InsightCard("Yasa gore uyku", sleepReport.detail) }
+        item { InsightCard("Yaşa göre uyku", sleepReport.detail) }
         item { WaterCard(cups = data.waterCups, onChange = onWaterChange) }
         item { nextHomework?.let { CountdownCard(entry = it, onOpen = { onOpen(Section.Homework) }) } }
         item { QuickActions(onOpen) }
@@ -665,9 +665,9 @@ private fun CountdownCard(entry: HomeworkEntry, onOpen: () -> Unit) {
             Icon(Icons.Filled.DateRange, contentDescription = null, tint = entry.priority.color, modifier = Modifier.size(32.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("${entry.lesson}: ${entry.title}", fontWeight = FontWeight.Bold)
-                Text(if (days >= 0) "Son $days gun" else "Teslim tarihi gecti", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                Text(if (days >= 0) "Son $days gün" else "Teslim tarihi geçti", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
             }
-            TextButton(onClick = onOpen) { Text("Ac") }
+            TextButton(onClick = onOpen) { Text("Aç") }
         }
     }
 }
@@ -697,8 +697,8 @@ private fun QuickActions(onOpen: (Section) -> Unit) {
 private fun SleepScreen(entries: List<SleepEntry>, profile: Profile, onDelete: (String) -> Unit) {
     val average = entries.mapNotNull { it.duration() }.averageOrZero()
     SectionList(
-        title = "Uyku gunlugu",
-        subtitle = "Grafigi, kalite yorumunu ve toplam sureyi takip et.",
+        title = "Uyku günlüğü",
+        subtitle = "Grafiği, kalite yorumunu ve toplam süreyi takip et.",
         header = {
             SleepChart(entries, profile.age)
             InsightCard("Otomatik karar", sleepStatus(average, profile.age).detail)
@@ -718,7 +718,7 @@ private fun SleepChart(entries: List<SleepEntry>, age: Int) {
     GlassCard {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("Detayli uyku grafigi", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                Text("Detaylı uyku grafiği", fontWeight = FontWeight.Black, fontSize = 18.sp)
                 Text("Hedef ${target.oneDecimal()}s", color = MaterialTheme.colorScheme.primary)
             }
             Row(
@@ -782,14 +782,14 @@ private fun SleepEntryCard(entry: SleepEntry, age: Int, onDelete: () -> Unit) {
 @Composable
 private fun MealScreen(entries: List<MealEntry>, profile: Profile, onDelete: (String) -> Unit) {
     SectionList(
-        title = "Ogunler",
-        subtitle = "Yasa gore besin onerileri ve gunluk ogun kayitlari.",
-        header = { InsightCard("Besin onerisi", mealSuggestion(profile.age)) },
+        title = "Öğünler",
+        subtitle = "Yaşa göre besin önerileri ve günlük öğün kayıtları.",
+        header = { InsightCard("Besin önerisi", mealSuggestion(profile.age)) },
     ) {
         items(entries.groupBy { it.date }.toList()) { (date, dayEntries) ->
             GlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Gun: $date", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                    Text("Gün: $date", fontWeight = FontWeight.Black, fontSize = 20.sp)
                     dayEntries.forEach { meal ->
                         DismissibleItem(onDelete = { onDelete(meal.id) }) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -813,11 +813,11 @@ private fun SkinScreen(entries: List<SkinEntry>, onDelete: (String) -> Unit, onO
     val indexed = entries.sortedBy { it.date }.mapIndexed { index, entry -> entry.id to index + 1 }.toMap()
     SectionList(
         title = "Cilt takip",
-        subtitle = "Gun numarasi, silme ve tam ekran fotograf goruntuleme.",
+        subtitle = "Gün numarası, silme ve tam ekran fotoğraf görüntüleme.",
         header = {
             HeroCard(
-                title = "Toplu ice aktarma",
-                subtitle = "Fotografa dokun: buyut. Saga kaydir: sil. Zaman yolculuguna dokun: ilk fotografi ac.",
+                title = "Toplu içe aktarma",
+                subtitle = "Fotoğrafa dokun: büyüt. Sağa kaydır: sil. Zaman yolculuğuna dokun: ilk fotoğrafı aç.",
                 icon = Icons.Filled.Face,
             )
             if (entries.isNotEmpty()) {
@@ -848,13 +848,13 @@ private fun TimeLapseStrip(entries: List<SkinEntry>, dayNumbers: Map<String, Int
         modifier = Modifier.clickable { entries.sortedBy { it.date }.firstOrNull()?.let { onOpenPhoto(it.photoUri) } },
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Zaman yolculugu - dokun", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("Zaman yolculuğu - dokun", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(entries.sortedBy { it.date }) { entry ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         AsyncImage(
                             model = entry.photoUri,
-                            contentDescription = "Gun ${dayNumbers[entry.id]}",
+                            contentDescription = "Gün ${dayNumbers[entry.id]}",
                             modifier = Modifier
                                 .size(92.dp)
                                 .clip(RoundedCornerShape(24.dp))
@@ -862,7 +862,7 @@ private fun TimeLapseStrip(entries: List<SkinEntry>, dayNumbers: Map<String, Int
                                 .clickable { onOpenPhoto(entry.photoUri) },
                             contentScale = ContentScale.Crop,
                         )
-                        Text("Gun ${dayNumbers[entry.id] ?: 1}", fontSize = 11.sp)
+                        Text("Gün ${dayNumbers[entry.id] ?: 1}", fontSize = 11.sp)
                     }
                 }
             }
@@ -876,7 +876,7 @@ private fun SkinEntryCard(entry: SkinEntry, dayNumber: Int, onDelete: () -> Unit
         Row(modifier = Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             AsyncImage(
                 model = entry.photoUri,
-                contentDescription = "Gun $dayNumber",
+                contentDescription = "Gün $dayNumber",
                 modifier = Modifier
                     .size(112.dp)
                     .clip(RoundedCornerShape(26.dp))
@@ -885,9 +885,9 @@ private fun SkinEntryCard(entry: SkinEntry, dayNumber: Int, onDelete: () -> Unit
                 contentScale = ContentScale.Crop,
             )
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Gun $dayNumber", fontWeight = FontWeight.Black, fontSize = 20.sp)
-                if (entry.zones.isNotEmpty()) Text("Bolge: ${entry.zones.joinToString()}", color = MaterialTheme.colorScheme.primary)
-                if (entry.products.isNotBlank()) Text("Urun: ${entry.products}", maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text("Gün $dayNumber", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                if (entry.zones.isNotEmpty()) Text("Bölge: ${entry.zones.joinToString()}", color = MaterialTheme.colorScheme.primary)
+                if (entry.products.isNotBlank()) Text("Ürün: ${entry.products}", maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (entry.notes.isNotBlank()) Text(entry.notes, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f), maxLines = 2)
             }
             DeleteButton(onDelete)
@@ -898,9 +898,9 @@ private fun SkinEntryCard(entry: SkinEntry, dayNumber: Int, onDelete: () -> Unit
 @Composable
 private fun HomeworkScreen(entries: List<HomeworkEntry>, onDelete: (String) -> Unit) {
     SectionList(
-        title = "Odev panosu",
-        subtitle = "Kartlari saga kaydirarak veya Sil tusuyla temizle.",
-        header = { HeroCard("Geri sayim aktif", "Ana sayfada en yakin odev icin geri sayim karti gorunur.", Icons.Filled.DateRange) },
+        title = "Ödev panosu",
+        subtitle = "Kartları sağa kaydırarak veya Sil tuşuyla temizle.",
+        header = { HeroCard("Geri sayım aktif", "Ana sayfada en yakın ödev için geri sayım kartı görünür.", Icons.Filled.DateRange) },
     ) {
         items(entries) { entry ->
             DismissibleItem(onDelete = { onDelete(entry.id) }) {
@@ -935,16 +935,16 @@ private fun HomeworkCard(entry: HomeworkEntry, onDelete: () -> Unit) {
 private fun SettingsScreen(data: AppData, onBackgroundChange: (BackgroundStyle) -> Unit, onProfileClick: () -> Unit) {
     SectionList(
         title = "Ayarlar",
-        subtitle = "Arka plan rengini ve profil bilgilerini yonet.",
+        subtitle = "Arka plan rengini ve profil bilgilerini yönet.",
         header = {
             GlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Arka plan temasi", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                    Text("Arka plan teması", fontWeight = FontWeight.Black, fontSize = 20.sp)
                     ChipSelector(BackgroundStyle.entries, data.backgroundStyle, onBackgroundChange) { it.label }
                     Button(onClick = onProfileClick, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Filled.Person, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Profil bilgilerini duzenle")
+                        Text("Profil bilgilerini düzenle")
                     }
                 }
             }
@@ -973,14 +973,14 @@ private fun SleepForm(onAdd: (SleepEntry) -> Unit) {
 private fun MealForm(onAdd: (MealEntry) -> Unit) {
     var date by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
     var mealType by rememberSaveable { mutableStateOf(MealType.Morning) }
-    var foods by rememberSaveable { mutableStateOf("Tost\nCay\nSut") }
-    FormShell(title = "Ogun ekle") {
+    var foods by rememberSaveable { mutableStateOf("Tost\nÇay\nSüt") }
+    FormShell(title = "Öğün ekle") {
         DateField(date, { date = it })
         ChipSelector(MealType.entries, mealType, { mealType = it }) { it.label }
         OutlinedTextField(
             value = foods,
             onValueChange = { foods = it },
-            label = { Text("Yiyecekler (her satir bir oge)") },
+            label = { Text("Yiyecekler (her satır bir öğe)") },
             modifier = Modifier.fillMaxWidth(),
             minLines = 4,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
@@ -1017,16 +1017,16 @@ private fun SkinForm(onAddMany: (List<SkinEntry>) -> Unit) {
         selectedUris = uris
     }
 
-    FormShell(title = "Cilt fotografi ekle") {
+    FormShell(title = "Cilt fotoğrafı ekle") {
         DateField(date, { date = it })
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(onClick = { singlePicker.launch(arrayOf("image/*")) }, modifier = Modifier.weight(1f)) { Text("Tek sec") }
-            OutlinedButton(onClick = { multiPicker.launch(arrayOf("image/*")) }, modifier = Modifier.weight(1f)) { Text("Toplu sec") }
+            Button(onClick = { singlePicker.launch(arrayOf("image/*")) }, modifier = Modifier.weight(1f)) { Text("Tek seç") }
+            OutlinedButton(onClick = { multiPicker.launch(arrayOf("image/*")) }, modifier = Modifier.weight(1f)) { Text("Toplu seç") }
         }
-        if (selectedUris.isNotEmpty()) Text("${selectedUris.size} fotograf secildi. Ilk secilen en eski, son secilen bugun kabul edilir.")
-        Text("Yuz haritasi", fontWeight = FontWeight.Bold)
+        if (selectedUris.isNotEmpty()) Text("${selectedUris.size} fotoğraf seçildi. İlk seçilen en eski, son seçilen bugün kabul edilir.")
+        Text("Yüz haritası", fontWeight = FontWeight.Bold)
         ZoneSelector(selectedZones)
-        OutlinedTextField(products, { products = it }, label = { Text("Krem / ilac / urun") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(products, { products = it }, label = { Text("Krem / ilaç / ürün") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(notes, { notes = it }, label = { Text("Notlar") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
         Button(
             onClick = {
@@ -1044,7 +1044,7 @@ private fun SkinForm(onAddMany: (List<SkinEntry>) -> Unit) {
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = date.isValidDate() && selectedUris.isNotEmpty(),
-        ) { Text("Arsive ekle") }
+        ) { Text("Arşive ekle") }
     }
 }
 
@@ -1055,12 +1055,12 @@ private fun HomeworkForm(onAdd: (HomeworkEntry) -> Unit) {
     var dueDate by rememberSaveable { mutableStateOf(LocalDate.now().plusDays(1).toString()) }
     var priority by rememberSaveable { mutableStateOf(Priority.Important) }
     var attachment by rememberSaveable { mutableStateOf("") }
-    FormShell(title = "Odev ekle") {
+    FormShell(title = "Ödev ekle") {
         OutlinedTextField(lesson, { lesson = it }, label = { Text("Ders") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(title, { title = it }, label = { Text("Odev adi") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(title, { title = it }, label = { Text("Ödev adı") }, modifier = Modifier.fillMaxWidth())
         DateField(dueDate, { dueDate = it }, "Teslim tarihi")
         ChipSelector(Priority.entries, priority, { priority = it }) { it.label }
-        OutlinedTextField(attachment, { attachment = it }, label = { Text("Dosya/fotograf notu veya link") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(attachment, { attachment = it }, label = { Text("Dosya/fotoğraf notu veya link") }, modifier = Modifier.fillMaxWidth())
         Button(
             onClick = { onAdd(HomeworkEntry(newId(), lesson, title, dueDate, priority, attachment)) },
             modifier = Modifier.fillMaxWidth(),
@@ -1100,11 +1100,11 @@ private fun ProfileForm(profile: Profile, onSave: (Profile) -> Unit) {
                 Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(44.dp))
             }
         }
-        OutlinedTextField(name, { name = it }, label = { Text("Isim") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(age, { age = it.filter(Char::isDigit).take(2) }, label = { Text("Yas") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+        OutlinedTextField(name, { name = it }, label = { Text("İsim") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(age, { age = it.filter(Char::isDigit).take(2) }, label = { Text("Yaş") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         OutlinedTextField(gender, { gender = it }, label = { Text("Cinsiyet") }, modifier = Modifier.fillMaxWidth())
         Button(
-            onClick = { onSave(Profile(name.ifBlank { "Kardesim" }, age.toIntOrNull() ?: 16, gender.ifBlank { "Belirtilmedi" }, photoUri)) },
+            onClick = { onSave(Profile(name.ifBlank { "Kardeşim" }, age.toIntOrNull() ?: 16, gender.ifBlank { "Belirtilmedi" }, photoUri)) },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Kaydet") }
     }
@@ -1160,7 +1160,7 @@ private fun <T> ChipSelector(values: List<T>, selected: T, onSelected: (T) -> Un
 @Composable
 private fun ZoneSelector(selectedZones: MutableList<String>) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("Alin", "Cene", "Sol yanak", "Sag yanak", "Burun").forEach { zone ->
+        listOf("Alın", "Çene", "Sol yanak", "Sağ yanak", "Bürün").forEach { zone ->
             FilterChip(
                 selected = zone in selectedZones,
                 onClick = { if (zone in selectedZones) selectedZones.remove(zone) else selectedZones.add(zone) },
@@ -1312,7 +1312,7 @@ private fun FullScreenPhoto(uri: String, onDismiss: () -> Unit) {
         ) {
             AsyncImage(
                 model = uri,
-                contentDescription = "Orijinal fotograf",
+                contentDescription = "Orijinal fotoğraf",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit,
             )
@@ -1337,18 +1337,18 @@ private fun sleepTarget(age: Int): SleepTarget = when (age) {
 private fun sleepStatus(hours: Double, age: Int): SleepReport {
     val target = sleepTarget(age)
     return when {
-        hours <= 0.0 -> SleepReport("Veri yok", "Uyku kaydi eklenince yasa gore otomatik yorumlanacak.", Color(0xFF9CA3AF))
-        hours + 0.25 < target.recommended -> SleepReport("Yetersiz", "$age yas icin onerilen aralik ${target.rangeText}. Ortalama biraz dusuk.", Color(0xFFFF6B6B))
-        hours > target.recommended + 2 -> SleepReport("Fazla", "$age yas icin onerilen aralik ${target.rangeText}. Uyku suresi uzun gorunuyor.", Color(0xFFFFB84D))
-        else -> SleepReport("Yeterli", "$age yas icin onerilen aralik ${target.rangeText}. Uyku suresi iyi gorunuyor.", Color(0xFF22C55E))
+        hours <= 0.0 -> SleepReport("Veri yok", "Uyku kaydı eklenince yaşa göre otomatik yorumlanacak.", Color(0xFF9CA3AF))
+        hours + 0.25 < target.recommended -> SleepReport("Yetersiz", "$age yaş için önerilen aralık ${target.rangeText}. Ortalama biraz düşük.", Color(0xFFFF6B6B))
+        hours > target.recommended + 2 -> SleepReport("Fazla", "$age yaş için önerilen aralık ${target.rangeText}. Uyku süresi uzun görünüyor.", Color(0xFFFFB84D))
+        else -> SleepReport("Yeterli", "$age yaş için önerilen aralık ${target.rangeText}. Uyku süresi iyi görünüyor.", Color(0xFF22C55E))
     }
 }
 
 private fun mealSuggestion(age: Int): String = when (age) {
-    in 0..5 -> "Protein, yogurt/sut, yumurta, meyve ve sebze agirlikli minik porsiyonlar iyi olur."
-    in 6..12 -> "Kahvaltida yumurta/peynir, oglen protein + tahil, aksam sebze + yogurt dengesi onerilir."
-    in 13..18 -> "Ergenlik donemi icin protein, kompleks karbonhidrat, yesillik, su ve sekeri azaltma cilt icin onemli."
-    else -> "Protein, lifli sebze, tam tahil ve yeterli su dengesi takip edilmeli."
+    in 0..5 -> "Protein, yoğurt/süt, yumurta, meyve ve sebze ağırlıklı minik porsiyonlar iyi olur."
+    in 6..12 -> "Kahvaltıda yumurta/peynir, öğlen protein + tahıl, akşam sebze + yoğurt dengesi önerilir."
+    in 13..18 -> "Ergenlik dönemi için protein, kompleks karbonhidrat, yeşillik, su ve şekeri azaltma cilt için önemli."
+    else -> "Protein, lifli sebze, tam tahıl ve yeterli su dengesi takip edilmeli."
 }
 
 private fun SleepEntry.duration(): Double? {
