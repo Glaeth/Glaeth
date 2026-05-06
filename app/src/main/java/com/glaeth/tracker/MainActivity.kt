@@ -7,17 +7,25 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +35,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,21 +53,38 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalDining
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -71,9 +95,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,34 +111,45 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Canvas
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.LocalTime as JavaLocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+import java.util.UUID
+import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -120,13 +159,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Section(val label: String, val icon: ImageVector, val actionLabel: String) {
-    Dashboard("Ana", Icons.Filled.Home, ""),
-    Sleep("Uyku", Icons.Filled.DateRange, "Uyku ekle"),
-    Meals("Öğün", Icons.Filled.Favorite, "Öğün ekle"),
-    Skin("Cilt", Icons.Filled.Face, "Fotoğraf ekle"),
-    Homework("Ödev", Icons.Filled.DateRange, "Ödev ekle"),
-    Settings("Ayar", Icons.Filled.Settings, ""),
+// region Domain models
+
+private enum class Section(val label: String, val icon: ImageVector, val short: String) {
+    Dashboard("Ana Sayfa", Icons.Filled.Home, "Ana"),
+    Sleep("Uyku", Icons.Filled.DateRange, "Uyku"),
+    Meals("Öğünler", Icons.Filled.LocalDining, "Öğün"),
+    Water("Su", Icons.Filled.WaterDrop, "Su"),
+    Skin("Cilt", Icons.Filled.Face, "Cilt"),
+    Homework("Ödev", Icons.Filled.School, "Ödev"),
+    Budget("Bütçe", Icons.Filled.AttachMoney, "Bütçe"),
+    Settings("Ayarlar", Icons.Filled.Settings, "Ayar"),
 }
 
 private enum class MealType(val label: String) {
@@ -137,15 +180,62 @@ private enum class MealType(val label: String) {
 }
 
 private enum class Priority(val label: String, val color: Color) {
-    Urgent("Acil", Color(0xFFFF5C5C)),
-    Important("Önemli", Color(0xFFFFB84D)),
-    Chill("Keyfi", Color(0xFF58D68D)),
+    Urgent("Acil", Color(0xFFEF4444)),
+    Important("Önemli", Color(0xFFF59E0B)),
+    Chill("Keyfi", Color(0xFF22C55E)),
 }
 
-private enum class BackgroundStyle(val label: String, val top: Color, val bottom: Color, val accent: Color) {
-    Black("Siyah", Color(0xFF020204), Color(0xFF101014), Color(0xFF9CA3AF)),
-    Graphite("Grafit", Color(0xFF07090D), Color(0xFF1D1F27), Color(0xFFB8BDC7)),
-    Midnight("Lacivert", Color(0xFF020615), Color(0xFF111827), Color(0xFF7DD3FC)),
+private enum class ThemeMode(val label: String) {
+    System("Sistem"), Light("Açık"), Dark("Koyu")
+}
+
+private enum class Palette(
+    val label: String,
+    val darkPrimary: Color,
+    val darkSecondary: Color,
+    val darkBackground: Color,
+    val darkSurface: Color,
+    val lightPrimary: Color,
+    val lightSecondary: Color,
+    val lightBackground: Color,
+    val lightSurface: Color,
+    val accentSoft: Color,
+) {
+    Obsidian("Obsidyen",
+        darkPrimary = Color(0xFFFF8A3D), darkSecondary = Color(0xFF94A3B8),
+        darkBackground = Color(0xFF06070A), darkSurface = Color(0xFF101218),
+        lightPrimary = Color(0xFFD96A1B), lightSecondary = Color(0xFF1F2937),
+        lightBackground = Color(0xFFF8FAFC), lightSurface = Color(0xFFFFFFFF),
+        accentSoft = Color(0xFFFFB58A),
+    ),
+    Aurora("Aurora",
+        darkPrimary = Color(0xFF7DD3FC), darkSecondary = Color(0xFF38BDF8),
+        darkBackground = Color(0xFF050A18), darkSurface = Color(0xFF101A2C),
+        lightPrimary = Color(0xFF0284C7), lightSecondary = Color(0xFF0F172A),
+        lightBackground = Color(0xFFF1F5F9), lightSurface = Color(0xFFFFFFFF),
+        accentSoft = Color(0xFF93C5FD),
+    ),
+    Mocha("Mocha",
+        darkPrimary = Color(0xFFE8C39E), darkSecondary = Color(0xFFC0A98F),
+        darkBackground = Color(0xFF120E0B), darkSurface = Color(0xFF1F1714),
+        lightPrimary = Color(0xFF7C5836), lightSecondary = Color(0xFF3F2E1E),
+        lightBackground = Color(0xFFFBF6F0), lightSurface = Color(0xFFFFFFFF),
+        accentSoft = Color(0xFFD7BFA1),
+    ),
+    Sakura("Sakura",
+        darkPrimary = Color(0xFFF472B6), darkSecondary = Color(0xFFC084FC),
+        darkBackground = Color(0xFF0E0712), darkSurface = Color(0xFF1B1126),
+        lightPrimary = Color(0xFFDB2777), lightSecondary = Color(0xFF7E22CE),
+        lightBackground = Color(0xFFFFF1F8), lightSurface = Color(0xFFFFFFFF),
+        accentSoft = Color(0xFFF9A8D4),
+    ),
+    Forest("Orman",
+        darkPrimary = Color(0xFF4ADE80), darkSecondary = Color(0xFF34D399),
+        darkBackground = Color(0xFF06120C), darkSurface = Color(0xFF0F1E15),
+        lightPrimary = Color(0xFF15803D), lightSecondary = Color(0xFF065F46),
+        lightBackground = Color(0xFFF0FDF4), lightSurface = Color(0xFFFFFFFF),
+        accentSoft = Color(0xFF86EFAC),
+    ),
 }
 
 private data class Profile(
@@ -155,36 +245,53 @@ private data class Profile(
     val photoUri: String = "",
 )
 
-private data class SleepEntry(
+private data class SleepEntry(val id: String, val date: String, val sleptAt: String, val wokeAt: String)
+private data class MealEntry(val id: String, val date: String, val type: MealType, val foods: List<String>)
+private data class SkinEntry(val id: String, val date: String, val photoUri: String, val products: String, val notes: String, val zones: Set<String>)
+private data class HomeworkEntry(val id: String, val lesson: String, val title: String, val dueDate: String, val priority: Priority, val attachment: String)
+private data class WaterEntry(val id: String, val date: String, val time: String, val amountMl: Int)
+
+private enum class AccountType(val label: String, val icon: ImageVector) {
+    Bank("Banka Hesabı", Icons.Filled.AccountBalance),
+    Card("Kredi Kartı", Icons.Filled.CreditCard),
+    Cash("Nakit", Icons.Filled.AttachMoney),
+}
+
+private data class BudgetPerson(val id: String, val name: String, val photoUri: String = "")
+
+private data class BudgetAccount(
     val id: String,
-    val date: String,
-    val sleptAt: String,
-    val wokeAt: String,
+    val personId: String,
+    val name: String,
+    val type: AccountType,
+    val iconKey: String,
 )
 
-private data class MealEntry(
-    val id: String,
-    val date: String,
-    val type: MealType,
-    val foods: List<String>,
-)
+private enum class TxnCategory(val label: String, val isIncome: Boolean, val icon: ImageVector, val color: Color) {
+    Salary("Maaş", true, Icons.Filled.AttachMoney, Color(0xFF22C55E)),
+    Other("Diğer Gelir", true, Icons.Filled.Receipt, Color(0xFF34D399)),
+    Rent("Kira", false, Icons.Filled.Home, Color(0xFFEF4444)),
+    Electricity("Elektrik", false, Icons.Filled.Bolt, Color(0xFFFACC15)),
+    Water("Su Faturası", false, Icons.Filled.WaterDrop, Color(0xFF38BDF8)),
+    Gas("Doğalgaz", false, Icons.Filled.Bolt, Color(0xFFF97316)),
+    Food("Market", false, Icons.Filled.LocalDining, Color(0xFFF472B6)),
+    Subscription("Abonelik", false, Icons.Filled.MenuBook, Color(0xFF8B5CF6)),
+    Misc("Diğer Gider", false, Icons.Filled.Receipt, Color(0xFF64748B)),
+}
 
-private data class SkinEntry(
-    val id: String,
-    val date: String,
-    val photoUri: String,
-    val products: String,
-    val notes: String,
-    val zones: Set<String>,
-)
+private enum class Currency(val label: String, val symbol: String) {
+    TRY("Türk Lirası", "₺"), USD("Dolar", "$"), EUR("Euro", "€")
+}
 
-private data class HomeworkEntry(
+private data class TxnEntry(
     val id: String,
-    val lesson: String,
-    val title: String,
-    val dueDate: String,
-    val priority: Priority,
-    val attachment: String,
+    val personId: String,
+    val accountId: String,
+    val category: TxnCategory,
+    val amount: Double,
+    val currency: Currency,
+    val description: String,
+    val date: String,
 )
 
 private data class AppData(
@@ -192,16 +299,26 @@ private data class AppData(
     val mealEntries: List<MealEntry>,
     val skinEntries: List<SkinEntry>,
     val homeworkEntries: List<HomeworkEntry>,
-    val waterCups: Int,
+    val waterEntries: List<WaterEntry>,
+    val people: List<BudgetPerson>,
+    val accounts: List<BudgetAccount>,
+    val transactions: List<TxnEntry>,
+    val waterTargetMl: Int,
+    val budgetLimit: Double,
+    val currency: Currency,
     val profile: Profile,
-    val backgroundStyle: BackgroundStyle,
+    val palette: Palette,
+    val themeMode: ThemeMode,
 )
 
-private class AppDatabase(context: Context) : SQLiteOpenHelper(context, "glaeth.db", null, 1) {
+// endregion
+
+// region Persistence
+
+private class GlaethDatabase(context: Context) : SQLiteOpenHelper(context.applicationContext, "glaeth.db", null, 2) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("CREATE TABLE app_state (state_key TEXT PRIMARY KEY, payload TEXT NOT NULL)")
     }
-
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS app_state")
         onCreate(db)
@@ -209,147 +326,87 @@ private class AppDatabase(context: Context) : SQLiteOpenHelper(context, "glaeth.
 }
 
 private class AppRepository(context: Context) {
-    private val database = AppDatabase(context.applicationContext)
+    private val database = GlaethDatabase(context)
 
-    fun load(): AppData {
-        database.readableDatabase.query(
-            "app_state",
-            arrayOf("payload"),
-            "state_key = ?",
-            arrayOf("main"),
-            null,
-            null,
-            null,
-        ).use { cursor ->
-            if (cursor.moveToFirst()) {
-                return runCatching { parse(JSONObject(cursor.getString(0))) }.getOrElse { demoData() }
-            }
+    fun load(): AppData = readableLoad() ?: demoData()
+    private fun readableLoad(): AppData? {
+        return database.readableDatabase.query("app_state", arrayOf("payload"), "state_key = ?", arrayOf("main"), null, null, null).use { cursor ->
+            if (cursor.moveToFirst()) runCatching { decode(JSONObject(cursor.getString(0))) }.getOrNull() else null
         }
-        return demoData()
     }
-
     fun save(data: AppData) {
         val values = ContentValues().apply {
             put("state_key", "main")
-            put("payload", data.toJson().toString())
+            put("payload", encode(data).toString())
         }
         database.writableDatabase.insertWithOnConflict("app_state", null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
-    private fun parse(root: JSONObject): AppData {
-        return AppData(
-            sleepEntries = root.optJSONArray("sleep")?.mapJsonObjects {
-                SleepEntry(
-                    id = it.optString("id", newId()),
-                    date = it.optString("date"),
-                    sleptAt = it.optString("sleptAt"),
-                    wokeAt = it.optString("wokeAt"),
-                )
-            }.orEmpty(),
-            mealEntries = root.optJSONArray("meals")?.mapJsonObjects {
-                MealEntry(
-                    id = it.optString("id", newId()),
-                    date = it.optString("date"),
-                    type = enumValueOfOrDefault(it.optString("type"), MealType.Morning),
-                    foods = it.optJSONArray("foods")?.mapStrings().orEmpty(),
-                )
-            }.orEmpty(),
-            skinEntries = root.optJSONArray("skin")?.mapJsonObjects {
-                SkinEntry(
-                    id = it.optString("id", newId()),
-                    date = it.optString("date"),
-                    photoUri = it.optString("photoUri"),
-                    products = it.optString("products"),
-                    notes = it.optString("notes"),
-                    zones = it.optJSONArray("zones")?.mapStrings()?.toSet().orEmpty(),
-                )
-            }.orEmpty(),
-            homeworkEntries = root.optJSONArray("homework")?.mapJsonObjects {
-                HomeworkEntry(
-                    id = it.optString("id", newId()),
-                    lesson = it.optString("lesson"),
-                    title = it.optString("title"),
-                    dueDate = it.optString("dueDate"),
-                    priority = enumValueOfOrDefault(it.optString("priority"), Priority.Important),
-                    attachment = it.optString("attachment"),
-                )
-            }.orEmpty(),
-            waterCups = root.optInt("waterCups", 4),
-            profile = root.optJSONObject("profile")?.let {
-                Profile(
-                    name = it.optString("name", "Kardeşim"),
-                    age = it.optInt("age", 16),
-                    gender = it.optString("gender", "Belirtilmedi"),
-                    photoUri = it.optString("photoUri"),
-                )
-            } ?: Profile(),
-            backgroundStyle = enumValueOfOrDefault(root.optString("backgroundStyle"), BackgroundStyle.Black),
-        )
-    }
-}
-
-private fun AppData.toJson(): JSONObject = JSONObject()
-    .put("waterCups", waterCups)
-    .put("backgroundStyle", backgroundStyle.name)
-    .put(
-        "profile",
-        JSONObject()
-            .put("name", profile.name)
-            .put("age", profile.age)
-            .put("gender", profile.gender)
-            .put("photoUri", profile.photoUri),
+    private fun decode(root: JSONObject): AppData = AppData(
+        sleepEntries = root.optJSONArray("sleep").mapJsonObjects {
+            SleepEntry(it.optString("id", newId()), it.optString("date"), it.optString("sleptAt"), it.optString("wokeAt"))
+        },
+        mealEntries = root.optJSONArray("meals").mapJsonObjects {
+            MealEntry(it.optString("id", newId()), it.optString("date"), enumValueOfOrDefault(it.optString("type"), MealType.Morning), it.optJSONArray("foods").mapStrings())
+        },
+        skinEntries = root.optJSONArray("skin").mapJsonObjects {
+            SkinEntry(it.optString("id", newId()), it.optString("date"), it.optString("photoUri"), it.optString("products"), it.optString("notes"), it.optJSONArray("zones").mapStrings().toSet())
+        },
+        homeworkEntries = root.optJSONArray("homework").mapJsonObjects {
+            HomeworkEntry(it.optString("id", newId()), it.optString("lesson"), it.optString("title"), it.optString("dueDate"), enumValueOfOrDefault(it.optString("priority"), Priority.Important), it.optString("attachment"))
+        },
+        waterEntries = root.optJSONArray("water").mapJsonObjects {
+            WaterEntry(it.optString("id", newId()), it.optString("date"), it.optString("time"), it.optInt("amountMl", 250))
+        },
+        people = root.optJSONArray("people").mapJsonObjects {
+            BudgetPerson(it.optString("id", newId()), it.optString("name", "Kişi"), it.optString("photoUri"))
+        }.ifEmpty { listOf(BudgetPerson(newId(), "Ben")) },
+        accounts = root.optJSONArray("accounts").mapJsonObjects {
+            BudgetAccount(it.optString("id", newId()), it.optString("personId"), it.optString("name", "Hesap"), enumValueOfOrDefault(it.optString("type"), AccountType.Bank), it.optString("iconKey"))
+        },
+        transactions = root.optJSONArray("transactions").mapJsonObjects {
+            TxnEntry(
+                it.optString("id", newId()),
+                it.optString("personId"),
+                it.optString("accountId"),
+                enumValueOfOrDefault(it.optString("category"), TxnCategory.Misc),
+                it.optDouble("amount", 0.0),
+                enumValueOfOrDefault(it.optString("currency"), Currency.TRY),
+                it.optString("description"),
+                it.optString("date"),
+            )
+        },
+        waterTargetMl = root.optInt("waterTargetMl", 2500),
+        budgetLimit = root.optDouble("budgetLimit", 0.0),
+        currency = enumValueOfOrDefault(root.optString("currency"), Currency.TRY),
+        profile = root.optJSONObject("profile")?.let {
+            Profile(it.optString("name", "Kardeşim"), it.optInt("age", 16), it.optString("gender", "Belirtilmedi"), it.optString("photoUri"))
+        } ?: Profile(),
+        palette = enumValueOfOrDefault(root.optString("palette"), Palette.Obsidian),
+        themeMode = enumValueOfOrDefault(root.optString("themeMode"), ThemeMode.System),
     )
-    .put("sleep", JSONArray().also { array ->
-        sleepEntries.forEach { entry ->
-            array.put(
-                JSONObject()
-                    .put("id", entry.id)
-                    .put("date", entry.date)
-                    .put("sleptAt", entry.sleptAt)
-                    .put("wokeAt", entry.wokeAt),
-            )
-        }
-    })
-    .put("meals", JSONArray().also { array ->
-        mealEntries.forEach { entry ->
-            array.put(
-                JSONObject()
-                    .put("id", entry.id)
-                    .put("date", entry.date)
-                    .put("type", entry.type.name)
-                    .put("foods", JSONArray(entry.foods)),
-            )
-        }
-    })
-    .put("skin", JSONArray().also { array ->
-        skinEntries.forEach { entry ->
-            array.put(
-                JSONObject()
-                    .put("id", entry.id)
-                    .put("date", entry.date)
-                    .put("photoUri", entry.photoUri)
-                    .put("products", entry.products)
-                    .put("notes", entry.notes)
-                    .put("zones", JSONArray(entry.zones.toList())),
-            )
-        }
-    })
-    .put("homework", JSONArray().also { array ->
-        homeworkEntries.forEach { entry ->
-            array.put(
-                JSONObject()
-                    .put("id", entry.id)
-                    .put("lesson", entry.lesson)
-                    .put("title", entry.title)
-                    .put("dueDate", entry.dueDate)
-                    .put("priority", entry.priority.name)
-                    .put("attachment", entry.attachment),
-            )
-        }
-    })
+
+    fun encode(data: AppData): JSONObject = JSONObject()
+        .put("waterTargetMl", data.waterTargetMl)
+        .put("budgetLimit", data.budgetLimit)
+        .put("currency", data.currency.name)
+        .put("palette", data.palette.name)
+        .put("themeMode", data.themeMode.name)
+        .put("profile", JSONObject().put("name", data.profile.name).put("age", data.profile.age).put("gender", data.profile.gender).put("photoUri", data.profile.photoUri))
+        .put("sleep", JSONArray().apply { data.sleepEntries.forEach { put(JSONObject().put("id", it.id).put("date", it.date).put("sleptAt", it.sleptAt).put("wokeAt", it.wokeAt)) } })
+        .put("meals", JSONArray().apply { data.mealEntries.forEach { put(JSONObject().put("id", it.id).put("date", it.date).put("type", it.type.name).put("foods", JSONArray(it.foods))) } })
+        .put("skin", JSONArray().apply { data.skinEntries.forEach { put(JSONObject().put("id", it.id).put("date", it.date).put("photoUri", it.photoUri).put("products", it.products).put("notes", it.notes).put("zones", JSONArray(it.zones.toList()))) } })
+        .put("homework", JSONArray().apply { data.homeworkEntries.forEach { put(JSONObject().put("id", it.id).put("lesson", it.lesson).put("title", it.title).put("dueDate", it.dueDate).put("priority", it.priority.name).put("attachment", it.attachment)) } })
+        .put("water", JSONArray().apply { data.waterEntries.forEach { put(JSONObject().put("id", it.id).put("date", it.date).put("time", it.time).put("amountMl", it.amountMl)) } })
+        .put("people", JSONArray().apply { data.people.forEach { put(JSONObject().put("id", it.id).put("name", it.name).put("photoUri", it.photoUri)) } })
+        .put("accounts", JSONArray().apply { data.accounts.forEach { put(JSONObject().put("id", it.id).put("personId", it.personId).put("name", it.name).put("type", it.type.name).put("iconKey", it.iconKey)) } })
+        .put("transactions", JSONArray().apply { data.transactions.forEach { put(JSONObject().put("id", it.id).put("personId", it.personId).put("accountId", it.accountId).put("category", it.category.name).put("amount", it.amount).put("currency", it.currency.name).put("description", it.description).put("date", it.date)) } })
+}
 
 private fun demoData(): AppData {
     val today = LocalDate.now()
+    val ben = BudgetPerson(newId(), "Ben")
+    val account = BudgetAccount(newId(), ben.id, "Ana Hesap", AccountType.Bank, "")
     return AppData(
         sleepEntries = listOf(
             SleepEntry(newId(), today.minusDays(2).toString(), "23:20", "07:10"),
@@ -366,11 +423,84 @@ private fun demoData(): AppData {
             HomeworkEntry(newId(), "Matematik", "Problemler testi", today.plusDays(1).toString(), Priority.Urgent, ""),
             HomeworkEntry(newId(), "Türkçe", "Kitap özeti", today.plusDays(3).toString(), Priority.Important, ""),
         ),
-        waterCups = 4,
+        waterEntries = listOf(
+            WaterEntry(newId(), today.toString(), "09:30", 250),
+            WaterEntry(newId(), today.toString(), "12:00", 500),
+            WaterEntry(newId(), today.minusDays(1).toString(), "20:00", 250),
+        ),
+        people = listOf(ben),
+        accounts = listOf(account),
+        transactions = listOf(
+            TxnEntry(newId(), ben.id, account.id, TxnCategory.Salary, 25000.0, Currency.TRY, "Maaş", today.toString()),
+            TxnEntry(newId(), ben.id, account.id, TxnCategory.Rent, 8000.0, Currency.TRY, "Ev kirası", today.minusDays(2).toString()),
+            TxnEntry(newId(), ben.id, account.id, TxnCategory.Food, 1450.0, Currency.TRY, "Market", today.minusDays(1).toString()),
+            TxnEntry(newId(), ben.id, account.id, TxnCategory.Electricity, 740.0, Currency.TRY, "Elektrik faturası", today.minusDays(3).toString()),
+        ),
+        waterTargetMl = 2500,
+        budgetLimit = 12000.0,
+        currency = Currency.TRY,
         profile = Profile(),
-        backgroundStyle = BackgroundStyle.Black,
+        palette = Palette.Obsidian,
+        themeMode = ThemeMode.Dark,
     )
 }
+
+// endregion
+
+// region Theme
+
+@Composable
+private fun GlaethTheme(palette: Palette, themeMode: ThemeMode, content: @Composable () -> Unit) {
+    val systemDark = isSystemInDarkTheme()
+    val isDark = when (themeMode) {
+        ThemeMode.System -> systemDark
+        ThemeMode.Light -> false
+        ThemeMode.Dark -> true
+    }
+    val scheme: ColorScheme = if (isDark) {
+        darkColorScheme(
+            primary = palette.darkPrimary,
+            onPrimary = Color(0xFF0B0F14),
+            secondary = palette.darkSecondary,
+            tertiary = palette.accentSoft,
+            background = palette.darkBackground,
+            surface = palette.darkSurface,
+            surfaceVariant = Color(0xFF1B1F27),
+            onBackground = Color(0xFFF5F7FA),
+            onSurface = Color(0xFFEAEEF4),
+            primaryContainer = Color(0xFF1B1F27),
+            onPrimaryContainer = Color(0xFFF8FAFC),
+        )
+    } else {
+        lightColorScheme(
+            primary = palette.lightPrimary,
+            onPrimary = Color.White,
+            secondary = palette.lightSecondary,
+            tertiary = palette.accentSoft,
+            background = palette.lightBackground,
+            surface = palette.lightSurface,
+            surfaceVariant = Color(0xFFE5E7EB),
+            onBackground = Color(0xFF0F172A),
+            onSurface = Color(0xFF111827),
+            primaryContainer = Color(0xFFE2E8F0),
+            onPrimaryContainer = Color(0xFF111827),
+        )
+    }
+    androidx.compose.material3.MaterialTheme(colorScheme = scheme) {
+        CompositionLocals(isDark = isDark, content = content)
+    }
+}
+
+private val LocalIsDark = androidx.compose.runtime.staticCompositionLocalOf { true }
+
+@Composable
+private fun CompositionLocals(isDark: Boolean, content: @Composable () -> Unit) {
+    androidx.compose.runtime.CompositionLocalProvider(LocalIsDark provides isDark, content = content)
+}
+
+// endregion
+
+// region Root
 
 @Composable
 private fun GlaethRoot() {
@@ -382,130 +512,167 @@ private fun GlaethRoot() {
         withContext(Dispatchers.IO) { repository.save(data) }
     }
 
-    GlaethTheme(data.backgroundStyle) {
+    GlaethTheme(palette = data.palette, themeMode = data.themeMode) {
         GlaethApp(
             data = data,
             updateData = { data = it },
+            repository = repository,
         )
     }
 }
 
-@Composable
-private fun GlaethTheme(style: BackgroundStyle, content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = style.accent,
-            secondary = Color(0xFFD1D5DB),
-            tertiary = Color(0xFF22C55E),
-            background = style.bottom,
-            surface = Color(0xFF111318),
-            surfaceVariant = Color(0xFF1F232B),
-            onBackground = Color(0xFFF6F7F9),
-            onSurface = Color(0xFFF1F5F9),
-            primaryContainer = Color(0xFF20242C),
-            onPrimaryContainer = Color(0xFFF8FAFC),
-        ),
-        content = content,
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit) {
+private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: AppRepository) {
+    val context = LocalContext.current
     var section by rememberSaveable { mutableStateOf(Section.Dashboard) }
     var sheet by remember { mutableStateOf<Section?>(null) }
     var profileSheet by remember { mutableStateOf(false) }
     var fullImage by remember { mutableStateOf<String?>(null) }
 
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        uri?.let {
+            runCatching {
+                context.contentResolver.openOutputStream(it)?.use { stream ->
+                    stream.write(repository.encode(data).toString(2).toByteArray())
+                }
+            }.onSuccess {
+                Toast.makeText(context, "Yedek kaydedildi", Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(context, "Yedek alınamadı", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let {
+            runCatching {
+                context.contentResolver.openInputStream(it)?.use { input ->
+                    val text = BufferedReader(InputStreamReader(input)).readText()
+                    val tempData = repository.let { repo ->
+                        // reuse decode via writing to db then reading
+                        runCatching {
+                            val tempJson = JSONObject(text)
+                            // delegate to repository's private decode through reflection-free approach: re-save then load
+                            // simpler: temporarily save into prefs; here just write & reload
+                            val helper = GlaethDatabase(context)
+                            val cv = ContentValues().apply {
+                                put("state_key", "main")
+                                put("payload", tempJson.toString())
+                            }
+                            helper.writableDatabase.insertWithOnConflict("app_state", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
+                            repo.load()
+                        }.getOrThrow()
+                    }
+                    updateData(tempData)
+                }
+            }.onSuccess {
+                Toast.makeText(context, "Yedek geri yüklendi", Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(context, "Yedek okunamadı", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0),
         floatingActionButton = {
-            if (section !in listOf(Section.Dashboard, Section.Settings)) {
+            if (section in listOf(Section.Sleep, Section.Meals, Section.Water, Section.Skin, Section.Homework, Section.Budget)) {
                 FloatingActionButton(
                     onClick = { sheet = section },
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.Black,
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = section.actionLabel)
-                }
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) { Icon(Icons.Filled.Add, contentDescription = "Ekle") }
             }
         },
-        bottomBar = {
-            GlassBottomBar(selected = section, onSelect = { section = it })
-        },
+        bottomBar = { GlassBottomBar(selected = section, onSelect = { section = it }) },
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(appBackground(data.backgroundStyle))
-                .padding(padding),
-        ) {
-            AnimatedContent(targetState = section, label = "seçtion") { target ->
+        Box(modifier = Modifier.fillMaxSize().background(appBackground(data.palette)).padding(padding)) {
+            AnimatedContent(targetState = section, label = "section") { target ->
                 when (target) {
                     Section.Dashboard -> DashboardScreen(
                         data = data,
-                        onWaterChange = { cups -> updateData(data.copy(waterCups = cups.coerceIn(0, 12))) },
                         onOpen = { section = it },
+                        onProfile = { profileSheet = true },
                     )
-                    Section.Sleep -> SleepScreen(
-                        entries = data.sleepEntries,
-                        profile = data.profile,
-                        onDelete = { id -> updateData(data.copy(sleepEntries = data.sleepEntries.filterNot { it.id == id })) },
-                    )
-                    Section.Meals -> MealScreen(
-                        entries = data.mealEntries,
-                        profile = data.profile,
-                        onDelete = { id -> updateData(data.copy(mealEntries = data.mealEntries.filterNot { it.id == id })) },
+                    Section.Sleep -> SleepScreen(data.sleepEntries, data.profile) { id ->
+                        updateData(data.copy(sleepEntries = data.sleepEntries.filterNot { it.id == id }))
+                    }
+                    Section.Meals -> MealScreen(data.mealEntries, data.profile) { id ->
+                        updateData(data.copy(mealEntries = data.mealEntries.filterNot { it.id == id }))
+                    }
+                    Section.Water -> WaterScreen(
+                        entries = data.waterEntries,
+                        targetMl = data.waterTargetMl,
+                        onTargetChange = { updateData(data.copy(waterTargetMl = it.coerceIn(500, 5000))) },
+                        onDelete = { id -> updateData(data.copy(waterEntries = data.waterEntries.filterNot { it.id == id })) },
                     )
                     Section.Skin -> SkinScreen(
                         entries = data.skinEntries,
                         onDelete = { id -> updateData(data.copy(skinEntries = data.skinEntries.filterNot { it.id == id })) },
                         onOpenPhoto = { fullImage = it },
                     )
-                    Section.Homework -> HomeworkScreen(
-                        entries = data.homeworkEntries,
-                        onDelete = { id -> updateData(data.copy(homeworkEntries = data.homeworkEntries.filterNot { it.id == id })) },
+                    Section.Homework -> HomeworkScreen(data.homeworkEntries) { id ->
+                        updateData(data.copy(homeworkEntries = data.homeworkEntries.filterNot { it.id == id }))
+                    }
+                    Section.Budget -> BudgetScreen(
+                        data = data,
+                        onUpdate = updateData,
                     )
                     Section.Settings -> SettingsScreen(
                         data = data,
-                        onBackgroundChange = { updateData(data.copy(backgroundStyle = it)) },
+                        onPaletteChange = { updateData(data.copy(palette = it)) },
+                        onThemeModeChange = { updateData(data.copy(themeMode = it)) },
+                        onCurrencyChange = { updateData(data.copy(currency = it)) },
                         onProfileClick = { profileSheet = true },
+                        onExport = {
+                            val ts = LocalDate.now().toString()
+                            exportLauncher.launch("glaeth-yedek-$ts.json")
+                        },
+                        onImport = { importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*")) },
                     )
                 }
             }
-            ProfileButton(
+            TopProfileBar(
                 profile = data.profile,
-                onClick = { profileSheet = true },
+                onProfile = { profileSheet = true },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
-                    .padding(top = 12.dp, end = 18.dp),
+                    .padding(top = 12.dp, end = 16.dp),
             )
         }
     }
 
-    sheet?.let { activeSheet ->
+    sheet?.let { active ->
         ModalBottomSheet(
             onDismissRequest = { sheet = null },
-            containerColor = Color(0xFF0D0F14),
+            containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
-            when (activeSheet) {
-                Section.Sleep -> SleepForm {
-                    updateData(data.copy(sleepEntries = (data.sleepEntries + it).sortedByDescending(SleepEntry::date)))
+            when (active) {
+                Section.Sleep -> SleepForm { entry ->
+                    updateData(data.copy(sleepEntries = (data.sleepEntries + entry).sortedByDescending { it.date }))
                     sheet = null
                 }
-                Section.Meals -> MealForm {
-                    updateData(data.copy(mealEntries = (data.mealEntries + it).sortedByDescending(MealEntry::date)))
+                Section.Meals -> MealForm { entry ->
+                    updateData(data.copy(mealEntries = (data.mealEntries + entry).sortedByDescending { it.date }))
+                    sheet = null
+                }
+                Section.Water -> WaterForm { entry ->
+                    updateData(data.copy(waterEntries = (data.waterEntries + entry).sortedByDescending { it.date + " " + it.time }))
                     sheet = null
                 }
                 Section.Skin -> SkinForm { entries ->
-                    updateData(data.copy(skinEntries = (data.skinEntries + entries).sortedByDescending(SkinEntry::date)))
+                    updateData(data.copy(skinEntries = (data.skinEntries + entries).sortedByDescending { it.date }))
                     sheet = null
                 }
-                Section.Homework -> HomeworkForm {
-                    updateData(data.copy(homeworkEntries = (data.homeworkEntries + it).sortedBy(HomeworkEntry::dueDate)))
+                Section.Homework -> HomeworkForm { entry ->
+                    updateData(data.copy(homeworkEntries = (data.homeworkEntries + entry).sortedBy { it.dueDate }))
+                    sheet = null
+                }
+                Section.Budget -> BudgetForm(data) { newData ->
+                    updateData(newData)
                     sheet = null
                 }
                 Section.Dashboard, Section.Settings -> Unit
@@ -516,16 +683,13 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit) {
     if (profileSheet) {
         ModalBottomSheet(
             onDismissRequest = { profileSheet = false },
-            containerColor = Color(0xFF0D0F14),
+            containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
-            ProfileForm(
-                profile = data.profile,
-                onSave = {
-                    updateData(data.copy(profile = it))
-                    profileSheet = false
-                },
-            )
+            ProfileForm(profile = data.profile) { newProfile ->
+                updateData(data.copy(profile = newProfile))
+                profileSheet = false
+            }
         }
     }
 
@@ -534,122 +698,163 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit) {
     }
 }
 
+// endregion
+
+// region Dashboard
+
 @Composable
-private fun DashboardScreen(data: AppData, onWaterChange: (Int) -> Unit, onOpen: (Section) -> Unit) {
+private fun DashboardScreen(data: AppData, onOpen: (Section) -> Unit, onProfile: () -> Unit) {
+    val skinStreak = computeStreak(data.skinEntries.map { it.date })
+    val waterStreak = computeStreak(data.waterEntries.map { it.date }.distinct())
+    val mealStreak = computeStreak(data.mealEntries.map { it.date }.distinct())
     val averageSleep = data.sleepEntries.mapNotNull { it.duration() }.averageOrZero()
-    val nextHomework = data.homeworkEntries.minByOrNull { it.dueDate }
     val sleepReport = sleepStatus(averageSleep, data.profile.age)
-    val greeting = timeBasedGreeting(data.profile.name)
-    val skinDays = data.skinEntries.size
+    val today = LocalDate.now().toString()
+    val todayWaterMl = data.waterEntries.filter { it.date == today }.sumOf { it.amountMl }
+    val waterProgress = (todayWaterMl.toFloat() / data.waterTargetMl.coerceAtLeast(1)).coerceIn(0f, 1f)
+    val recent = recentUpdates(data).take(5)
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(20.dp, 24.dp, 20.dp, 112.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize().statusBarsPadding(),
+        contentPadding = PaddingValues(0.dp, 24.dp, 0.dp, 120.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 72.dp)) {
-                Text("Glaeth", style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Black))
+            Column(modifier = Modifier.padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                val greet = timeBasedGreeting()
+                Text(greet.first, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.72f), fontSize = 16.sp)
                 Text(
-                    "${data.profile.name} için uyku, cilt, öğün ve ödev kontrol paneli.",
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.66f),
+                    data.profile.name.ifBlank { "Glaeth" },
+                    fontWeight = FontWeight.Black,
+                    fontSize = 36.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
             }
         }
         item {
-            HeroCard(
-                title = greeting.first,
-                subtitle = "${greeting.second} Cilt takibinde $skinDays gün kayıt var.",
-                icon = Icons.Filled.Favorite,
+            StreakStrip(skinStreak = skinStreak, waterStreak = waterStreak, mealStreak = mealStreak)
+        }
+        item {
+            HeroScoreCard(
+                skinDays = data.skinEntries.size,
+                skinStreak = skinStreak,
+                waterMlToday = todayWaterMl,
+                waterTarget = data.waterTargetMl,
+                onOpenSkin = { onOpen(Section.Skin) },
             )
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Ort. uyku", "${averageSleep.oneDecimal()} saat", Icons.Filled.DateRange, Modifier.weight(1f))
-                StatCard("Uyku durumu", sleepReport.title, Icons.Filled.Face, Modifier.weight(1f))
-            }
+            QuickStatsRow(
+                averageSleepText = "${averageSleep.oneDecimal()} sa",
+                sleepReport = sleepReport.title,
+                waterPercent = (waterProgress * 100).roundToInt(),
+                budgetUsed = monthlyExpense(data),
+                currency = data.currency,
+            )
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Cilt arşivi", "$skinDays gün", Icons.Filled.Face, Modifier.weight(1f))
-                StatCard("Ödev", "${data.homeworkEntries.size}", Icons.Filled.DateRange, Modifier.weight(1f))
-            }
+            LatestUpdatesSection(updates = recent, onSeeAll = { /* simple no-op for now */ })
         }
-        item { InsightCard("Yaşa göre uyku", sleepReport.detail) }
-        item { WaterCard(cups = data.waterCups, onChange = onWaterChange) }
-        item { nextHomework?.let { CountdownCard(entry = it, onOpen = { onOpen(Section.Homework) }) } }
-        item { QuickActions(onOpen) }
-    }
-}
-
-@Composable
-private fun HeroCard(title: String, subtitle: String, icon: ImageVector) {
-    GlassCard {
-        Row(
-            modifier = Modifier.padding(22.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(62.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f))
-                    .border(1.dp, Color.White.copy(alpha = 0.16f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(title, fontWeight = FontWeight.Black, fontSize = 22.sp)
-                Text(subtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
-            }
+        item {
+            QuickActions(onOpen)
         }
     }
 }
 
 @Composable
-private fun StatCard(label: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
-    GlassCard(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Text(value, fontWeight = FontWeight.Black, fontSize = 22.sp, maxLines = 1)
-            Text(label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f), fontSize = 13.sp)
-        }
+private fun StreakStrip(skinStreak: Int, waterStreak: Int, mealStreak: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        StreakChip(label = "Cilt", days = skinStreak, color = Color(0xFFFB923C))
+        StreakChip(label = "Su", days = waterStreak, color = Color(0xFF38BDF8))
+        StreakChip(label = "Öğün", days = mealStreak, color = Color(0xFF22C55E))
     }
 }
 
 @Composable
-private fun InsightCard(title: String, body: String) {
-    GlassCard {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, fontWeight = FontWeight.Black, fontSize = 18.sp)
-            Text(body, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f))
-        }
+private fun StreakChip(label: String, days: Int, color: Color) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(99.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.78f else 1f))
+            .border(1.dp, color.copy(alpha = 0.55f), RoundedCornerShape(99.dp))
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+        Text("$days", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f), fontSize = 12.sp)
     }
 }
 
 @Composable
-private fun WaterCard(cups: Int, onChange: (Int) -> Unit) {
-    GlassCard {
-        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Su ve cilt dengesi", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            LinearProgressIndicator(
-                progress = { (cups / 8f).coerceIn(0f, 1f) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(RoundedCornerShape(99.dp)),
-                color = MaterialTheme.colorScheme.tertiary,
-                trackColor = Color.White.copy(alpha = 0.12f),
+private fun HeroScoreCard(skinDays: Int, skinStreak: Int, waterMlToday: Int, waterTarget: Int, onOpenSkin: () -> Unit) {
+    val target = 1000
+    val scoreValue = skinDays.coerceAtMost(target)
+    val animated by animateFloatAsState(targetValue = (scoreValue.toFloat() / target).coerceIn(0f, 1f), label = "score")
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp)
+            .clip(RoundedCornerShape(34.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.80f else 1f),
+                    ),
+                ),
             )
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.30f), RoundedCornerShape(34.dp))
+            .clickable(onClick = onOpenSkin)
+            .padding(20.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("$cups / 8 bardak")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { onChange(cups - 1) }) { Text("-") }
-                    Button(onClick = { onChange(cups + 1) }) { Text("+") }
+                Text("Cilt yolculuğu", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = Color(0xFFFB923C))
+                    Spacer(Modifier.width(4.dp))
+                    Text("$skinStreak günlük seri", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.78f), fontSize = 13.sp)
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                Box(modifier = Modifier.size(150.dp), contentAlignment = Alignment.Center) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val stroke = 14.dp.toPx()
+                        drawArc(
+                            color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.12f),
+                            startAngle = 130f, sweepAngle = 280f,
+                            useCenter = false,
+                            topLeft = Offset(stroke / 2, stroke / 2),
+                            size = Size(size.width - stroke, size.height - stroke),
+                            style = Stroke(width = stroke, cap = StrokeCap.Round),
+                        )
+                        drawArc(
+                            color = androidx.compose.ui.graphics.Color(0xFFFB923C),
+                            startAngle = 130f, sweepAngle = 280f * animated,
+                            useCenter = false,
+                            topLeft = Offset(stroke / 2, stroke / 2),
+                            size = Size(size.width - stroke, size.height - stroke),
+                            style = Stroke(width = stroke, cap = StrokeCap.Round),
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("$skinDays", fontWeight = FontWeight.Black, fontSize = 44.sp, color = MaterialTheme.colorScheme.onBackground)
+                        Text("/ $target gün", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.62f), fontSize = 12.sp)
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
+                    HeroPill("Bugün su", "$waterMlToday / $waterTarget ml", Icons.Filled.WaterDrop)
+                    HeroPill("Cilt arşivi", "$skinDays gün fotoğraf", Icons.Filled.Face)
+                    HeroPill("Aktif seri", "$skinStreak gün üst üste", Icons.Filled.LocalFireDepartment)
                 }
             }
         }
@@ -657,51 +862,171 @@ private fun WaterCard(cups: Int, onChange: (Int) -> Unit) {
 }
 
 @Composable
-private fun CountdownCard(entry: HomeworkEntry, onOpen: () -> Unit) {
-    val days = runCatching { ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.parse(entry.dueDate)) }.getOrDefault(0)
-    GlassCard {
-        Row(
-            modifier = Modifier.padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Icon(Icons.Filled.DateRange, contentDescription = null, tint = entry.priority.color, modifier = Modifier.size(32.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text("${entry.lesson}: ${entry.title}", fontWeight = FontWeight.Bold)
-                Text(if (days >= 0) "Son $days gün" else "Teslim tarihi geçti", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+private fun HeroPill(title: String, value: String, icon: ImageVector) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.55f else 0.82f))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(value, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
+            Text(title, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+private fun QuickStatsRow(averageSleepText: String, sleepReport: String, waterPercent: Int, budgetUsed: Double, currency: Currency) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 22.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { StatTile("Ort. uyku", averageSleepText, sleepReport, Icons.Filled.DateRange) }
+        item { StatTile("Su", "$waterPercent%", "Günlük hedef", Icons.Filled.WaterDrop) }
+        item { StatTile("Bütçe", "${currency.symbol}${budgetUsed.format()}", "Bu ay gider", Icons.Filled.AttachMoney) }
+        item { StatTile("Ödev", "Yaklaşan", "Pano", Icons.Filled.School) }
+    }
+}
+
+@Composable
+private fun StatTile(title: String, value: String, helper: String, icon: ImageVector) {
+    Column(
+        modifier = Modifier
+            .width(160.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), RoundedCornerShape(22.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Text(value, fontWeight = FontWeight.Black, fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+        Text(title, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f), fontSize = 13.sp)
+        Text(helper, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), fontSize = 11.sp, maxLines = 1)
+    }
+}
+
+private data class FeedItem(val title: String, val subtitle: String, val icon: ImageVector, val tint: Color)
+
+private fun recentUpdates(data: AppData): List<FeedItem> {
+    val list = mutableListOf<Pair<String, FeedItem>>()
+    data.skinEntries.forEach {
+        list += it.date to FeedItem("Cilt fotoğrafı eklendi", "${it.date} – arşivde", Icons.Filled.Face, Color(0xFFFB923C))
+    }
+    data.waterEntries.forEach {
+        list += "${it.date} ${it.time}" to FeedItem("${it.amountMl} ml su içildi", "${it.date} ${it.time}", Icons.Filled.WaterDrop, Color(0xFF38BDF8))
+    }
+    data.mealEntries.forEach {
+        list += it.date to FeedItem("${it.type.label} kaydı", "${it.foods.take(3).joinToString(", ")} (${it.date})", Icons.Filled.LocalDining, Color(0xFF22C55E))
+    }
+    data.sleepEntries.forEach {
+        list += it.date to FeedItem("Uyku ${it.sleptAt} → ${it.wokeAt}", "${it.date} – uyku kaydı", Icons.Filled.DateRange, Color(0xFFA855F7))
+    }
+    data.transactions.forEach {
+        val sign = if (it.category.isIncome) "+" else "-"
+        list += it.date to FeedItem("${it.category.label} $sign${it.amount.format()}${it.currency.symbol}", "${it.description} (${it.date})", Icons.Filled.Receipt, it.category.color)
+    }
+    data.homeworkEntries.forEach {
+        list += it.dueDate to FeedItem("${it.lesson} – ${it.title}", "Teslim: ${it.dueDate}", Icons.Filled.School, it.priority.color)
+    }
+    return list.sortedByDescending { it.first }.map { it.second }
+}
+
+@Composable
+private fun LatestUpdatesSection(updates: List<FeedItem>, onSeeAll: () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Text("Son güncellemeler", fontWeight = FontWeight.Black, fontSize = 22.sp, color = MaterialTheme.colorScheme.onBackground)
+            TextButton(onClick = onSeeAll) { Text("Tümü") }
+        }
+        if (updates.isEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.78f else 1f),
+            ) {
+                Text(
+                    "Henüz hareket yok. Yeni kayıt eklemek için aşağıdaki bölümleri kullan.",
+                    modifier = Modifier.padding(18.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                )
             }
-            TextButton(onClick = onOpen) { Text("Aç") }
+        } else {
+            updates.forEach { item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(item.tint.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(item.icon, contentDescription = null, tint = item.tint)
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(item.title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(item.subtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun QuickActions(onOpen: (Section) -> Unit) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(listOf(Section.Sleep, Section.Meals, Section.Skin, Section.Homework, Section.Settings)) { action ->
-            Button(
-                onClick = { onOpen(action) },
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.09f),
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
-            ) {
-                Icon(action.icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(if (action.actionLabel.isBlank()) action.label else action.actionLabel)
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Hızlı erişim", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(listOf(Section.Sleep, Section.Meals, Section.Water, Section.Skin, Section.Homework, Section.Budget, Section.Settings)) { section ->
+                Column(
+                    modifier = Modifier
+                        .width(112.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
+                        .clickable { onOpen(section) }
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(section.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    }
+                    Text(section.label, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, maxLines = 1)
+                    Text("Aç", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 11.sp)
+                }
             }
         }
     }
 }
+
+// endregion
+
+// region Sections (sleep/meal/skin/homework reused with cleaner styles)
 
 @Composable
 private fun SleepScreen(entries: List<SleepEntry>, profile: Profile, onDelete: (String) -> Unit) {
     val average = entries.mapNotNull { it.duration() }.averageOrZero()
     SectionList(
         title = "Uyku günlüğü",
-        subtitle = "Grafiği, kalite yorumunu ve toplam süreyi takip et.",
+        subtitle = "Yatma, uyanma saati ve toplam süreyi takip et.",
         header = {
             SleepChart(entries, profile.age)
             InsightCard("Otomatik karar", sleepStatus(average, profile.age).detail)
@@ -721,13 +1046,11 @@ private fun SleepChart(entries: List<SleepEntry>, age: Int) {
     GlassCard {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("Detaylı uyku grafiği", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                Text("Detaylı uyku grafiği", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text("Hedef ${target.oneDecimal()}s", color = MaterialTheme.colorScheme.primary)
             }
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(168.dp),
+                modifier = Modifier.fillMaxWidth().height(168.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.Bottom,
             ) {
@@ -736,29 +1059,24 @@ private fun SleepChart(entries: List<SleepEntry>, age: Int) {
                     val enough = hours >= target
                     val fraction = (hours / (target + 2)).coerceIn(0.08, 1.0).toFloat()
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            contentAlignment = Alignment.BottomCenter,
-                        ) {
+                        Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth(0.64f)
+                                    .fillMaxWidth(0.6f)
                                     .fillMaxHeight(fraction)
                                     .clip(RoundedCornerShape(99.dp))
                                     .background(
                                         Brush.verticalGradient(
                                             listOf(
-                                                if (enough) Color(0xFF22C55E) else Color(0xFFFF5C5C),
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.72f),
+                                                if (enough) Color(0xFF22C55E) else Color(0xFFEF4444),
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                             ),
                                         ),
                                     ),
                             )
                         }
-                        Text("${hours.oneDecimal()}s", fontSize = 11.sp)
-                        Text(entry.date.takeLast(5), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f))
+                        Text("${hours.oneDecimal()}s", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(entry.date.takeLast(5), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
                     }
                 }
             }
@@ -774,8 +1092,8 @@ private fun SleepEntryCard(entry: SleepEntry, age: Int) {
         Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Icon(Icons.Filled.DateRange, contentDescription = null, tint = status.color)
             Column(modifier = Modifier.weight(1f)) {
-                Text("${entry.sleptAt} - ${entry.wokeAt}", fontWeight = FontWeight.Bold)
-                Text("${entry.date} | ${hours.oneDecimal()} saat | ${status.title}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.68f))
+                Text("${entry.sleptAt} – ${entry.wokeAt}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("${entry.date} • ${hours.oneDecimal()} saat • ${status.title}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
             }
         }
     }
@@ -788,20 +1106,18 @@ private fun MealScreen(entries: List<MealEntry>, profile: Profile, onDelete: (St
         subtitle = "Yaşa göre besin önerileri ve günlük öğün kayıtları.",
         header = { InsightCard("Besin önerisi", mealSuggestion(profile.age)) },
     ) {
-        items(entries.groupBy { it.date }.toList()) { (date, dayEntries) ->
+        items(entries.groupBy { it.date }.toList()) { (date, day) ->
             GlassCard {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Gün: $date", fontWeight = FontWeight.Black, fontSize = 20.sp)
-                    dayEntries.forEach { meal ->
+                    Text("Gün: $date", fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
+                    day.forEach { meal ->
                         DismissibleItem(onDelete = { onDelete(meal.id) }) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(meal.type.label, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                    Text(meal.foods.joinToString(separator = "\n"), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f))
-                                }
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(meal.type.label, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                Text(meal.foods.joinToString(separator = "\n"), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f))
                             }
                         }
-                        if (meal != dayEntries.last()) HorizontalDivider(color = Color.White.copy(alpha = 0.10f))
+                        if (meal != day.last()) HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
                     }
                 }
             }
@@ -816,27 +1132,17 @@ private fun SkinScreen(entries: List<SkinEntry>, onDelete: (String) -> Unit, onO
         title = "Cilt takip",
         subtitle = "Gün numarası, silme ve tam ekran fotoğraf görüntüleme.",
         header = {
-            HeroCard(
+            HeroBanner(
                 title = "Toplu içe aktarma",
-                subtitle = "Fotoğrafa dokun: büyüt. Sağa kaydır: sil. Zaman yolculuğuna dokun: ilk fotoğrafı aç.",
+                subtitle = "Fotoğrafa dokun: büyüt. Sola kaydır: sil. Zaman yolculuğuna dokun: ilk fotoğrafı aç.",
                 icon = Icons.Filled.Face,
             )
-            if (entries.isNotEmpty()) {
-                TimeLapseStrip(
-                    entries = entries,
-                    dayNumbers = indexed,
-                    onOpenPhoto = onOpenPhoto,
-                )
-            }
+            if (entries.isNotEmpty()) TimeLapseStrip(entries = entries, dayNumbers = indexed, onOpenPhoto = onOpenPhoto)
         },
     ) {
         items(entries) { entry ->
             DismissibleItem(onDelete = { onDelete(entry.id) }) {
-                SkinEntryCard(
-                    entry = entry,
-                    dayNumber = indexed[entry.id] ?: 1,
-                    onOpenPhoto = { onOpenPhoto(entry.photoUri) },
-                )
+                SkinEntryCard(entry = entry, dayNumber = indexed[entry.id] ?: 1, onOpenPhoto = { onOpenPhoto(entry.photoUri) })
             }
         }
     }
@@ -844,11 +1150,9 @@ private fun SkinScreen(entries: List<SkinEntry>, onDelete: (String) -> Unit, onO
 
 @Composable
 private fun TimeLapseStrip(entries: List<SkinEntry>, dayNumbers: Map<String, Int>, onOpenPhoto: (String) -> Unit) {
-    GlassCard(
-        modifier = Modifier.clickable { entries.sortedBy { it.date }.firstOrNull()?.let { onOpenPhoto(it.photoUri) } },
-    ) {
+    GlassCard(modifier = Modifier.clickable { entries.sortedBy { it.date }.firstOrNull()?.let { onOpenPhoto(it.photoUri) } }) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Zaman yolculuğu - dokun", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("Zaman yolculuğu – dokun", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(entries.sortedBy { it.date }) { entry ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -857,12 +1161,12 @@ private fun TimeLapseStrip(entries: List<SkinEntry>, dayNumbers: Map<String, Int
                             contentDescription = "Gün ${dayNumbers[entry.id]}",
                             modifier = Modifier
                                 .size(92.dp)
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
+                                .clip(RoundedCornerShape(22.dp))
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))
                                 .clickable { onOpenPhoto(entry.photoUri) },
                             contentScale = ContentScale.Crop,
                         )
-                        Text("Gün ${dayNumbers[entry.id] ?: 1}", fontSize = 11.sp)
+                        Text("Gün ${dayNumbers[entry.id] ?: 1}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -879,15 +1183,15 @@ private fun SkinEntryCard(entry: SkinEntry, dayNumber: Int, onOpenPhoto: () -> U
                 contentDescription = "Gün $dayNumber",
                 modifier = Modifier
                     .size(112.dp)
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(Color.White.copy(alpha = 0.08f))
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))
                     .clickable { onOpenPhoto() },
                 contentScale = ContentScale.Crop,
             )
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Gün $dayNumber", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                Text("Gün $dayNumber", fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
                 if (entry.zones.isNotEmpty()) Text("Bölge: ${entry.zones.joinToString()}", color = MaterialTheme.colorScheme.primary)
-                if (entry.products.isNotBlank()) Text("Ürün: ${entry.products}", maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (entry.products.isNotBlank()) Text("Ürün: ${entry.products}", maxLines = 2, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurface)
                 if (entry.notes.isNotBlank()) Text(entry.notes, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f), maxLines = 2)
             }
         }
@@ -898,12 +1202,12 @@ private fun SkinEntryCard(entry: SkinEntry, dayNumber: Int, onOpenPhoto: () -> U
 private fun HomeworkScreen(entries: List<HomeworkEntry>, onDelete: (String) -> Unit) {
     SectionList(
         title = "Ödev panosu",
-        subtitle = "Kartları sağa kaydırarak veya Sil tuşuyla temizle.",
-        header = { HeroCard("Geri sayım aktif", "Ana sayfada en yakın ödev için geri sayım kartı görünür.", Icons.Filled.DateRange) },
+        subtitle = "Sola kaydırarak veya bekleyerek silebilirsin.",
+        header = { HeroBanner("Geri sayım aktif", "Ana sayfada en yakın ödev için bilgilendirme görünür.", Icons.Filled.School) },
     ) {
         items(entries) { entry ->
             DismissibleItem(onDelete = { onDelete(entry.id) }) {
-                HomeworkCard(entry = entry)
+                HomeworkCard(entry)
             }
         }
     }
@@ -911,34 +1215,404 @@ private fun HomeworkScreen(entries: List<HomeworkEntry>, onDelete: (String) -> U
 
 @Composable
 private fun HomeworkCard(entry: HomeworkEntry) {
+    val days = runCatching { ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.parse(entry.dueDate)) }.getOrDefault(0)
     GlassCard {
         Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(entry.priority.color),
-            )
+            Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(entry.priority.color))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("${entry.lesson} - ${entry.title}", fontWeight = FontWeight.Black)
-                Text("Teslim: ${entry.dueDate}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                Text("${entry.lesson} – ${entry.title}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
+                Text(if (days >= 0) "Son $days gün" else "Tarih geçti", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f))
                 if (entry.attachment.isNotBlank()) Text("Ek: ${entry.attachment}", color = MaterialTheme.colorScheme.secondary)
             }
-            AssistChip(onClick = {}, label = { Text(entry.priority.label) })
+            AssistChip(
+                onClick = {},
+                label = { Text(entry.priority.label) },
+                colors = AssistChipDefaults.assistChipColors(
+                    containerColor = entry.priority.color.copy(alpha = 0.18f),
+                    labelColor = entry.priority.color,
+                ),
+            )
+        }
+    }
+}
+
+// endregion
+
+// region Water module
+
+@Composable
+private fun WaterScreen(entries: List<WaterEntry>, targetMl: Int, onTargetChange: (Int) -> Unit, onDelete: (String) -> Unit) {
+    val today = LocalDate.now().toString()
+    val todayMl = entries.filter { it.date == today }.sumOf { it.amountMl }
+    val progress = (todayMl.toFloat() / targetMl).coerceIn(0f, 1f)
+
+    SectionList(
+        title = "Su takip",
+        subtitle = "Bardak veya ml seçerek kayıt ekle, hedefini takip et.",
+        header = {
+            GlassCard {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Bugün", fontWeight = FontWeight.Black, fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("$todayMl / $targetMl ml", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(99.dp)),
+                        color = Color(0xFF38BDF8),
+                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text("Günlük hedef", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = { onTargetChange(targetMl - 250) }) { Text("-250") }
+                            Button(onClick = { onTargetChange(targetMl + 250) }) { Text("+250") }
+                        }
+                    }
+                }
+            }
+            InsightCard("Hatırlatıcı", "Telefonu her elinize aldığınızda 1 bardak su için. Cilt sağlığı için günlük en az 2 litre öneriyoruz.")
+        },
+    ) {
+        items(entries.groupBy { it.date }.toList()) { (date, day) ->
+            GlassCard {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Gün: $date", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Toplam ${day.sumOf { it.amountMl }} ml", color = MaterialTheme.colorScheme.primary)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                    day.sortedBy { it.time }.forEach { entry ->
+                        DismissibleItem(onDelete = { onDelete(entry.id) }) {
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(Icons.Filled.WaterDrop, contentDescription = null, tint = Color(0xFF38BDF8))
+                                Text("${entry.amountMl} ml", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.weight(1f))
+                                Text(entry.time, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun SettingsScreen(data: AppData, onBackgroundChange: (BackgroundStyle) -> Unit, onProfileClick: () -> Unit) {
+private fun WaterForm(onAdd: (WaterEntry) -> Unit) {
+    var date by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
+    var time by rememberSaveable { mutableStateOf(LocalTime.now().withSecond(0).withNano(0).format(DateTimeFormatter.ofPattern("HH:mm"))) }
+    var amountMl by rememberSaveable { mutableIntStateOf(250) }
+    val presets = listOf(150, 200, 250, 330, 500, 750, 1000)
+    FormShell(title = "Su ekle") {
+        DateField(date, { date = it })
+        TimeField("Saat", time, { time = it })
+        Text("Bardak / şişe", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        ChipSelector(presets, amountMl, { amountMl = it }) { "$it ml" }
+        OutlinedTextField(
+            value = amountMl.toString(),
+            onValueChange = { amountMl = it.filter(Char::isDigit).take(4).toIntOrNull() ?: 0 },
+            label = { Text("Manuel ml girişi") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        )
+        Button(
+            onClick = { onAdd(WaterEntry(newId(), date, time, amountMl.coerceAtLeast(50))) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = date.isValidDate() && time.isValidTime() && amountMl > 0,
+        ) { Text("Kaydet") }
+    }
+}
+
+// endregion
+
+// region Budget module
+
+@Composable
+private fun BudgetScreen(data: AppData, onUpdate: (AppData) -> Unit) {
+    val txnsByCategory = data.transactions.filter { !it.category.isIncome }.groupBy { it.category }.mapValues { it.value.sumOf { e -> e.amount } }
+    val income = data.transactions.filter { it.category.isIncome }.sumOf { it.amount }
+    val expense = data.transactions.filter { !it.category.isIncome }.sumOf { it.amount }
+    val balance = income - expense
+    val limit = data.budgetLimit
+    val ratio = if (limit > 0) (expense / limit).coerceIn(0.0, 1.5).toFloat() else 0f
+    val overLimit = limit > 0 && expense > limit
+
     SectionList(
-        title = "Ayarlar",
-        subtitle = "Arka plan rengini ve profil bilgilerini yönet.",
+        title = "Bütçe paneli",
+        subtitle = "Çoklu kişi (Kasa) desteği, hesaplar ve ay sonu görünümü.",
         header = {
             GlassCard {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Arka plan teması", fontWeight = FontWeight.Black, fontSize = 20.sp)
-                    ChipSelector(BackgroundStyle.entries, data.backgroundStyle, onBackgroundChange) { it.label }
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text("Toplam bakiye", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                    Text("${data.currency.symbol}${balance.format()}", fontSize = 34.sp, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        BudgetMetric("Gelir", "${data.currency.symbol}${income.format()}", Color(0xFF22C55E))
+                        BudgetMetric("Gider", "${data.currency.symbol}${expense.format()}", Color(0xFFEF4444))
+                    }
+                    if (limit > 0) {
+                        LinearProgressIndicator(
+                            progress = { ratio.coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(99.dp)),
+                            color = if (overLimit) Color(0xFFEF4444) else MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                        )
+                        Text(
+                            if (overLimit) "Bütçe sınırını aştın!" else "Bütçenin %${(ratio * 100).roundToInt()}'i kullanıldı",
+                            color = if (overLimit) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
+            }
+            if (txnsByCategory.isNotEmpty()) BudgetPieCard(txnsByCategory)
+            VaultCard(data)
+        },
+    ) {
+        items(data.transactions.sortedByDescending { it.date }) { txn ->
+            DismissibleItem(onDelete = { onUpdate(data.copy(transactions = data.transactions.filterNot { it.id == txn.id })) }) {
+                TransactionCard(txn, data.people, data.accounts)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BudgetMetric(title: String, value: String, color: Color) {
+    Column {
+        Text(title, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+        Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp, color = color)
+    }
+}
+
+@Composable
+private fun BudgetPieCard(byCategory: Map<TxnCategory, Double>) {
+    val total = byCategory.values.sum().takeIf { it > 0 } ?: 1.0
+    GlassCard {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("Kategori dağılımı", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+            Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(140.dp), contentAlignment = Alignment.Center) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val stroke = 26.dp.toPx()
+                        var angle = -90f
+                        byCategory.forEach { (category, amount) ->
+                            val sweep = (amount / total * 360.0).toFloat()
+                            drawArc(
+                                color = category.color,
+                                startAngle = angle,
+                                sweepAngle = sweep,
+                                useCenter = false,
+                                topLeft = Offset(stroke / 2, stroke / 2),
+                                size = Size(size.width - stroke, size.height - stroke),
+                                style = Stroke(width = stroke, cap = StrokeCap.Butt),
+                            )
+                            angle += sweep
+                        }
+                    }
+                    Text("${byCategory.size}\nkategori", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
+                    byCategory.entries.sortedByDescending { it.value }.take(5).forEach { (category, amount) ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.size(10.dp).clip(CircleShape).background(category.color))
+                            Text(category.label, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                            Text(amount.format(), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VaultCard(data: AppData) {
+    if (data.people.isEmpty()) return
+    val perPerson = data.people.map { person ->
+        val txns = data.transactions.filter { it.personId == person.id }
+        val income = txns.filter { it.category.isIncome }.sumOf { it.amount }
+        val expense = txns.filter { !it.category.isIncome }.sumOf { it.amount }
+        Triple(person, income, expense)
+    }
+    GlassCard {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("Kasa görünümü", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+            perPerson.forEach { (person, income, expense) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(person.name.firstOrNull()?.toString() ?: "?", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black) }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(person.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Gelir ${income.format()} • Gider ${expense.format()}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                    }
+                    val net = income - expense
+                    Text(
+                        "${if (net >= 0) "+" else ""}${net.format()}${data.currency.symbol}",
+                        color = if (net >= 0) Color(0xFF22C55E) else Color(0xFFEF4444),
+                        fontWeight = FontWeight.Black,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionCard(txn: TxnEntry, people: List<BudgetPerson>, accounts: List<BudgetAccount>) {
+    val person = people.firstOrNull { it.id == txn.personId }
+    val account = accounts.firstOrNull { it.id == txn.accountId }
+    GlassCard {
+        Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(txn.category.color.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(txn.category.icon, contentDescription = null, tint = txn.category.color) }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(txn.description.ifBlank { txn.category.label }, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    listOfNotNull(person?.name, account?.name, txn.date).joinToString(" • "),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontSize = 12.sp,
+                )
+            }
+            Text(
+                "${if (txn.category.isIncome) "+" else "-"}${txn.amount.format()}${txn.currency.symbol}",
+                color = if (txn.category.isIncome) Color(0xFF22C55E) else Color(0xFFEF4444),
+                fontWeight = FontWeight.Black,
+            )
+        }
+    }
+}
+
+@Composable
+private fun BudgetForm(data: AppData, onSave: (AppData) -> Unit) {
+    val people = remember { mutableStateListOf<BudgetPerson>().apply { addAll(data.people) } }
+    val accounts = remember { mutableStateListOf<BudgetAccount>().apply { addAll(data.accounts) } }
+    var personName by rememberSaveable { mutableStateOf("") }
+    var accountName by rememberSaveable { mutableStateOf("") }
+    var accountType by rememberSaveable { mutableStateOf(AccountType.Bank) }
+    var selectedPersonId by rememberSaveable { mutableStateOf(people.firstOrNull()?.id ?: "") }
+    var selectedAccountId by rememberSaveable { mutableStateOf(accounts.firstOrNull()?.id ?: "") }
+    var category by rememberSaveable { mutableStateOf(TxnCategory.Salary) }
+    var amount by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var date by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
+    var budgetLimit by rememberSaveable { mutableStateOf(data.budgetLimit.takeIf { it > 0 }?.toString().orEmpty()) }
+
+    FormShell(title = "Bütçe ekle") {
+        Text("Kişi seç (Kasa)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        ChipSelector(people.toList(), people.firstOrNull { it.id == selectedPersonId } ?: people.firstOrNull(), { p -> p?.let { selectedPersonId = it.id } }) { it?.name ?: "" }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(personName, { personName = it }, label = { Text("Yeni kişi") }, modifier = Modifier.weight(1f))
+            Button(onClick = {
+                if (personName.isNotBlank()) {
+                    val p = BudgetPerson(newId(), personName.trim())
+                    people += p
+                    selectedPersonId = p.id
+                    personName = ""
+                }
+            }) { Text("Ekle") }
+        }
+
+        Text("Hesap seç", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        val visibleAccounts = accounts.filter { it.personId == selectedPersonId }
+        if (visibleAccounts.isNotEmpty()) {
+            ChipSelector(visibleAccounts, visibleAccounts.firstOrNull { it.id == selectedAccountId } ?: visibleAccounts.first(), { a -> selectedAccountId = a.id }) { "${it.type.label}: ${it.name}" }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(accountName, { accountName = it }, label = { Text("Yeni hesap adı") }, modifier = Modifier.weight(1f))
+            Button(onClick = {
+                if (accountName.isNotBlank() && selectedPersonId.isNotBlank()) {
+                    val a = BudgetAccount(newId(), selectedPersonId, accountName.trim(), accountType, "")
+                    accounts += a
+                    selectedAccountId = a.id
+                    accountName = ""
+                }
+            }) { Text("Ekle") }
+        }
+        ChipSelector(AccountType.entries, accountType, { accountType = it }) { it.label }
+
+        Text("Kategori", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        ChipSelector(TxnCategory.entries, category, { category = it }) { (if (it.isIncome) "+ " else "- ") + it.label }
+        OutlinedTextField(amount, { amount = it.filter { c -> c.isDigit() || c == '.' || c == ',' }.replace(',', '.') }, label = { Text("Tutar") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+        OutlinedTextField(description, { description = it }, label = { Text("Açıklama") }, modifier = Modifier.fillMaxWidth())
+        DateField(date, { date = it })
+        OutlinedTextField(budgetLimit, { budgetLimit = it.filter { c -> c.isDigit() || c == '.' || c == ',' }.replace(',', '.') }, label = { Text("Aylık bütçe sınırı (opsiyonel)") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+
+        Button(
+            onClick = {
+                val parsed = amount.toDoubleOrNull()
+                val newTxn = if (parsed != null && parsed > 0 && selectedPersonId.isNotBlank()) {
+                    TxnEntry(
+                        id = newId(),
+                        personId = selectedPersonId,
+                        accountId = selectedAccountId,
+                        category = category,
+                        amount = parsed,
+                        currency = data.currency,
+                        description = description.trim(),
+                        date = date,
+                    )
+                } else null
+                val newBudgetLimit = budgetLimit.toDoubleOrNull() ?: data.budgetLimit
+                onSave(
+                    data.copy(
+                        people = people.toList(),
+                        accounts = accounts.toList(),
+                        transactions = if (newTxn != null) data.transactions + newTxn else data.transactions,
+                        budgetLimit = newBudgetLimit,
+                    ),
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = selectedPersonId.isNotBlank(),
+        ) { Text("Kaydet") }
+    }
+}
+
+private fun monthlyExpense(data: AppData): Double {
+    val now = LocalDate.now()
+    return data.transactions
+        .filter { !it.category.isIncome }
+        .filter {
+            runCatching { LocalDate.parse(it.date) }.getOrNull()?.let { d ->
+                d.month == now.month && d.year == now.year
+            } ?: false
+        }
+        .sumOf { it.amount }
+}
+
+// endregion
+
+// region Settings
+
+@Composable
+private fun SettingsScreen(
+    data: AppData,
+    onPaletteChange: (Palette) -> Unit,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    onCurrencyChange: (Currency) -> Unit,
+    onProfileClick: () -> Unit,
+    onExport: () -> Unit,
+    onImport: () -> Unit,
+) {
+    SectionList(
+        title = "Ayarlar",
+        subtitle = "Tema, profil, para birimi ve yedekleme.",
+        header = {
+            GlassCard {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text("Görünüm", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Tema modu", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 13.sp)
+                    ChipSelector(ThemeMode.entries, data.themeMode, onThemeModeChange) { it.label }
+                    Text("Renk paleti", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 13.sp)
+                    ChipSelector(Palette.entries, data.palette, onPaletteChange) { it.label }
+                }
+            }
+            GlassCard {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Profil", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                     Button(onClick = onProfileClick, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Filled.Person, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
@@ -946,9 +1620,38 @@ private fun SettingsScreen(data: AppData, onBackgroundChange: (BackgroundStyle) 
                     }
                 }
             }
+            GlassCard {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Bütçe", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Para birimi", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 13.sp)
+                    ChipSelector(Currency.entries, data.currency, onCurrencyChange) { "${it.symbol} ${it.label}" }
+                }
+            }
+            GlassCard {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Yedekleme", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Tüm verileri JSON dosyası olarak dışa aktarabilir veya geri yükleyebilirsin.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 13.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(onClick = onExport, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Filled.FileDownload, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Dışa aktar")
+                        }
+                        OutlinedButton(onClick = onImport, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Filled.FileUpload, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("İçe aktar")
+                        }
+                    }
+                }
+            }
         },
     ) {}
 }
+
+// endregion
+
+// region Forms (sleep, meal, skin, homework, profile)
 
 @Composable
 private fun SleepForm(onAdd: (SleepEntry) -> Unit) {
@@ -1001,28 +1704,23 @@ private fun SkinForm(onAddMany: (List<SkinEntry>) -> Unit) {
     var selectedUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     val persistUris: (List<Uri>) -> Unit = { uris ->
         uris.forEach { uri ->
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
+            runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
         }
     }
     val singlePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        persistUris(listOfNotNull(uri))
-        selectedUris = listOfNotNull(uri)
+        persistUris(listOfNotNull(uri)); selectedUris = listOfNotNull(uri)
     }
     val multiPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        persistUris(uris)
-        selectedUris = uris
+        persistUris(uris); selectedUris = uris
     }
-
     FormShell(title = "Cilt fotoğrafı ekle") {
         DateField(date, { date = it })
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(onClick = { singlePicker.launch(arrayOf("image/*")) }, modifier = Modifier.weight(1f)) { Text("Tek seç") }
             OutlinedButton(onClick = { multiPicker.launch(arrayOf("image/*")) }, modifier = Modifier.weight(1f)) { Text("Toplu seç") }
         }
-        if (selectedUris.isNotEmpty()) Text("${selectedUris.size} fotoğraf seçildi. İlk seçilen en eski, son seçilen bugün kabul edilir.")
-        Text("Yüz haritası", fontWeight = FontWeight.Bold)
+        if (selectedUris.isNotEmpty()) Text("${selectedUris.size} fotoğraf seçildi.", color = MaterialTheme.colorScheme.onSurface)
+        Text("Yüz haritası", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         ZoneSelector(selectedZones)
         OutlinedTextField(products, { products = it }, label = { Text("Krem / ilaç / ürün") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(notes, { notes = it }, label = { Text("Notlar") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
@@ -1076,49 +1774,33 @@ private fun ProfileForm(profile: Profile, onSave: (Profile) -> Unit) {
     var photoUri by rememberSaveable { mutableStateOf(profile.photoUri) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
+            runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
             photoUri = it.toString()
         }
     }
-
     FormShell(title = "Profil") {
         GlassCard {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { picker.launch(arrayOf("image/*")) }
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth().clickable { picker.launch(arrayOf("image/*")) }.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(96.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.10f))
-                        .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape),
+                    modifier = Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (photoUri.isNotBlank()) {
-                        AsyncImage(photoUri, contentDescription = "Profil fotoğrafı", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    } else {
-                        Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(44.dp))
-                    }
+                    if (photoUri.isNotBlank()) AsyncImage(photoUri, contentDescription = "Profil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    else Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(44.dp))
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Profil fotoğrafı", fontWeight = FontWeight.Black, fontSize = 18.sp)
-                    Text(
-                        if (photoUri.isBlank()) "Fotoğraf eklemek için dokun" else "Fotoğrafı değiştirmek için dokun",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.64f),
-                    )
+                    Text("Profil fotoğrafı", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(if (photoUri.isBlank()) "Eklemek için dokun" else "Değiştirmek için dokun", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f))
                 }
             }
         }
         OutlinedTextField(name, { name = it }, label = { Text("İsim") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(age, { age = it.filter(Char::isDigit).take(2) }, label = { Text("Yaş") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-        Text("Cinsiyet", fontWeight = FontWeight.Bold)
+        Text("Cinsiyet", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         ChipSelector(listOf("Erkek", "Kadın"), gender, { gender = it }) { it }
         Button(
             onClick = { onSave(Profile(name.ifBlank { "Kardeşim" }, age.toIntOrNull() ?: 16, gender.ifBlank { "Belirtilmedi" }, photoUri)) },
@@ -1127,16 +1809,198 @@ private fun ProfileForm(profile: Profile, onSave: (Profile) -> Unit) {
     }
 }
 
+// endregion
+
+// region Shared UI helpers
+
 @Composable
-private fun FormShell(title: String, content: @Composable () -> Unit) {
-    LazyColumn(
+private fun TopProfileBar(profile: Profile, onProfile: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
+                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape)
+                .clickable(onClick = onProfile),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (profile.photoUri.isNotBlank()) {
+                AsyncImage(profile.photoUri, contentDescription = "Profil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            } else {
+                Icon(Icons.Filled.Person, contentDescription = "Profil", tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
+                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Filled.Notifications, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) }
+    }
+}
+
+@Composable
+private fun GlassBottomBar(selected: Section, onSelect: (Section) -> Unit) {
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(20.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), RoundedCornerShape(28.dp)),
+        tonalElevation = 0.dp,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.94f else 1f),
+    ) {
+        LazyRow(
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            items(Section.entries) { item ->
+                val active = item == selected
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f) else Color.Transparent)
+                        .clickable { onSelect(item) }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(item.icon, contentDescription = item.label, tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
+                    Text(item.short, color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 12.sp, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val shape = RoundedCornerShape(28.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(20.dp, shape, ambientColor = Color.Black.copy(alpha = 0.18f))
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), shape),
+    ) { content() }
+}
+
+@Composable
+private fun HeroBanner(title: String, subtitle: String, icon: ImageVector) {
+    GlassCard {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Box(
+                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f), fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun InsightCard(title: String, body: String) {
+    GlassCard {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(body, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f))
+        }
+    }
+}
+
+@Composable
+private fun SectionList(
+    title: String,
+    subtitle: String,
+    header: @Composable () -> Unit,
+    content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().statusBarsPadding(),
+        contentPadding = PaddingValues(20.dp, 24.dp, 20.dp, 120.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item { Text(title, fontWeight = FontWeight.Black, fontSize = 24.sp) }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 100.dp)) {
+                Text(title, style = androidx.compose.material3.MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Black), color = MaterialTheme.colorScheme.onBackground)
+                Text(subtitle, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.62f))
+            }
+        }
+        item { Column(verticalArrangement = Arrangement.spacedBy(14.dp), content = { header() }) }
+        content()
+    }
+}
+
+@Composable
+private fun DismissibleItem(onDelete: () -> Unit, content: @Composable () -> Unit) {
+    val actionWidth = 110.dp
+    val actionWidthPx = with(LocalDensity.current) { actionWidth.toPx() }
+    var offsetPx by remember { mutableFloatStateOf(0f) }
+    val revealFraction = (-offsetPx / actionWidthPx).coerceIn(0f, 1f)
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        if (revealFraction > 0.04f) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .height(60.dp)
+                        .width(actionWidth)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color(0xFFEF4444).copy(alpha = revealFraction))
+                        .clickable(enabled = revealFraction > 0.7f) { onDelete() },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    if (revealFraction > 0.45f) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color.White)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Sil", color = Color.White, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetPx.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = { offsetPx = if (offsetPx < -actionWidthPx * 0.45f) -actionWidthPx else 0f },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetPx = (offsetPx + dragAmount).coerceIn(-actionWidthPx, 0f)
+                        },
+                    )
+                },
+        ) { content() }
+    }
+}
+
+@Composable
+private fun FormShell(title: String, content: @Composable () -> Unit) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        item { Text(title, fontWeight = FontWeight.Black, fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface) }
         item { Column(verticalArrangement = Arrangement.spacedBy(14.dp), content = { content() }) }
     }
 }
@@ -1165,10 +2029,18 @@ private fun TimeField(label: String, value: String, onChange: (String) -> Unit) 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun <T> ChipSelector(values: List<T>, selected: T, onSelected: (T) -> Unit, label: (T) -> String) {
+private fun <T> ChipSelector(values: List<T>, selected: T?, onSelected: (T) -> Unit, label: (T) -> String) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         values.forEach { value ->
-            FilterChip(selected = value == selected, onClick = { onSelected(value) }, label = { Text(label(value)) })
+            FilterChip(
+                selected = value == selected,
+                onClick = { onSelected(value) },
+                label = { Text(label(value)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
+                    selectedLabelColor = MaterialTheme.colorScheme.primary,
+                ),
+            )
         }
     }
 }
@@ -1188,187 +2060,51 @@ private fun ZoneSelector(selectedZones: MutableList<String>) {
 }
 
 @Composable
-private fun SectionList(
-    title: String,
-    subtitle: String,
-    header: @Composable () -> Unit,
-    content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit,
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(20.dp, 24.dp, 20.dp, 112.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(end = 72.dp)) {
-                Text(title, style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Black))
-                Text(subtitle, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.62f))
-            }
-        }
-        item { Column(verticalArrangement = Arrangement.spacedBy(14.dp), content = { header() }) }
-        content()
-    }
-}
-
-@Composable
-private fun DismissibleItem(onDelete: () -> Unit, content: @Composable () -> Unit) {
-    val actionWidth = 112.dp
-    val actionWidthPx = with(LocalDensity.current) { actionWidth.toPx() }
-    var offsetPx by remember { mutableStateOf(0f) }
-    val revealFraction = (-offsetPx / actionWidthPx).coerceIn(0f, 1f)
-
-    Box(modifier = Modifier.fillMaxWidth()) {
-        if (revealFraction > 0.02f) {
-            Row(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .width(actionWidth * revealFraction)
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFFE5484D).copy(alpha = revealFraction))
-                    .clickable(enabled = revealFraction > 0.7f) { onDelete() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                if (revealFraction > 0.55f) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color.White)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Sil", color = Color.White, fontWeight = FontWeight.Black)
-                }
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset { IntOffset(offsetPx.roundToInt(), 0) }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            offsetPx = if (offsetPx < -actionWidthPx * 0.45f) -actionWidthPx else 0f
-                        },
-                        onHorizontalDrag = { change, dragAmount ->
-                            change.consume()
-                            offsetPx = (offsetPx + dragAmount).coerceIn(-actionWidthPx, 0f)
-                        },
-                    )
-                },
-        ) {
-            content()
-        }
-    }
-}
-
-@Composable
-private fun GlassCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    val shape = RoundedCornerShape(30.dp)
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(22.dp, shape, ambientColor = Color.Black.copy(alpha = 0.38f))
-            .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.105f),
-                        Color.White.copy(alpha = 0.055f),
-                    ),
-                ),
-            )
-            .border(1.dp, Color.White.copy(alpha = 0.12f), shape),
-    ) {
-        content()
-    }
-}
-
-@Composable
-private fun GlassBottomBar(selected: Section, onSelect: (Section) -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-            .clip(RoundedCornerShape(30.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(30.dp)),
-        tonalElevation = 0.dp,
-        color = Color(0xFF0A0B0F).copy(alpha = 0.92f),
-    ) {
-        LazyRow(
-            contentPadding = PaddingValues(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            items(Section.entries) { item ->
-                val active = item == selected
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(22.dp))
-                        .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f) else Color.Transparent)
-                        .clickable { onSelect(item) }
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Icon(item.icon, contentDescription = item.label, tint = if (active) MaterialTheme.colorScheme.primary else Color(0xFF9CA3AF), modifier = Modifier.size(19.dp))
-                    Text(item.label, color = if (active) MaterialTheme.colorScheme.primary else Color(0xFF9CA3AF), fontSize = 12.sp, maxLines = 1)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProfileButton(profile: Profile, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .size(48.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.10f))
-            .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (profile.photoUri.isNotBlank()) {
-            AsyncImage(profile.photoUri, contentDescription = "Profil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        } else {
-            Icon(Icons.Filled.Person, contentDescription = "Profil", tint = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-@Composable
 private fun FullScreenPhoto(uri: String, onDismiss: () -> Unit) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .clickable { onDismiss() },
+            modifier = Modifier.fillMaxSize().background(Color.Black).clickable { onDismiss() },
             contentAlignment = Alignment.Center,
         ) {
-            AsyncImage(
-                model = uri,
-                contentDescription = "Orijinal fotoğraf",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit,
-            )
+            AsyncImage(model = uri, contentDescription = "Orijinal fotoğraf", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         }
     }
 }
 
-private fun appBackground(style: BackgroundStyle): Brush =
-    Brush.verticalGradient(listOf(style.top, style.bottom, Color.Black))
+@Composable
+private fun appBackground(palette: Palette): Brush {
+    val isDark = LocalIsDark.current
+    return if (isDark) {
+        Brush.verticalGradient(
+            listOf(
+                palette.darkPrimary.copy(alpha = 0.10f),
+                palette.darkBackground,
+                Color.Black,
+            ),
+        )
+    } else {
+        Brush.verticalGradient(
+            listOf(
+                palette.lightPrimary.copy(alpha = 0.08f),
+                palette.lightBackground,
+                palette.lightSurface,
+            ),
+        )
+    }
+}
 
-private data class SleepTarget(val recommended: Double, val rangeText: String)
+// endregion
+
+// region Helpers
+
 private data class SleepReport(val title: String, val detail: String, val color: Color)
+private data class SleepTarget(val recommended: Double, val rangeText: String)
 
 private fun sleepTarget(age: Int): SleepTarget = when (age) {
-    in 0..2 -> SleepTarget(12.0, "11-14 saat")
-    in 3..5 -> SleepTarget(11.0, "10-13 saat")
+    in 0..5 -> SleepTarget(11.0, "10-13 saat")
     in 6..12 -> SleepTarget(10.0, "9-12 saat")
-    in 13..18 -> SleepTarget(8.5, "8-10 saat")
+    in 13..18 -> SleepTarget(9.0, "8-10 saat")
+    in 19..64 -> SleepTarget(8.0, "7-9 saat")
     else -> SleepTarget(7.5, "7-9 saat")
 }
 
@@ -1376,8 +2112,8 @@ private fun sleepStatus(hours: Double, age: Int): SleepReport {
     val target = sleepTarget(age)
     return when {
         hours <= 0.0 -> SleepReport("Veri yok", "Uyku kaydı eklenince yaşa göre otomatik yorumlanacak.", Color(0xFF9CA3AF))
-        hours + 0.25 < target.recommended -> SleepReport("Yetersiz", "$age yaş için önerilen aralık ${target.rangeText}. Ortalama biraz düşük.", Color(0xFFFF6B6B))
-        hours > target.recommended + 2 -> SleepReport("Fazla", "$age yaş için önerilen aralık ${target.rangeText}. Uyku süresi uzun görünüyor.", Color(0xFFFFB84D))
+        hours + 0.25 < target.recommended -> SleepReport("Yetersiz", "$age yaş için önerilen aralık ${target.rangeText}. Ortalama biraz düşük.", Color(0xFFEF4444))
+        hours > target.recommended + 2 -> SleepReport("Fazla", "$age yaş için önerilen aralık ${target.rangeText}. Uyku süresi uzun görünüyor.", Color(0xFFF59E0B))
         else -> SleepReport("Yeterli", "$age yaş için önerilen aralık ${target.rangeText}. Uyku süresi iyi görünüyor.", Color(0xFF22C55E))
     }
 }
@@ -1389,47 +2125,61 @@ private fun mealSuggestion(age: Int): String = when (age) {
     else -> "Protein, lifli sebze, tam tahıl ve yeterli su dengesi takip edilmeli."
 }
 
-private fun timeBasedGreeting(name: String): Pair<String, String> {
+private fun timeBasedGreeting(): Pair<String, String> {
     val hour = LocalTime.now().hour
-    val cleanName = name.ifBlank { "Kardeşim" }
     return when (hour) {
-        in 5..11 -> "Günaydın, $cleanName" to "Bugün nasıl hissediyorsun? Güne sakin başla, su içmeyi unutma."
-        in 12..17 -> "Merhaba, $cleanName" to "Günün nasıl geçiyor? Öğün, ödev ve cilt kaydını hızlıca kontrol edebilirsin."
-        in 18..23 -> "İyi akşamlar, $cleanName" to "Bugün nasılsın? Uyumadan önce yüz fotoğrafını ekleyip rutini tamamlayabilirsin."
-        else -> "İyi geceler, $cleanName" to "Geç oldu; uyku düzenini korumak için sakinleşme zamanı."
+        in 5..11 -> "Günaydın," to "Bugünü güzel başlat."
+        in 12..17 -> "Merhaba," to "Günün ortasında bir mola."
+        in 18..22 -> "İyi akşamlar," to "Bugünü kapatmaya hazır mısın?"
+        else -> "İyi geceler," to "Sakin bir gece olsun."
     }
+}
+
+private fun computeStreak(dates: Iterable<String>): Int {
+    val parsedDates = dates.mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toHashSet()
+    if (parsedDates.isEmpty()) return 0
+    var current = LocalDate.now()
+    if (!parsedDates.contains(current)) current = current.minusDays(1)
+    var streak = 0
+    while (parsedDates.contains(current)) {
+        streak += 1
+        current = current.minusDays(1)
+    }
+    return streak
 }
 
 private fun SleepEntry.duration(): Double? {
     val start = sleptAt.parseTimeOrNull() ?: return null
     val end = wokeAt.parseTimeOrNull() ?: return null
-    val rawMinutes = Duration.between(start, end).toMinutes()
-    val minutes = if (rawMinutes <= 0) rawMinutes + Duration.ofDays(1).toMinutes() else rawMinutes
+    val raw = Duration.between(start, end).toMinutes()
+    val minutes = if (raw <= 0) raw + Duration.ofDays(1).toMinutes() else raw
     return minutes / 60.0
 }
 
 private fun String.parseTimeOrNull(): LocalTime? = try {
     LocalTime.parse(this, DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT))
-} catch (_: DateTimeParseException) {
-    null
-}
+} catch (_: DateTimeParseException) { null }
 
 private fun String.isValidTime(): Boolean = parseTimeOrNull() != null
 private fun String.isValidDate(): Boolean = runCatching { LocalDate.parse(this) }.isSuccess
 private fun Double?.orZero(): Double = this ?: 0.0
 private fun List<Double>.averageOrZero(): Double = if (isEmpty()) 0.0 else average()
 private fun Double.oneDecimal(): String = ((this * 10).roundToInt() / 10.0).toString()
-private fun newId(): String = "${System.currentTimeMillis()}-${(0..9999).random()}"
+private fun Double.format(): String = String.format(Locale("tr"), "%,.0f", this)
 
 private inline fun <reified T : Enum<T>> enumValueOfOrDefault(name: String, default: T): T =
     runCatching { enumValueOf<T>(name) }.getOrDefault(default)
 
-private fun JSONArray.mapStrings(): List<String> = buildList {
-    for (index in 0 until length()) add(optString(index))
+private fun JSONArray?.mapStrings(): List<String> = buildList {
+    val arr = this@mapStrings ?: return@buildList
+    for (i in 0 until arr.length()) add(arr.optString(i))
 }
 
-private fun <T> JSONArray.mapJsonObjects(transform: (JSONObject) -> T): List<T> = buildList {
-    for (index in 0 until length()) {
-        optJSONObject(index)?.let { add(transform(it)) }
-    }
+private fun <T> JSONArray?.mapJsonObjects(transform: (JSONObject) -> T): List<T> = buildList {
+    val arr = this@mapJsonObjects ?: return@buildList
+    for (i in 0 until arr.length()) arr.optJSONObject(i)?.let { add(transform(it)) }
 }
+
+private fun newId(): String = UUID.randomUUID().toString()
+
+// endregion
