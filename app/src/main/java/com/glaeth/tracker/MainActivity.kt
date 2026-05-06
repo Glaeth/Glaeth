@@ -69,14 +69,22 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalDining
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Park
+import androidx.compose.material.icons.filled.PauseCircle
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.AssistChip
@@ -168,13 +176,15 @@ class MainActivity : ComponentActivity() {
 // region Domain models
 
 private enum class Section(val label: String, val icon: ImageVector, val short: String) {
-    Dashboard("Ana Sayfa", Icons.Filled.Home, "Ana"),
+    Dashboard("Ana Sayfa", Icons.Filled.Home, "Ana Sayfa"),
     Sleep("Uyku", Icons.Filled.DateRange, "Uyku"),
     Meals("Öğünler", Icons.Filled.LocalDining, "Öğün"),
     Water("Su", Icons.Filled.WaterDrop, "Su"),
     Skin("Cilt", Icons.Filled.Face, "Cilt"),
+    Forest("Orman", Icons.Filled.Park, "Orman"),
     Homework("Ödev", Icons.Filled.School, "Ödev"),
     Budget("Bütçe", Icons.Filled.AttachMoney, "Bütçe"),
+    History("Geçmiş", Icons.Filled.History, "Geçmiş"),
     Settings("Ayarlar", Icons.Filled.Settings, "Ayar"),
 }
 
@@ -271,6 +281,9 @@ private data class BudgetAccount(
     val name: String,
     val type: AccountType,
     val iconKey: String,
+    val balance: Double = 0.0,
+    val creditLimit: Double = 0.0,
+    val dueAmount: Double = 0.0,
 )
 
 private enum class TxnCategory(val label: String, val isIncome: Boolean, val icon: ImageVector, val color: Color) {
@@ -286,8 +299,81 @@ private enum class TxnCategory(val label: String, val isIncome: Boolean, val ico
 }
 
 private enum class Currency(val label: String, val symbol: String) {
-    TRY("Türk Lirası", "₺"), USD("Dolar", "$"), EUR("Euro", "€")
+    TRY("Türk Lirası", "₺"),
+    USD("Amerikan Doları", "$"),
+    EUR("Euro", "€"),
+    GBP("İngiliz Sterlini", "£"),
+    JPY("Japon Yeni", "¥"),
+    CAD("Kanada Doları", "C$"),
+    AUD("Avustralya Doları", "A$"),
+    CHF("İsviçre Frangı", "Fr"),
+    CNY("Çin Yuanı", "¥"),
+    INR("Hindistan Rupisi", "₹"),
+    RUB("Rus Rublesi", "₽"),
+    KRW("Kore Wonu", "₩"),
+    MXN("Meksika Pesosu", "MX$"),
+    BRL("Brezilya Reali", "R$"),
+    SAR("Suudi Riyali", "﷼"),
+    AED("BAE Dirhemi", "AED"),
+    SEK("İsveç Kronu", "kr"),
+    NOK("Norveç Kronu", "kr"),
+    DKK("Danimarka Kronu", "kr"),
+    NZD("Yeni Zelanda Doları", "NZ$"),
 }
+
+private enum class StoreCategory(val label: String) {
+    Freeze("Seri Dondurma"),
+    Pet("Evcil Hayvan"),
+    Tree("Ağaç Tohumu"),
+    MealSkin("Yemek Kâsesi"),
+    WaterSkin("Bardak / Şişe"),
+    Background("Arka Plan"),
+}
+
+private data class StoreItem(
+    val key: String,
+    val label: String,
+    val cost: Int,
+    val category: StoreCategory,
+    val emoji: String,
+    val isDefault: Boolean = false,
+)
+
+private val DefaultStoreCatalog: List<StoreItem> = listOf(
+    StoreItem("freeze_pass", "Seri Dondurma (Buz)", 150, StoreCategory.Freeze, "🧊"),
+    StoreItem("pet_dog", "Sadık Köpek", 0, StoreCategory.Pet, "🐶", isDefault = true),
+    StoreItem("pet_cat", "Tatlı Kedi", 600, StoreCategory.Pet, "🐱"),
+    StoreItem("pet_panda", "Nadir Panda", 1500, StoreCategory.Pet, "🐼"),
+    StoreItem("pet_dragon", "Efsane Ejderha", 1500, StoreCategory.Pet, "🐉"),
+    StoreItem("pet_bunny", "Sevimli Tavşan", 800, StoreCategory.Pet, "🐰"),
+    StoreItem("tree_oak", "Meşe Tohumu", 500, StoreCategory.Tree, "🌳", isDefault = true),
+    StoreItem("tree_sakura", "Sakura Tohumu", 750, StoreCategory.Tree, "🌸"),
+    StoreItem("tree_sedir", "Sedir Tohumu", 900, StoreCategory.Tree, "🌲"),
+    StoreItem("tree_palm", "Palmiye Tohumu", 700, StoreCategory.Tree, "🌴"),
+    StoreItem("tree_glow", "Glowshroom", 1200, StoreCategory.Tree, "🍄"),
+    StoreItem("bowl_classic", "Klasik Kâse", 0, StoreCategory.MealSkin, "🍚", isDefault = true),
+    StoreItem("bowl_noodle", "Noodle & Chopstick", 750, StoreCategory.MealSkin, "🍜"),
+    StoreItem("bowl_salad", "Sağlıklı Salata", 300, StoreCategory.MealSkin, "🥗"),
+    StoreItem("bowl_ramen", "Premium Ramen", 750, StoreCategory.MealSkin, "🍲"),
+    StoreItem("glass_basic", "Klasik Bardak", 0, StoreCategory.WaterSkin, "🥛", isDefault = true),
+    StoreItem("glass_bottle", "Spor Matarası", 300, StoreCategory.WaterSkin, "🧃"),
+    StoreItem("glass_crystal", "Kristal Kadeh", 750, StoreCategory.WaterSkin, "🍷"),
+    StoreItem("glass_mug", "Sıcak Kupa", 300, StoreCategory.WaterSkin, "☕"),
+    StoreItem("bg_aurora", "Aurora", 0, StoreCategory.Background, "🌅", isDefault = true),
+    StoreItem("bg_ocean", "Okyanus", 300, StoreCategory.Background, "🌊"),
+    StoreItem("bg_forest", "Orman", 300, StoreCategory.Background, "🌲"),
+    StoreItem("bg_galaxy", "Galaksi", 750, StoreCategory.Background, "🌌"),
+    StoreItem("bg_desert", "Çöl Günbatımı", 500, StoreCategory.Background, "🏜️"),
+)
+
+private data class TreeEntry(
+    val id: String,
+    val date: String,
+    val durationMinutes: Int,
+    val treeKey: String,
+)
+
+private enum class ChartKind(val label: String) { Bar("Bar"), Line("Line"), Candle("Candle") }
 
 private data class TxnEntry(
     val id: String,
@@ -306,6 +392,7 @@ private data class AppData(
     val skinEntries: List<SkinEntry>,
     val homeworkEntries: List<HomeworkEntry>,
     val waterEntries: List<WaterEntry>,
+    val treeEntries: List<TreeEntry>,
     val people: List<BudgetPerson>,
     val accounts: List<BudgetAccount>,
     val transactions: List<TxnEntry>,
@@ -315,6 +402,14 @@ private data class AppData(
     val profile: Profile,
     val palette: Palette,
     val themeMode: ThemeMode,
+    val currentPoints: Int,
+    val freezePassCount: Int,
+    val purchasedItems: Set<String>,
+    val selectedPet: String,
+    val selectedTree: String,
+    val selectedBowl: String,
+    val selectedGlass: String,
+    val selectedBackground: String,
 )
 
 // endregion
@@ -368,7 +463,16 @@ private class AppRepository(context: Context) {
             BudgetPerson(it.optString("id", newId()), it.optString("name", "Kişi"), it.optString("photoUri"))
         }.ifEmpty { listOf(BudgetPerson(newId(), "Ben")) },
         accounts = root.optJSONArray("accounts").mapJsonObjects {
-            BudgetAccount(it.optString("id", newId()), it.optString("personId"), it.optString("name", "Hesap"), enumValueOfOrDefault(it.optString("type"), AccountType.Bank), it.optString("iconKey"))
+            BudgetAccount(
+                id = it.optString("id", newId()),
+                personId = it.optString("personId"),
+                name = it.optString("name", "Hesap"),
+                type = enumValueOfOrDefault(it.optString("type"), AccountType.Bank),
+                iconKey = it.optString("iconKey"),
+                balance = it.optDouble("balance", 0.0),
+                creditLimit = it.optDouble("creditLimit", 0.0),
+                dueAmount = it.optDouble("dueAmount", 0.0),
+            )
         },
         transactions = root.optJSONArray("transactions").mapJsonObjects {
             TxnEntry(
@@ -382,6 +486,9 @@ private class AppRepository(context: Context) {
                 it.optString("date"),
             )
         },
+        treeEntries = root.optJSONArray("trees").mapJsonObjects {
+            TreeEntry(it.optString("id", newId()), it.optString("date"), it.optInt("durationMinutes", 25), it.optString("treeKey", "tree_oak"))
+        },
         waterTargetMl = root.optInt("waterTargetMl", 2500),
         budgetLimit = root.optDouble("budgetLimit", 0.0),
         currency = enumValueOfOrDefault(root.optString("currency"), Currency.TRY),
@@ -390,6 +497,14 @@ private class AppRepository(context: Context) {
         } ?: Profile(),
         palette = enumValueOfOrDefault(root.optString("palette"), Palette.Obsidian),
         themeMode = enumValueOfOrDefault(root.optString("themeMode"), ThemeMode.System),
+        currentPoints = root.optInt("currentPoints", 0),
+        freezePassCount = root.optInt("freezePassCount", 1),
+        purchasedItems = root.optJSONArray("purchasedItems").mapStrings().toSet() + DefaultStoreCatalog.filter { it.isDefault }.map { it.key },
+        selectedPet = root.optString("selectedPet", "pet_dog").ifBlank { "pet_dog" },
+        selectedTree = root.optString("selectedTree", "tree_oak").ifBlank { "tree_oak" },
+        selectedBowl = root.optString("selectedBowl", "bowl_classic").ifBlank { "bowl_classic" },
+        selectedGlass = root.optString("selectedGlass", "glass_basic").ifBlank { "glass_basic" },
+        selectedBackground = root.optString("selectedBackground", "bg_aurora").ifBlank { "bg_aurora" },
     )
 
     fun encode(data: AppData): JSONObject = JSONObject()
@@ -405,14 +520,33 @@ private class AppRepository(context: Context) {
         .put("homework", JSONArray().apply { data.homeworkEntries.forEach { put(JSONObject().put("id", it.id).put("lesson", it.lesson).put("title", it.title).put("dueDate", it.dueDate).put("priority", it.priority.name).put("attachment", it.attachment)) } })
         .put("water", JSONArray().apply { data.waterEntries.forEach { put(JSONObject().put("id", it.id).put("date", it.date).put("time", it.time).put("amountMl", it.amountMl)) } })
         .put("people", JSONArray().apply { data.people.forEach { put(JSONObject().put("id", it.id).put("name", it.name).put("photoUri", it.photoUri)) } })
-        .put("accounts", JSONArray().apply { data.accounts.forEach { put(JSONObject().put("id", it.id).put("personId", it.personId).put("name", it.name).put("type", it.type.name).put("iconKey", it.iconKey)) } })
+        .put("accounts", JSONArray().apply {
+            data.accounts.forEach {
+                put(
+                    JSONObject()
+                        .put("id", it.id).put("personId", it.personId).put("name", it.name)
+                        .put("type", it.type.name).put("iconKey", it.iconKey)
+                        .put("balance", it.balance).put("creditLimit", it.creditLimit).put("dueAmount", it.dueAmount),
+                )
+            }
+        })
         .put("transactions", JSONArray().apply { data.transactions.forEach { put(JSONObject().put("id", it.id).put("personId", it.personId).put("accountId", it.accountId).put("category", it.category.name).put("amount", it.amount).put("currency", it.currency.name).put("description", it.description).put("date", it.date)) } })
+        .put("trees", JSONArray().apply { data.treeEntries.forEach { put(JSONObject().put("id", it.id).put("date", it.date).put("durationMinutes", it.durationMinutes).put("treeKey", it.treeKey)) } })
+        .put("currentPoints", data.currentPoints)
+        .put("freezePassCount", data.freezePassCount)
+        .put("purchasedItems", JSONArray(data.purchasedItems.toList()))
+        .put("selectedPet", data.selectedPet)
+        .put("selectedTree", data.selectedTree)
+        .put("selectedBowl", data.selectedBowl)
+        .put("selectedGlass", data.selectedGlass)
+        .put("selectedBackground", data.selectedBackground)
 }
 
 private fun demoData(): AppData {
     val today = LocalDate.now()
     val ben = BudgetPerson(newId(), "Ben")
-    val account = BudgetAccount(newId(), ben.id, "Ana Hesap", AccountType.Bank, "")
+    val bank = BudgetAccount(newId(), ben.id, "Ana Hesap", AccountType.Bank, "", balance = 18500.0)
+    val card = BudgetAccount(newId(), ben.id, "Visa Kart", AccountType.Card, "", creditLimit = 15000.0, balance = 9700.0, dueAmount = 2800.0)
     return AppData(
         sleepEntries = listOf(
             SleepEntry(newId(), today.minusDays(2).toString(), "23:20", "07:10"),
@@ -434,13 +568,14 @@ private fun demoData(): AppData {
             WaterEntry(newId(), today.toString(), "12:00", 500),
             WaterEntry(newId(), today.minusDays(1).toString(), "20:00", 250),
         ),
+        treeEntries = emptyList(),
         people = listOf(ben),
-        accounts = listOf(account),
+        accounts = listOf(bank, card),
         transactions = listOf(
-            TxnEntry(newId(), ben.id, account.id, TxnCategory.Salary, 25000.0, Currency.TRY, "Maaş", today.toString()),
-            TxnEntry(newId(), ben.id, account.id, TxnCategory.Rent, 8000.0, Currency.TRY, "Ev kirası", today.minusDays(2).toString()),
-            TxnEntry(newId(), ben.id, account.id, TxnCategory.Food, 1450.0, Currency.TRY, "Market", today.minusDays(1).toString()),
-            TxnEntry(newId(), ben.id, account.id, TxnCategory.Electricity, 740.0, Currency.TRY, "Elektrik faturası", today.minusDays(3).toString()),
+            TxnEntry(newId(), ben.id, bank.id, TxnCategory.Salary, 25000.0, Currency.TRY, "Maaş", today.toString()),
+            TxnEntry(newId(), ben.id, bank.id, TxnCategory.Rent, 8000.0, Currency.TRY, "Ev kirası", today.minusDays(2).toString()),
+            TxnEntry(newId(), ben.id, card.id, TxnCategory.Food, 1450.0, Currency.TRY, "Market", today.minusDays(1).toString()),
+            TxnEntry(newId(), ben.id, card.id, TxnCategory.Electricity, 740.0, Currency.TRY, "Elektrik faturası", today.minusDays(3).toString()),
         ),
         waterTargetMl = 2500,
         budgetLimit = 12000.0,
@@ -448,6 +583,14 @@ private fun demoData(): AppData {
         profile = Profile(),
         palette = Palette.Obsidian,
         themeMode = ThemeMode.Dark,
+        currentPoints = 250,
+        freezePassCount = 1,
+        purchasedItems = DefaultStoreCatalog.filter { it.isDefault }.map { it.key }.toSet(),
+        selectedPet = "pet_dog",
+        selectedTree = "tree_oak",
+        selectedBowl = "bowl_classic",
+        selectedGlass = "glass_basic",
+        selectedBackground = "bg_aurora",
     )
 }
 
@@ -579,6 +722,11 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
         }
     }
 
+    var storeSheet by remember { mutableStateOf(false) }
+    var sleepEdit by remember { mutableStateOf<SleepEntry?>(null) }
+    var historyFilter by remember { mutableStateOf<String?>(null) }
+    var vaultPersonId by remember { mutableStateOf<String?>(null) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0),
@@ -591,7 +739,7 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
                 ) { Icon(Icons.Filled.Add, contentDescription = "Ekle") }
             }
         },
-        bottomBar = { GlassBottomBar(selected = section, onSelect = { section = it }) },
+        bottomBar = { GlassBottomBar(selected = section, onSelect = { section = it }, currency = data.currency) },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().background(appBackground(data.palette)).padding(padding)) {
             AnimatedContent(targetState = section, label = "section") { target ->
@@ -600,16 +748,32 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
                         data = data,
                         onOpen = { section = it },
                         onProfile = { profileSheet = true },
+                        onPetAction = { reward ->
+                            updateData(data.copy(currentPoints = data.currentPoints + reward))
+                            Toast.makeText(context, "+$reward puan", Toast.LENGTH_SHORT).show()
+                        },
+                        onSeeAll = {
+                            historyFilter = null
+                            section = Section.History
+                        },
+                        onOpenStore = { storeSheet = true },
                     )
-                    Section.Sleep -> SleepScreen(data.sleepEntries, data.profile) { id ->
-                        updateData(data.copy(sleepEntries = data.sleepEntries.filterNot { it.id == id }))
-                    }
-                    Section.Meals -> MealScreen(data.mealEntries, data.profile) { id ->
-                        updateData(data.copy(mealEntries = data.mealEntries.filterNot { it.id == id }))
-                    }
+                    Section.Sleep -> SleepScreen(
+                        entries = data.sleepEntries,
+                        profile = data.profile,
+                        onDelete = { id -> updateData(data.copy(sleepEntries = data.sleepEntries.filterNot { it.id == id })) },
+                        onEdit = { entry -> sleepEdit = entry },
+                    )
+                    Section.Meals -> MealScreen(
+                        entries = data.mealEntries,
+                        profile = data.profile,
+                        bowlSkin = data.selectedBowl,
+                        onDelete = { id -> updateData(data.copy(mealEntries = data.mealEntries.filterNot { it.id == id })) },
+                    )
                     Section.Water -> WaterScreen(
                         entries = data.waterEntries,
                         targetMl = data.waterTargetMl,
+                        glassSkin = data.selectedGlass,
                         onTargetChange = { updateData(data.copy(waterTargetMl = it.coerceIn(500, 5000))) },
                         onDelete = { id -> updateData(data.copy(waterEntries = data.waterEntries.filterNot { it.id == id })) },
                     )
@@ -618,19 +782,40 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
                         onDelete = { id -> updateData(data.copy(skinEntries = data.skinEntries.filterNot { it.id == id })) },
                         onOpenPhoto = { fullImage = it },
                     )
+                    Section.Forest -> ForestScreen(
+                        data = data,
+                        onComplete = { entry ->
+                            updateData(
+                                data.copy(
+                                    treeEntries = data.treeEntries + entry,
+                                    currentPoints = data.currentPoints + entry.durationMinutes,
+                                ),
+                            )
+                            Toast.makeText(context, "+${entry.durationMinutes} puan kazandın", Toast.LENGTH_SHORT).show()
+                        },
+                        onSelectTree = { key -> updateData(data.copy(selectedTree = key)) },
+                    )
                     Section.Homework -> HomeworkScreen(data.homeworkEntries) { id ->
                         updateData(data.copy(homeworkEntries = data.homeworkEntries.filterNot { it.id == id }))
                     }
                     Section.Budget -> BudgetScreen(
                         data = data,
                         onUpdate = updateData,
+                        onOpenVault = { id -> vaultPersonId = id },
+                    )
+                    Section.History -> AllHistoryScreen(
+                        data = data,
+                        initialFilter = historyFilter,
+                        onBack = { section = Section.Dashboard },
                     )
                     Section.Settings -> SettingsScreen(
                         data = data,
                         onPaletteChange = { updateData(data.copy(palette = it)) },
                         onThemeModeChange = { updateData(data.copy(themeMode = it)) },
                         onCurrencyChange = { updateData(data.copy(currency = it)) },
+                        onBackgroundChange = { key -> updateData(data.copy(selectedBackground = key)) },
                         onProfileClick = { profileSheet = true },
+                        onOpenStore = { storeSheet = true },
                         onExport = {
                             val ts = LocalDate.now().toString()
                             exportLauncher.launch("glaeth-yedek-$ts.json")
@@ -641,12 +826,92 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
             }
             TopProfileBar(
                 profile = data.profile,
+                points = data.currentPoints,
                 onProfile = { profileSheet = true },
+                onPoints = { storeSheet = true },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
                     .padding(top = 12.dp, end = 16.dp),
             )
+        }
+    }
+
+    if (storeSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { storeSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ) {
+            StoreScreen(
+                data = data,
+                onPurchase = { item ->
+                    if (data.currentPoints >= item.cost && item.key !in data.purchasedItems) {
+                        val updated = data.copy(
+                            currentPoints = data.currentPoints - item.cost,
+                            purchasedItems = data.purchasedItems + item.key,
+                            freezePassCount = if (item.category == StoreCategory.Freeze) data.freezePassCount + 1 else data.freezePassCount,
+                        )
+                        updateData(updated)
+                        Toast.makeText(context, "${item.label} alındı", Toast.LENGTH_SHORT).show()
+                    } else if (item.key in data.purchasedItems && item.category != StoreCategory.Freeze) {
+                        Toast.makeText(context, "Zaten envanterinde", Toast.LENGTH_SHORT).show()
+                    } else if (item.category == StoreCategory.Freeze && data.currentPoints >= item.cost) {
+                        val updated = data.copy(
+                            currentPoints = data.currentPoints - item.cost,
+                            freezePassCount = data.freezePassCount + 1,
+                            purchasedItems = data.purchasedItems + item.key,
+                        )
+                        updateData(updated)
+                    } else {
+                        Toast.makeText(context, "Yeterli puanın yok", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onSelect = { item ->
+                    val key = item.key
+                    val updated = when (item.category) {
+                        StoreCategory.Pet -> data.copy(selectedPet = key)
+                        StoreCategory.Tree -> data.copy(selectedTree = key)
+                        StoreCategory.MealSkin -> data.copy(selectedBowl = key)
+                        StoreCategory.WaterSkin -> data.copy(selectedGlass = key)
+                        StoreCategory.Background -> data.copy(selectedBackground = key)
+                        StoreCategory.Freeze -> data
+                    }
+                    updateData(updated)
+                },
+            )
+        }
+    }
+
+    sleepEdit?.let { entry ->
+        ModalBottomSheet(
+            onDismissRequest = { sleepEdit = null },
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ) {
+            SleepEditForm(initial = entry) { updated ->
+                val newList = data.sleepEntries.map { if (it.id == updated.id) updated else it }
+                updateData(data.copy(sleepEntries = newList.sortedByDescending { it.date }))
+                sleepEdit = null
+            }
+        }
+    }
+
+    vaultPersonId?.let { id ->
+        val person = data.people.firstOrNull { it.id == id }
+        if (person != null) {
+            ModalBottomSheet(
+                onDismissRequest = { vaultPersonId = null },
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ) {
+                VaultDetailScreen(
+                    data = data,
+                    person = person,
+                )
+            }
+        } else {
+            vaultPersonId = null
         }
     }
 
@@ -681,7 +946,7 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
                     updateData(newData)
                     sheet = null
                 }
-                Section.Dashboard, Section.Settings -> Unit
+                Section.Dashboard, Section.Forest, Section.History, Section.Settings -> Unit
             }
         }
     }
@@ -710,130 +975,91 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DashboardScreen(data: AppData, onOpen: (Section) -> Unit, onProfile: () -> Unit) {
-    val skinStreak = computeStreak(data.skinEntries.map { it.date })
-    val waterStreak = computeStreak(data.waterEntries.map { it.date }.distinct())
-    val mealStreak = computeStreak(data.mealEntries.map { it.date }.distinct())
+private fun DashboardScreen(
+    data: AppData,
+    onOpen: (Section) -> Unit,
+    onProfile: () -> Unit,
+    onPetAction: (Int) -> Unit,
+    onSeeAll: () -> Unit,
+    onOpenStore: () -> Unit,
+) {
+    val skinDates = data.skinEntries.map { it.date }
+    val waterDates = data.waterEntries.map { it.date }.distinct()
+    val mealDates = data.mealEntries.map { it.date }.distinct()
+    val skinStreakInfo = streakWithFreeze(skinDates, data.freezePassCount)
+    val waterStreakInfo = streakWithFreeze(waterDates, data.freezePassCount)
+    val mealStreakInfo = streakWithFreeze(mealDates, data.freezePassCount)
     val today = LocalDate.now().toString()
     val todayWaterMl = data.waterEntries.filter { it.date == today }.sumOf { it.amountMl }
     val recent = recentUpdates(data).take(6)
-    val pages = remember(data) { dashboardPages(data) }
-    val pagerState = rememberPagerState(pageCount = { pages.size })
+    val pagerState = rememberPagerState(pageCount = { 4 })
     val scrollState = rememberScrollState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
             ScenicHeader(
                 profileName = data.profile.name.ifBlank { "Glaeth" },
-                pages = pages,
+                backgroundKey = data.selectedBackground,
                 pagerState = pagerState,
-                onAction = onOpen,
+                pageContent = { page ->
+                    when (page) {
+                        0 -> PetScorePage(data = data, onPetAction = onPetAction)
+                        1 -> SkinScorePage(data = data, streak = skinStreakInfo, onAction = { onOpen(Section.Skin) })
+                        2 -> WaterScorePage(data = data, todayMl = todayWaterMl, streak = waterStreakInfo, onAction = { onOpen(Section.Water) })
+                        3 -> BudgetScorePage(data = data, onAction = { onOpen(Section.Budget) })
+                        else -> Unit
+                    }
+                },
             )
             BodyArea(
-                skinStreak = skinStreak,
-                waterStreak = waterStreak,
-                mealStreak = mealStreak,
+                skinStreak = skinStreakInfo,
+                waterStreak = waterStreakInfo,
+                mealStreak = mealStreakInfo,
                 todayWaterMl = todayWaterMl,
                 waterTarget = data.waterTargetMl,
                 updates = recent,
                 onOpen = onOpen,
+                onSeeAll = onSeeAll,
+                onOpenStore = onOpenStore,
+                points = data.currentPoints,
             )
             Spacer(Modifier.height(120.dp))
         }
     }
 }
 
-private data class DashboardPage(
-    val title: String,
-    val subtitle: String,
-    val score: Int,
-    val maxScore: Int,
-    val accent: Color,
-    val updateLabel: String,
-    val ctaLabel: String,
-    val targetSection: Section,
-)
+private data class StreakInfo(val days: Int, val isFrozen: Boolean)
 
-private fun dashboardPages(data: AppData): List<DashboardPage> {
-    val today = LocalDate.now().toString()
-    val skinDays = data.skinEntries.size
-    val skinScore = skinDays.coerceAtMost(1000)
-    val skinUpdate = data.skinEntries.maxByOrNull { it.date }?.date?.let { "Son fotoğraf $it" } ?: "Henüz fotoğraf yok"
-    val todayMl = data.waterEntries.filter { it.date == today }.sumOf { it.amountMl }
-    val waterScore = ((todayMl.toFloat() / data.waterTargetMl.coerceAtLeast(1)) * 1000).toInt().coerceIn(0, 1000)
-    val waterUpdate = "$todayMl / ${data.waterTargetMl} ml bugün"
-    val expense = monthlyExpense(data)
-    val income = data.transactions.filter { it.category.isIncome }.sumOf { it.amount }
-    val budgetMax = if (data.budgetLimit > 0) data.budgetLimit else (income.coerceAtLeast(1.0))
-    val ratio = (1.0 - (expense / budgetMax).coerceIn(0.0, 1.0)).coerceIn(0.0, 1.0)
-    val budgetScore = (ratio * 1000).toInt()
-    val budgetUpdate = "${data.currency.symbol}${expense.format()} bu ay gider"
-
-    return listOf(
-        DashboardPage(
-            title = "Cilt Skoru",
-            subtitle = "Eklenen yüz fotoğrafı",
-            score = skinScore,
-            maxScore = 1000,
-            accent = Color(0xFFFB923C),
-            updateLabel = skinUpdate,
-            ctaLabel = "Detayları Gör",
-            targetSection = Section.Skin,
-        ),
-        DashboardPage(
-            title = "Su Hedefi",
-            subtitle = "Günlük hedefe ilerleme",
-            score = waterScore,
-            maxScore = 1000,
-            accent = Color(0xFF38BDF8),
-            updateLabel = waterUpdate,
-            ctaLabel = "Su Geçmişi",
-            targetSection = Section.Water,
-        ),
-        DashboardPage(
-            title = "Bütçe Sağlığı",
-            subtitle = if (data.budgetLimit > 0) "Aylık limit kullanımı" else "Aylık gider/gelir oranı",
-            score = budgetScore,
-            maxScore = 1000,
-            accent = Color(0xFF14B8A6),
-            updateLabel = budgetUpdate,
-            ctaLabel = "Bütçeye Git",
-            targetSection = Section.Budget,
-        ),
-    )
+private fun streakWithFreeze(dates: List<String>, freezePassCount: Int): StreakInfo {
+    val parsed = dates.mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toHashSet()
+    if (parsed.isEmpty()) return StreakInfo(0, false)
+    val today = LocalDate.now()
+    val frozen = !parsed.contains(today) && parsed.contains(today.minusDays(1)) && freezePassCount > 0
+    var current = if (parsed.contains(today)) today else today.minusDays(1)
+    var count = 0
+    while (parsed.contains(current)) {
+        count += 1
+        current = current.minusDays(1)
+    }
+    return StreakInfo(count, frozen)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ScenicHeader(
     profileName: String,
-    pages: List<DashboardPage>,
+    backgroundKey: String,
     pagerState: androidx.compose.foundation.pager.PagerState,
-    onAction: (Section) -> Unit,
+    pageContent: @Composable (Int) -> Unit,
 ) {
     val isDark = LocalIsDark.current
-    val skyColors = if (isDark) {
-        listOf(
-            Color(0xFF1E1B4B),
-            Color(0xFF312E81),
-            Color(0xFF155E75),
-            Color(0xFF0F3D45),
-        )
-    } else {
-        listOf(
-            Color(0xFF7C3AED),
-            Color(0xFFEC4899),
-            Color(0xFFF97316),
-            Color(0xFF14B8A6),
-        )
-    }
+    val skyColors = backgroundColors(backgroundKey, isDark)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(610.dp)
+            .height(640.dp)
             .background(Brush.verticalGradient(skyColors)),
     ) {
-        // Subtle wave layer at the bottom for ocean feeling
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -843,8 +1069,8 @@ private fun ScenicHeader(
                     Brush.verticalGradient(
                         listOf(
                             Color.Transparent,
-                            Color(0xFF0F4C5C).copy(alpha = 0.55f),
-                            Color(0xFF0E2939).copy(alpha = 0.85f),
+                            Color.Black.copy(alpha = 0.18f),
+                            Color.Black.copy(alpha = 0.45f),
                         ),
                     ),
                 ),
@@ -857,20 +1083,10 @@ private fun ScenicHeader(
             ) {
                 Column {
                     val greet = timeBasedGreeting()
-                    Text(
-                        greet.first,
-                        color = Color.White.copy(alpha = 0.92f),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                    )
-                    Text(
-                        profileName,
-                        color = Color.White,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 38.sp,
-                    )
+                    Text(greet.first, color = Color.White.copy(alpha = 0.92f), fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                    Text(profileName, color = Color.White, fontWeight = FontWeight.Black, fontSize = 38.sp)
                 }
-                Spacer(Modifier.width(80.dp)) // reserved for the global TopProfileBar overlay
+                Spacer(Modifier.width(120.dp))
             }
             Spacer(Modifier.height(8.dp))
             HorizontalPager(
@@ -878,16 +1094,10 @@ private fun ScenicHeader(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 36.dp),
                 pageSpacing = 12.dp,
-            ) { page ->
-                ScorePageCard(page = pages[page], onAction = { onAction(pages[page].targetSection) })
-            }
+            ) { page -> pageContent(page) }
             Spacer(Modifier.height(14.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                repeat(pages.size) { index ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                repeat(4) { index ->
                     val active = pagerState.currentPage == index
                     Box(
                         modifier = Modifier
@@ -902,12 +1112,25 @@ private fun ScenicHeader(
     }
 }
 
-@Composable
-private fun ScorePageCard(page: DashboardPage, onAction: () -> Unit) {
-    val animated by animateFloatAsState(
-        targetValue = (page.score.toFloat() / page.maxScore.coerceAtLeast(1)).coerceIn(0f, 1f),
-        label = "scoreArc",
+private fun backgroundColors(key: String, isDark: Boolean): List<Color> {
+    val palettes = mapOf(
+        "bg_aurora" to (listOf(Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF155E75), Color(0xFF0F3D45)) to listOf(Color(0xFF7C3AED), Color(0xFFEC4899), Color(0xFFF97316), Color(0xFF14B8A6))),
+        "bg_ocean" to (listOf(Color(0xFF051937), Color(0xFF002b4f), Color(0xFF003c5e), Color(0xFF005e75)) to listOf(Color(0xFF38BDF8), Color(0xFF0EA5E9), Color(0xFF0284C7), Color(0xFF0369A1))),
+        "bg_forest" to (listOf(Color(0xFF052e16), Color(0xFF064e3b), Color(0xFF065f46), Color(0xFF0f766e)) to listOf(Color(0xFF34D399), Color(0xFF22C55E), Color(0xFF15803D), Color(0xFF065F46))),
+        "bg_galaxy" to (listOf(Color(0xFF0B1020), Color(0xFF1E1B4B), Color(0xFF581C87), Color(0xFF7C3AED)) to listOf(Color(0xFF60A5FA), Color(0xFF7C3AED), Color(0xFFC026D3), Color(0xFFF472B6))),
+        "bg_desert" to (listOf(Color(0xFF3E1F0E), Color(0xFF7C2D12), Color(0xFFEA580C), Color(0xFFFACC15)) to listOf(Color(0xFFFCA5A5), Color(0xFFF97316), Color(0xFFFACC15), Color(0xFFFEF3C7))),
     )
+    val pair = palettes[key] ?: palettes["bg_aurora"]!!
+    return if (isDark) pair.first else pair.second
+}
+
+@Composable
+private fun GlassScoreCircle(
+    accent: Color,
+    fraction: Float,
+    centerContent: @Composable () -> Unit,
+) {
+    val animated by animateFloatAsState(targetValue = fraction.coerceIn(0f, 1f), label = "score")
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -919,101 +1142,190 @@ private fun ScorePageCard(page: DashboardPage, onAction: () -> Unit) {
                 .size(320.dp)
                 .clip(CircleShape)
                 .background(Color.White.copy(alpha = 0.12f))
-                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape),
+                .border(1.dp, Color.White.copy(alpha = 0.22f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Canvas(modifier = Modifier.size(296.dp)) {
                 val stroke = 14.dp.toPx()
                 drawArc(
                     color = Color.White.copy(alpha = 0.18f),
-                    startAngle = 135f,
-                    sweepAngle = 270f,
-                    useCenter = false,
+                    startAngle = 135f, sweepAngle = 270f, useCenter = false,
                     topLeft = Offset(stroke / 2, stroke / 2),
                     size = Size(size.width - stroke, size.height - stroke),
                     style = Stroke(width = stroke, cap = StrokeCap.Round),
                 )
                 drawArc(
-                    color = page.accent,
-                    startAngle = 135f,
-                    sweepAngle = 270f * animated,
-                    useCenter = false,
+                    color = accent,
+                    startAngle = 135f, sweepAngle = 270f * animated, useCenter = false,
                     topLeft = Offset(stroke / 2, stroke / 2),
                     size = Size(size.width - stroke, size.height - stroke),
                     style = Stroke(width = stroke, cap = StrokeCap.Round),
                 )
             }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(99.dp),
-                    color = Color.Black.copy(alpha = 0.45f),
-                ) {
-                    Text(
-                        page.updateLabel,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        color = Color.White,
-                        fontSize = 12.sp,
-                    )
-                }
-                Text(
-                    "${page.score}",
-                    color = Color.White,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 64.sp,
-                )
-                Text(
-                    "${page.title} · ${page.maxScore} üzerinden",
-                    color = Color.White.copy(alpha = 0.78f),
-                    fontSize = 12.sp,
-                )
-                Spacer(Modifier.height(6.dp))
-                Surface(
-                    shape = RoundedCornerShape(99.dp),
-                    color = page.accent.copy(alpha = 0.92f),
-                    modifier = Modifier.clickable(onClick = onAction),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = null, tint = Color.Black)
-                        Spacer(Modifier.width(6.dp))
-                        Text(page.ctaLabel, color = Color.Black, fontWeight = FontWeight.Black)
-                    }
-                }
+            centerContent()
+        }
+    }
+}
+
+@Composable
+private fun PetScorePage(data: AppData, onPetAction: (Int) -> Unit) {
+    val petItem = DefaultStoreCatalog.firstOrNull { it.key == data.selectedPet } ?: DefaultStoreCatalog.first { it.category == StoreCategory.Pet && it.isDefault }
+    val happiness = ((data.currentPoints % 100) / 100f).coerceIn(0.05f, 1f)
+    GlassScoreCircle(accent = Color(0xFFF472B6), fraction = happiness) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(petItem.emoji, fontSize = 90.sp)
+            Text(petItem.label, color = Color.White.copy(alpha = 0.85f), fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PetActionButton("Sev") { onPetAction(5) }
+                PetActionButton("Besle") { onPetAction(8) }
+                PetActionButton("Temizle") { onPetAction(6) }
             }
         }
     }
 }
 
 @Composable
+private fun PetActionButton(label: String, onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(99.dp),
+        color = Color.White.copy(alpha = 0.20f),
+        modifier = Modifier.clickable(onClick = onClick),
+    ) {
+        Text(label, color = Color.White, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+    }
+}
+
+@Composable
+private fun SkinScorePage(data: AppData, streak: StreakInfo, onAction: () -> Unit) {
+    val accent = Color(0xFFFB923C)
+    val total = data.skinEntries.size
+    GlassScoreCircle(accent = accent, fraction = (total / 100f).coerceIn(0f, 1f)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Surface(shape = RoundedCornerShape(99.dp), color = Color.Black.copy(alpha = 0.45f)) {
+                Text(
+                    if (total == 0) "Cilt yolculuğun başlasın" else "$total fotoğraflık arşiv",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                )
+            }
+            Text("${streak.days} Gün", color = Color.White, fontWeight = FontWeight.Black, fontSize = 64.sp)
+            Text(if (streak.isFrozen) "🧊" else "🔥", fontSize = 36.sp)
+            Spacer(Modifier.height(2.dp))
+            CtaButton("Detayları Gör", accent, onAction)
+        }
+    }
+}
+
+@Composable
+private fun WaterScorePage(data: AppData, todayMl: Int, streak: StreakInfo, onAction: () -> Unit) {
+    val accent = Color(0xFF38BDF8)
+    val target = data.waterTargetMl
+    val remaining = (target - todayMl).coerceAtLeast(0)
+    val message = when {
+        target == 0 -> "Hedef ayarla"
+        todayMl == 0 -> "Bugün başla 💧"
+        remaining == 0 -> "Hedefe ulaştın 🎉"
+        remaining <= 250 -> "Son $remaining ml!"
+        todayMl < target / 2 -> "Hadi devam, $remaining ml var"
+        else -> "Yarısını geçtin 🚰"
+    }
+    GlassScoreCircle(accent = accent, fraction = (todayMl.toFloat() / target.coerceAtLeast(1)).coerceIn(0f, 1f)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Surface(shape = RoundedCornerShape(99.dp), color = Color.Black.copy(alpha = 0.45f)) {
+                Text("$todayMl / $target ml", modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp), color = Color.White, fontSize = 12.sp)
+            }
+            Text(message, color = Color.White, fontWeight = FontWeight.Black, fontSize = 28.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 18.dp))
+            Text("${streak.days} gün ${if (streak.isFrozen) "🧊" else "🔥"}", color = Color.White.copy(alpha = 0.85f))
+            Spacer(Modifier.height(2.dp))
+            CtaButton("Su Geçmişi", accent, onAction)
+        }
+    }
+}
+
+@Composable
+private fun BudgetScorePage(data: AppData, onAction: () -> Unit) {
+    val accent = Color(0xFF14B8A6)
+    val expense = monthlyExpense(data)
+    val income = data.transactions.filter { it.category.isIncome }.sumOf { it.amount }
+    val limit = if (data.budgetLimit > 0) data.budgetLimit else income.coerceAtLeast(1.0)
+    val ratio = (expense / limit).coerceIn(0.0, 1.5).toFloat()
+    val card = data.accounts.firstOrNull { it.type == AccountType.Card && it.creditLimit > 0 }
+    val cardRatio = if (card != null && card.creditLimit > 0) (card.balance / card.creditLimit).coerceIn(0.0, 1.0).toFloat() else 0f
+    val message = when {
+        ratio < 0.5f -> "Harika gidiyorsun, artısın! 🚀"
+        ratio < 0.85f -> "Dengeli ilerliyor 👌"
+        ratio < 1.05f -> "Bu ay limitleri zorluyorsun ⚠️"
+        else -> "Limit aşıldı 🚨"
+    }
+    GlassScoreCircle(accent = accent, fraction = (1f - ratio.coerceAtMost(1f)).coerceAtLeast(0.05f)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(horizontal = 22.dp)) {
+            Surface(shape = RoundedCornerShape(99.dp), color = Color.Black.copy(alpha = 0.45f)) {
+                Text(
+                    "${data.currency.symbol}${expense.format()} / ${data.currency.symbol}${limit.format()}",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    color = Color.White, fontSize = 12.sp,
+                )
+            }
+            Text(message, color = Color.White, fontWeight = FontWeight.Black, fontSize = 22.sp, textAlign = TextAlign.Center)
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                MultiBar(label = "Gelir", value = income, max = (income + expense).coerceAtLeast(1.0), color = Color(0xFF22C55E))
+                MultiBar(label = "Gider", value = expense, max = limit, color = Color(0xFFEF4444))
+                if (card != null) MultiBar(label = "${card.name} limit", value = card.balance, max = card.creditLimit.coerceAtLeast(1.0), color = Color(0xFFF59E0B), forceRatio = cardRatio.toDouble())
+            }
+            Spacer(Modifier.height(2.dp))
+            CtaButton("Bütçeye Git", accent, onAction)
+        }
+    }
+}
+
+@Composable
+private fun MultiBar(label: String, value: Double, max: Double, color: Color, forceRatio: Double? = null) {
+    val ratio = (forceRatio ?: (value / max.coerceAtLeast(1.0))).toFloat().coerceIn(0f, 1f)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Text(label, color = Color.White.copy(alpha = 0.85f), fontSize = 11.sp, modifier = Modifier.width(100.dp))
+        Box(modifier = Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(99.dp)).background(Color.White.copy(alpha = 0.15f))) {
+            Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(ratio).clip(RoundedCornerShape(99.dp)).background(color))
+        }
+    }
+}
+
+@Composable
+private fun CtaButton(label: String, accent: Color, onAction: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(99.dp),
+        color = accent.copy(alpha = 0.92f),
+        modifier = Modifier.clickable(onClick = onAction),
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Add, contentDescription = null, tint = Color.Black)
+            Spacer(Modifier.width(6.dp))
+            Text(label, color = Color.Black, fontWeight = FontWeight.Black)
+        }
+    }
+}
+
+@Composable
 private fun BodyArea(
-    skinStreak: Int,
-    waterStreak: Int,
-    mealStreak: Int,
+    skinStreak: StreakInfo,
+    waterStreak: StreakInfo,
+    mealStreak: StreakInfo,
     todayWaterMl: Int,
     waterTarget: Int,
     updates: List<FeedItem>,
     onOpen: (Section) -> Unit,
+    onSeeAll: () -> Unit,
+    onOpenStore: () -> Unit,
+    points: Int,
 ) {
     val shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .offset(y = (-32).dp)
-            .clip(shape),
+        modifier = Modifier.fillMaxWidth().offset(y = (-32).dp).clip(shape),
         shape = shape,
         color = MaterialTheme.colorScheme.background,
         tonalElevation = 0.dp,
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            // Drag handle
+        Column(modifier = Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Box(
                 modifier = Modifier
                     .padding(top = 4.dp)
@@ -1023,27 +1335,25 @@ private fun BodyArea(
                     .clip(RoundedCornerShape(99.dp))
                     .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f)),
             )
-            // Streak strip
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            // Streak rozet satırı
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                StreakChip("Cilt", skinStreak, Color(0xFFFB923C))
-                StreakChip("Su", waterStreak, Color(0xFF38BDF8))
-                StreakChip("Öğün", mealStreak, Color(0xFF22C55E))
+                item { StreakChip("Cilt", skinStreak, Color(0xFFFB923C)) }
+                item { StreakChip("Su", waterStreak, Color(0xFF38BDF8)) }
+                item { StreakChip("Öğün", mealStreak, Color(0xFF22C55E)) }
+                item { PointBadge(points = points, onClick = onOpenStore) }
             }
-            // Latest updates
-            LatestUpdatesSection(updates = updates)
-            // Quick actions
+            LatestUpdatesSection(updates = updates, onSeeAll = onSeeAll)
             QuickActions(onOpen)
-            // Bottom water mini-card
             BodyWaterPill(todayWaterMl, waterTarget, onOpen)
         }
     }
 }
 
 @Composable
-private fun StreakChip(label: String, days: Int, color: Color) {
+private fun StreakChip(label: String, info: StreakInfo, color: Color) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(99.dp))
@@ -1053,9 +1363,26 @@ private fun StreakChip(label: String, days: Int, color: Color) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
-        Text("$days", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+        Text(if (info.isFrozen) "🧊" else "🔥", fontSize = 16.sp)
+        Text("${info.days}", fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
         Text(label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f), fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun PointBadge(points: Int, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(99.dp))
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f))
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f), RoundedCornerShape(99.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(Icons.Filled.ShoppingBag, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+        Text("$points puan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black, fontSize = 13.sp)
     }
 }
 
@@ -1199,18 +1526,23 @@ private fun QuickActions(onOpen: (Section) -> Unit) {
 // region Sections (sleep/meal/skin/homework reused with cleaner styles)
 
 @Composable
-private fun SleepScreen(entries: List<SleepEntry>, profile: Profile, onDelete: (String) -> Unit) {
+private fun SleepScreen(entries: List<SleepEntry>, profile: Profile, onDelete: (String) -> Unit, onEdit: (SleepEntry) -> Unit) {
     val average = entries.mapNotNull { it.duration() }.averageOrZero()
+    var chartKind by rememberSaveable { mutableStateOf(ChartKind.Bar) }
     SectionList(
         title = "Uyku günlüğü",
-        subtitle = "Yatma, uyanma saati ve toplam süreyi takip et.",
+        subtitle = "Yatma, uyanma saati ve toplam süreyi takip et. Sola kaydır: sil, sağa kaydır: düzenle.",
         header = {
-            SleepChart(entries, profile.age)
-            InsightCard("Otomatik karar", sleepStatus(average, profile.age).detail)
+            ChartKindSelector(chartKind) { chartKind = it }
+            SleepChart(entries, profile.age, chartKind)
+            InsightCard("Sana Özel Tavsiye 💡", sleepStatus(average, profile.age).detail)
         },
     ) {
         items(entries) { entry ->
-            DismissibleItem(onDelete = { onDelete(entry.id) }) {
+            EditableDismissibleItem(
+                onDelete = { onDelete(entry.id) },
+                onEdit = { onEdit(entry) },
+            ) {
                 SleepEntryCard(entry = entry, age = profile.age)
             }
         }
@@ -1218,7 +1550,7 @@ private fun SleepScreen(entries: List<SleepEntry>, profile: Profile, onDelete: (
 }
 
 @Composable
-private fun SleepChart(entries: List<SleepEntry>, age: Int) {
+private fun SleepChart(entries: List<SleepEntry>, age: Int, kind: ChartKind = ChartKind.Bar) {
     val target = sleepTarget(age).recommended
     GlassCard {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -1226,36 +1558,129 @@ private fun SleepChart(entries: List<SleepEntry>, age: Int) {
                 Text("Detaylı uyku grafiği", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                 Text("Hedef ${target.oneDecimal()}s", color = MaterialTheme.colorScheme.primary)
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().height(168.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                entries.takeLast(7).forEach { entry ->
-                    val hours = entry.duration() ?: 0.0
-                    val enough = hours >= target
-                    val fraction = (hours / (target + 2)).coerceIn(0.08, 1.0).toFloat()
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.6f)
-                                    .fillMaxHeight(fraction)
-                                    .clip(RoundedCornerShape(99.dp))
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                if (enough) Color(0xFF22C55E) else Color(0xFFEF4444),
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                                            ),
-                                        ),
+            val data = entries.takeLast(7)
+            when (kind) {
+                ChartKind.Bar -> SleepBars(data, target)
+                ChartKind.Line -> SleepLine(data, target)
+                ChartKind.Candle -> SleepCandles(data, target)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SleepBars(data: List<SleepEntry>, target: Double) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(168.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        data.forEach { entry ->
+            val hours = entry.duration() ?: 0.0
+            val enough = hours >= target
+            val fraction = (hours / (target + 2)).coerceIn(0.08, 1.0).toFloat()
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.BottomCenter) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .fillMaxHeight(fraction)
+                            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 6.dp, bottomEnd = 6.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        if (enough) Color(0xFF22C55E) else Color(0xFFEF4444),
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                     ),
-                            )
-                        }
-                        Text("${hours.oneDecimal()}s", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
-                        Text(entry.date.takeLast(5), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
-                    }
+                                ),
+                            ),
+                    )
                 }
+                Text("${hours.oneDecimal()}s", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(entry.date.takeLast(5), fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SleepLine(data: List<SleepEntry>, target: Double) {
+    val accent = MaterialTheme.colorScheme.primary
+    val track = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
+    Canvas(modifier = Modifier.fillMaxWidth().height(168.dp)) {
+        if (data.isEmpty()) return@Canvas
+        val width = size.width
+        val height = size.height
+        val maxHours = (data.maxOf { it.duration() ?: 0.0 }).coerceAtLeast(target + 1)
+        val step = if (data.size > 1) width / (data.size - 1) else 0f
+        for (i in 0..3) {
+            val y = height * i / 3f
+            drawLine(track, Offset(0f, y), Offset(width, y), strokeWidth = 1f)
+        }
+        val points = data.mapIndexed { index, entry ->
+            val hours = entry.duration() ?: 0.0
+            val x = step * index
+            val y = height - ((hours / maxHours).toFloat() * height)
+            Offset(x, y)
+        }
+        for (i in 0 until points.size - 1) {
+            drawLine(accent, points[i], points[i + 1], strokeWidth = 6f, cap = StrokeCap.Round)
+        }
+        points.forEach { p ->
+            drawCircle(accent, radius = 8f, center = p)
+        }
+    }
+}
+
+@Composable
+private fun SleepCandles(data: List<SleepEntry>, target: Double) {
+    val up = Color(0xFF22C55E)
+    val down = Color(0xFFEF4444)
+    Canvas(modifier = Modifier.fillMaxWidth().height(168.dp)) {
+        if (data.isEmpty()) return@Canvas
+        val width = size.width
+        val height = size.height
+        val slot = width / data.size
+        val maxRange = 14.0
+        data.forEachIndexed { index, entry ->
+            val x = slot * index + slot / 2f
+            val hours = entry.duration() ?: 0.0
+            val good = hours >= target
+            val color = if (good) up else down
+            val openY = height * (1 - (hours / maxRange).toFloat()).coerceIn(0.05f, 0.95f)
+            val closeY = height * (1 - ((hours + 0.4) / maxRange).toFloat()).coerceIn(0f, 1f)
+            val highY = height * (1 - ((hours + 1.0) / maxRange).toFloat()).coerceIn(0f, 1f)
+            val lowY = height * (1 - ((hours - 0.5) / maxRange).toFloat()).coerceIn(0f, 1f)
+            drawLine(color, Offset(x, highY), Offset(x, lowY), strokeWidth = 3f)
+            val candleWidth = slot * 0.45f
+            drawRect(
+                color = color,
+                topLeft = Offset(x - candleWidth / 2f, kotlin.math.min(openY, closeY)),
+                size = Size(candleWidth, kotlin.math.abs(closeY - openY).coerceAtLeast(6f)),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChartKindSelector(selected: ChartKind, onSelected: (ChartKind) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+        ChartKind.entries.forEach { kind ->
+            val active = kind == selected
+            Surface(
+                shape = RoundedCornerShape(99.dp),
+                color = if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surface,
+                modifier = Modifier
+                    .border(1.dp, if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), RoundedCornerShape(99.dp))
+                    .clickable { onSelected(kind) },
+            ) {
+                Text(
+                    kind.label,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                )
             }
         }
     }
@@ -1277,11 +1702,16 @@ private fun SleepEntryCard(entry: SleepEntry, age: Int) {
 }
 
 @Composable
-private fun MealScreen(entries: List<MealEntry>, profile: Profile, onDelete: (String) -> Unit) {
+private fun MealScreen(entries: List<MealEntry>, profile: Profile, bowlSkin: String, onDelete: (String) -> Unit) {
+    val today = LocalDate.now().toString()
+    val todayCount = entries.count { it.date == today }
     SectionList(
         title = "Öğünler",
         subtitle = "Yaşa göre besin önerileri ve günlük öğün kayıtları.",
-        header = { InsightCard("Besin önerisi", mealSuggestion(profile.age)) },
+        header = {
+            BowlVisual(skinKey = bowlSkin, fillCount = todayCount)
+            InsightCard("Besin önerisi", mealSuggestion(profile.age))
+        },
     ) {
         items(entries.groupBy { it.date }.toList()) { (date, day) ->
             GlassCard {
@@ -1418,7 +1848,7 @@ private fun HomeworkCard(entry: HomeworkEntry) {
 // region Water module
 
 @Composable
-private fun WaterScreen(entries: List<WaterEntry>, targetMl: Int, onTargetChange: (Int) -> Unit, onDelete: (String) -> Unit) {
+private fun WaterScreen(entries: List<WaterEntry>, targetMl: Int, glassSkin: String, onTargetChange: (Int) -> Unit, onDelete: (String) -> Unit) {
     val today = LocalDate.now().toString()
     val todayMl = entries.filter { it.date == today }.sumOf { it.amountMl }
     val progress = (todayMl.toFloat() / targetMl).coerceIn(0f, 1f)
@@ -1427,6 +1857,7 @@ private fun WaterScreen(entries: List<WaterEntry>, targetMl: Int, onTargetChange
         title = "Su takip",
         subtitle = "Bardak veya ml seçerek kayıt ekle, hedefini takip et.",
         header = {
+            GlassVisual(skinKey = glassSkin, fillRatio = progress, todayMl = todayMl, targetMl = targetMl)
             GlassCard {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
@@ -1504,7 +1935,7 @@ private fun WaterForm(onAdd: (WaterEntry) -> Unit) {
 // region Budget module
 
 @Composable
-private fun BudgetScreen(data: AppData, onUpdate: (AppData) -> Unit) {
+private fun BudgetScreen(data: AppData, onUpdate: (AppData) -> Unit, onOpenVault: (String) -> Unit) {
     val txnsByCategory = data.transactions.filter { !it.category.isIncome }.groupBy { it.category }.mapValues { it.value.sumOf { e -> e.amount } }
     val income = data.transactions.filter { it.category.isIncome }.sumOf { it.amount }
     val expense = data.transactions.filter { !it.category.isIncome }.sumOf { it.amount }
@@ -1541,7 +1972,7 @@ private fun BudgetScreen(data: AppData, onUpdate: (AppData) -> Unit) {
                 }
             }
             if (txnsByCategory.isNotEmpty()) BudgetPieCard(txnsByCategory)
-            VaultCard(data)
+            VaultCard(data, onOpenVault)
         },
     ) {
         items(data.transactions.sortedByDescending { it.date }) { txn ->
@@ -1602,7 +2033,7 @@ private fun BudgetPieCard(byCategory: Map<TxnCategory, Double>) {
 }
 
 @Composable
-private fun VaultCard(data: AppData) {
+private fun VaultCard(data: AppData, onOpenVault: (String) -> Unit) {
     if (data.people.isEmpty()) return
     val perPerson = data.people.map { person ->
         val txns = data.transactions.filter { it.personId == person.id }
@@ -1612,16 +2043,21 @@ private fun VaultCard(data: AppData) {
     }
     GlassCard {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Kasa görünümü", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text("Kasa görünümü 🔐", fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text("Bir kişiye dokun: kart limitleri, hesap bakiyeleri ve detayları aç.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
             perPerson.forEach { (person, income, expense) ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).clickable { onOpenVault(person.id) }.padding(8.dp),
+                ) {
                     Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                        modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
                         contentAlignment = Alignment.Center,
-                    ) { Text(person.name.firstOrNull()?.toString() ?: "?", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black) }
+                    ) { Text("✨", fontSize = 20.sp) }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(person.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text("Gelir ${income.format()} • Gider ${expense.format()}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                        Text("💰 Gelir ${income.format()}${data.currency.symbol} · 💳 Gider ${expense.format()}${data.currency.symbol}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
                     }
                     val net = income - expense
                     Text(
@@ -1770,13 +2206,16 @@ private fun SettingsScreen(
     onPaletteChange: (Palette) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
     onCurrencyChange: (Currency) -> Unit,
+    onBackgroundChange: (String) -> Unit,
     onProfileClick: () -> Unit,
+    onOpenStore: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
 ) {
+    val backgroundOptions = DefaultStoreCatalog.filter { it.category == StoreCategory.Background }
     SectionList(
         title = "Ayarlar",
-        subtitle = "Tema, profil, para birimi ve yedekleme.",
+        subtitle = "Tema, profil, para birimi, mağaza ve yedekleme.",
         header = {
             GlassCard {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -1785,6 +2224,10 @@ private fun SettingsScreen(
                     ChipSelector(ThemeMode.entries, data.themeMode, onThemeModeChange) { it.label }
                     Text("Renk paleti", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 13.sp)
                     ChipSelector(Palette.entries, data.palette, onPaletteChange) { it.label }
+                    Text("Arka plan manzarası", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 13.sp)
+                    ChipSelector(backgroundOptions, backgroundOptions.firstOrNull { it.key == data.selectedBackground } ?: backgroundOptions.first(), { onBackgroundChange(it.key) }) {
+                        if (it.key in data.purchasedItems) "${it.emoji} ${it.label}" else "🔒 ${it.label} (${it.cost} puan)"
+                    }
                 }
             }
             GlassCard {
@@ -1794,6 +2237,11 @@ private fun SettingsScreen(
                         Icon(Icons.Filled.Person, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Profil bilgilerini düzenle")
+                    }
+                    OutlinedButton(onClick = onOpenStore, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Filled.ShoppingBag, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Mağazayı aç (${data.currentPoints} puan)")
                     }
                 }
             }
@@ -1991,36 +2439,41 @@ private fun ProfileForm(profile: Profile, onSave: (Profile) -> Unit) {
 // region Shared UI helpers
 
 @Composable
-private fun TopProfileBar(profile: Profile, onProfile: () -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+private fun TopProfileBar(profile: Profile, points: Int, onProfile: () -> Unit, onPoints: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(99.dp))
+                .background(Color.Black.copy(alpha = 0.45f))
+                .border(1.dp, Color.White.copy(alpha = 0.20f), RoundedCornerShape(99.dp))
+                .clickable(onClick = onPoints)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(Icons.Filled.ShoppingBag, contentDescription = "Mağaza", tint = Color(0xFFFACC15), modifier = Modifier.size(16.dp))
+            Text("$points", color = Color.White, fontWeight = FontWeight.Black, fontSize = 13.sp)
+        }
         Box(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
-                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape)
+                .background(Color.Black.copy(alpha = 0.45f))
+                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape)
                 .clickable(onClick = onProfile),
             contentAlignment = Alignment.Center,
         ) {
             if (profile.photoUri.isNotBlank()) {
                 AsyncImage(profile.photoUri, contentDescription = "Profil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             } else {
-                Icon(Icons.Filled.Person, contentDescription = "Profil", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Filled.Person, contentDescription = "Profil", tint = Color.White)
             }
         }
-        Box(
-            modifier = Modifier
-                .size(42.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
-                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Filled.Notifications, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface) }
     }
 }
 
 @Composable
-private fun GlassBottomBar(selected: Section, onSelect: (Section) -> Unit) {
+private fun GlassBottomBar(selected: Section, onSelect: (Section) -> Unit, currency: Currency = Currency.TRY) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -2055,12 +2508,21 @@ private fun GlassBottomBar(selected: Section, onSelect: (Section) -> Unit) {
                             .background(if (active) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.30f) else Color.Transparent),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(
-                            item.icon,
-                            contentDescription = item.label,
-                            tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
-                            modifier = Modifier.size(20.dp),
-                        )
+                        if (item == Section.Budget) {
+                            Text(
+                                currency.symbol,
+                                color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+                                fontWeight = FontWeight.Black,
+                                fontSize = 18.sp,
+                            )
+                        } else {
+                            Icon(
+                                item.icon,
+                                contentDescription = item.label,
+                                tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
                     }
                     Text(
                         item.short,
@@ -2287,6 +2749,468 @@ private fun appBackground(palette: Palette): Brush {
                 palette.lightSurface,
             ),
         )
+    }
+}
+
+@Composable
+private fun BowlVisual(skinKey: String, fillCount: Int) {
+    val item = DefaultStoreCatalog.firstOrNull { it.key == skinKey } ?: DefaultStoreCatalog.first { it.category == StoreCategory.MealSkin && it.isDefault }
+    val ratio = (fillCount / 4f).coerceIn(0f, 1f)
+    GlassCard {
+        Row(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(
+                modifier = Modifier.size(96.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight(ratio.coerceAtLeast(0.05f)).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)),
+                )
+                Text(item.emoji, fontSize = 56.sp)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(item.label, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
+                Text("Bugün $fillCount öğün eklendi", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f), fontSize = 13.sp)
+                Text("Mağazadan farklı kâseler açabilirsin.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), fontSize = 11.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun GlassVisual(skinKey: String, fillRatio: Float, todayMl: Int, targetMl: Int) {
+    val item = DefaultStoreCatalog.firstOrNull { it.key == skinKey } ?: DefaultStoreCatalog.first { it.category == StoreCategory.WaterSkin && it.isDefault }
+    GlassCard {
+        Row(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(
+                modifier = Modifier.size(96.dp).clip(RoundedCornerShape(28.dp)).background(Color(0xFF38BDF8).copy(alpha = 0.18f)),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight(fillRatio.coerceAtLeast(0.05f)).background(Color(0xFF38BDF8).copy(alpha = 0.45f)),
+                )
+                Text(item.emoji, fontSize = 56.sp)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(item.label, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.onSurface)
+                Text("$todayMl / $targetMl ml", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Text("Mağazadan kristal/mat şişe gibi skinler açılır.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f), fontSize = 11.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditableDismissibleItem(onDelete: () -> Unit, onEdit: () -> Unit, content: @Composable () -> Unit) {
+    val actionWidth = 120.dp
+    val actionWidthPx = with(LocalDensity.current) { actionWidth.toPx() }
+    var offsetPx by remember { mutableFloatStateOf(0f) }
+    val leftReveal = (-offsetPx / actionWidthPx).coerceIn(0f, 1f)
+    val rightReveal = (offsetPx / actionWidthPx).coerceIn(0f, 1f)
+    Box(modifier = Modifier.fillMaxWidth()) {
+        if (leftReveal > 0.04f) {
+            Box(modifier = Modifier.matchParentSize().padding(horizontal = 4.dp), contentAlignment = Alignment.CenterEnd) {
+                Row(
+                    modifier = Modifier
+                        .height(60.dp).width(actionWidth)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color(0xFFEF4444).copy(alpha = leftReveal))
+                        .clickable(enabled = leftReveal > 0.7f) { onDelete() },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    if (leftReveal > 0.45f) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Sil", tint = Color.White)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Sil", color = Color.White, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+        }
+        if (rightReveal > 0.04f) {
+            Box(modifier = Modifier.matchParentSize().padding(horizontal = 4.dp), contentAlignment = Alignment.CenterStart) {
+                Row(
+                    modifier = Modifier
+                        .height(60.dp).width(actionWidth)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color(0xFF2563EB).copy(alpha = rightReveal))
+                        .clickable(enabled = rightReveal > 0.7f) { onEdit(); offsetPx = 0f },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    if (rightReveal > 0.45f) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Düzenle", tint = Color.White)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Düzenle", color = Color.White, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetPx.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            offsetPx = when {
+                                offsetPx < -actionWidthPx * 0.45f -> -actionWidthPx
+                                offsetPx > actionWidthPx * 0.45f -> actionWidthPx
+                                else -> 0f
+                            }
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetPx = (offsetPx + dragAmount).coerceIn(-actionWidthPx, actionWidthPx)
+                        },
+                    )
+                },
+        ) { content() }
+    }
+}
+
+@Composable
+private fun SleepEditForm(initial: SleepEntry, onSave: (SleepEntry) -> Unit) {
+    var date by rememberSaveable { mutableStateOf(initial.date) }
+    var sleptAt by rememberSaveable { mutableStateOf(initial.sleptAt) }
+    var wokeAt by rememberSaveable { mutableStateOf(initial.wokeAt) }
+    FormShell(title = "Uyku düzenle ✏️") {
+        DateField(date, { date = it })
+        TimeField("Uyuma saati", sleptAt, { sleptAt = it })
+        TimeField("Uyanma saati", wokeAt, { wokeAt = it })
+        Button(
+            onClick = { onSave(initial.copy(date = date, sleptAt = sleptAt, wokeAt = wokeAt)) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = date.isValidDate() && sleptAt.isValidTime() && wokeAt.isValidTime(),
+        ) { Text("Güncelle") }
+    }
+}
+
+@Composable
+private fun StoreScreen(data: AppData, onPurchase: (StoreItem) -> Unit, onSelect: (StoreItem) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Text("Mağaza 🛍️", fontWeight = FontWeight.Black, fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)
+            Surface(shape = RoundedCornerShape(99.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)) {
+                Text("${data.currentPoints} puan", modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Black)
+            }
+        }
+        Text("Görevleri tamamlayarak puan kazan, kostümleri ve seri dondurma haklarını mağazadan al.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f), fontSize = 13.sp)
+        StoreCategory.entries.forEach { category ->
+            val items = DefaultStoreCatalog.filter { it.category == category }
+            Text(category.label, fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(items) { item ->
+                    val owned = item.key in data.purchasedItems || item.isDefault
+                    val isSelected = when (item.category) {
+                        StoreCategory.Pet -> data.selectedPet == item.key
+                        StoreCategory.Tree -> data.selectedTree == item.key
+                        StoreCategory.MealSkin -> data.selectedBowl == item.key
+                        StoreCategory.WaterSkin -> data.selectedGlass == item.key
+                        StoreCategory.Background -> data.selectedBackground == item.key
+                        StoreCategory.Freeze -> false
+                    }
+                    StoreItemCard(
+                        item = item,
+                        owned = owned,
+                        selected = isSelected,
+                        onAction = {
+                            if (!owned) onPurchase(item) else if (item.category != StoreCategory.Freeze) onSelect(item) else onPurchase(item)
+                        },
+                    )
+                }
+            }
+        }
+        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Aktif seri dondurma hakkı: ${data.freezePassCount} 🧊", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Görev kaçırırsan otomatik kullanılır; alev yerine buz görseli görünür.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f), fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StoreItemCard(item: StoreItem, owned: Boolean, selected: Boolean, onAction: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(150.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (LocalIsDark.current) 0.5f else 1f))
+            .border(
+                1.dp,
+                if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+                RoundedCornerShape(22.dp),
+            )
+            .clickable(onClick = onAction)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(item.emoji, fontSize = 34.sp)
+        Text(item.label, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center, fontSize = 13.sp)
+        if (item.cost == 0 && item.isDefault) {
+            Text("Ücretsiz", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f), fontSize = 11.sp)
+        } else {
+            Text("${item.cost} puan", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+        }
+        Surface(
+            shape = RoundedCornerShape(99.dp),
+            color = if (selected) MaterialTheme.colorScheme.primary else if (owned) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+        ) {
+            Text(
+                when {
+                    selected -> "Aktif"
+                    owned && item.category == StoreCategory.Freeze -> "+1 al"
+                    owned -> "Seç"
+                    else -> "Satın Al"
+                },
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                color = if (selected || owned) Color.Black else MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Black,
+                fontSize = 12.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ForestScreen(data: AppData, onComplete: (TreeEntry) -> Unit, onSelectTree: (String) -> Unit) {
+    val treeOptions = DefaultStoreCatalog.filter { it.category == StoreCategory.Tree && (it.key in data.purchasedItems || it.isDefault) }
+    val activeTree = treeOptions.firstOrNull { it.key == data.selectedTree } ?: treeOptions.first()
+    val durations = listOf(15, 25, 45, 60)
+    var duration by rememberSaveable { mutableIntStateOf(25) }
+    var running by remember { mutableStateOf(false) }
+    var remainingSec by remember { mutableIntStateOf(duration * 60) }
+
+    LaunchedEffect(running, duration) {
+        if (running) {
+            remainingSec = duration * 60
+            while (running && remainingSec > 0) {
+                kotlinx.coroutines.delay(1000)
+                remainingSec -= 1
+            }
+            if (running && remainingSec <= 0) {
+                running = false
+                onComplete(TreeEntry(newId(), LocalDate.now().toString(), duration, activeTree.key))
+            }
+        }
+    }
+
+    val totalSec = duration * 60
+    val growth = if (running) 1f - (remainingSec.toFloat() / totalSec.coerceAtLeast(1)) else 0f
+    SectionList(
+        title = "Orman 🌳",
+        subtitle = "Odaklan, fidanın büyüsün, puan kazan ve daha nadir tohumlar al.",
+        header = {
+            GlassCard {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(activeTree.emoji, fontSize = (24 + 60 * growth.coerceIn(0f, 1f)).sp)
+                    Text(if (running) "${remainingSec / 60} dk ${remainingSec % 60} sn" else "Hazır", fontWeight = FontWeight.Black, fontSize = 32.sp, color = MaterialTheme.colorScheme.onSurface)
+                    LinearProgressIndicator(
+                        progress = { growth.coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(99.dp)),
+                        color = Color(0xFF22C55E),
+                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+                    )
+                    ChipSelector(durations, duration, { duration = it }) { "$it dk" }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                        Button(onClick = { running = !running; if (!running) remainingSec = duration * 60 }, modifier = Modifier.weight(1f)) {
+                            Icon(if (running) Icons.Filled.Stop else Icons.Filled.PlayArrow, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text(if (running) "Vazgeç" else "Başlat")
+                        }
+                        OutlinedButton(onClick = { running = false; remainingSec = duration * 60 }, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Filled.PauseCircle, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Sıfırla")
+                        }
+                    }
+                }
+            }
+            GlassCard {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Aktif tohum", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(treeOptions) { tree ->
+                            val active = tree.key == activeTree.key
+                            Surface(
+                                shape = RoundedCornerShape(99.dp),
+                                color = if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surface,
+                                modifier = Modifier
+                                    .border(1.dp, if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), RoundedCornerShape(99.dp))
+                                    .clickable { onSelectTree(tree.key) },
+                            ) {
+                                Text(
+                                    "${tree.emoji} ${tree.label}",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+                    Text("Daha fazla tohum için mağazaya bak.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                }
+            }
+            if (data.treeEntries.isNotEmpty()) {
+                GlassCard {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Sanal Ormanın 🌲", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                        FlowRowTrees(entries = data.treeEntries.takeLast(40))
+                        Text("Toplam ${data.treeEntries.size} ağaç · ${data.treeEntries.sumOf { it.durationMinutes }} dk odak.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp)
+                    }
+                }
+            }
+        },
+    ) {}
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FlowRowTrees(entries: List<TreeEntry>) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        entries.forEach { entry ->
+            val tree = DefaultStoreCatalog.firstOrNull { it.key == entry.treeKey } ?: DefaultStoreCatalog.first { it.category == StoreCategory.Tree }
+            Text(tree.emoji, fontSize = 28.sp)
+        }
+    }
+}
+
+@Composable
+private fun AllHistoryScreen(data: AppData, initialFilter: String?, onBack: () -> Unit) {
+    val categories = listOf("Hepsi", "Cilt", "Su", "Uyku", "Öğün", "Bütçe", "Ödev")
+    var selected by rememberSaveable { mutableStateOf(initialFilter ?: "Hepsi") }
+    val items = recentUpdates(data)
+    val filtered = items.filter {
+        when (selected) {
+            "Hepsi" -> true
+            "Cilt" -> it.title.contains("Cilt") || it.title.contains("fotoğraf")
+            "Su" -> it.title.contains("ml")
+            "Uyku" -> it.title.contains("Uyku")
+            "Öğün" -> it.title.contains("Sabah") || it.title.contains("Öğle") || it.title.contains("Akşam") || it.title.contains("Ara Öğün")
+            "Bütçe" -> it.title.contains("Maaş") || it.title.contains("Kira") || it.title.contains("Elektrik") || it.title.contains("Su Faturası") || it.title.contains("Doğalgaz") || it.title.contains("Market") || it.title.contains("Abonelik") || it.title.contains("Diğer")
+            "Ödev" -> it.subtitle.contains("Teslim:")
+            else -> true
+        }
+    }
+    SectionList(
+        title = "Geçmiş",
+        subtitle = "Tüm modüllerden gelen kayıtları kategoriye göre filtrele.",
+        header = {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(categories) { cat ->
+                    val active = cat == selected
+                    Surface(
+                        shape = RoundedCornerShape(99.dp),
+                        color = if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surface,
+                        modifier = Modifier
+                            .border(1.dp, if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), RoundedCornerShape(99.dp))
+                            .clickable { selected = cat },
+                    ) {
+                        Text(
+                            cat,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
+            }
+        },
+    ) {
+        items(filtered) { item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(item.tint.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(item.icon, contentDescription = null, tint = item.tint) }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(item.title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(item.subtitle, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VaultDetailScreen(data: AppData, person: BudgetPerson) {
+    val txns = data.transactions.filter { it.personId == person.id }
+    val income = txns.filter { it.category.isIncome }.sumOf { it.amount }
+    val expense = txns.filter { !it.category.isIncome }.sumOf { it.amount }
+    val cards = data.accounts.filter { it.personId == person.id && it.type == AccountType.Card }
+    val banks = data.accounts.filter { it.personId == person.id && it.type == AccountType.Bank }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(
+                modifier = Modifier.size(56.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) { Text("✨", fontSize = 24.sp) }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(person.name, fontWeight = FontWeight.Black, fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text("Net ${(income - expense).format()}${data.currency.symbol}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+            }
+        }
+        Text("Kredi Kartları 💳", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+        if (cards.isEmpty()) {
+            Text("Bu kişide kredi kartı yok.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+        } else {
+            cards.forEach { card ->
+                val remaining = (card.creditLimit - card.balance).coerceAtLeast(0.0)
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surface).padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Filled.CreditCard, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(card.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Limit ${card.creditLimit.format()} · Kalan ${remaining.format()}${data.currency.symbol}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                        Text("Bu ay borç ${card.dueAmount.format()}${data.currency.symbol}", fontSize = 12.sp, color = Color(0xFFEF4444))
+                    }
+                }
+            }
+        }
+        Text("Banka Hesapları 🏦", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+        if (banks.isEmpty()) {
+            Text("Bu kişide banka hesabı yok.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+        } else {
+            banks.forEach { bank ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surface).padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Filled.AccountBalance, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(bank.name, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Bakiye ${bank.balance.format()}${data.currency.symbol}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                    }
+                }
+            }
+        }
     }
 }
 
