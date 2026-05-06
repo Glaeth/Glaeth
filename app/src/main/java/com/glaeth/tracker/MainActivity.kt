@@ -24,8 +24,13 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +59,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CreditCard
@@ -702,77 +708,337 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
 
 // region Dashboard
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DashboardScreen(data: AppData, onOpen: (Section) -> Unit, onProfile: () -> Unit) {
     val skinStreak = computeStreak(data.skinEntries.map { it.date })
     val waterStreak = computeStreak(data.waterEntries.map { it.date }.distinct())
     val mealStreak = computeStreak(data.mealEntries.map { it.date }.distinct())
-    val averageSleep = data.sleepEntries.mapNotNull { it.duration() }.averageOrZero()
-    val sleepReport = sleepStatus(averageSleep, data.profile.age)
     val today = LocalDate.now().toString()
     val todayWaterMl = data.waterEntries.filter { it.date == today }.sumOf { it.amountMl }
-    val waterProgress = (todayWaterMl.toFloat() / data.waterTargetMl.coerceAtLeast(1)).coerceIn(0f, 1f)
-    val recent = recentUpdates(data).take(5)
+    val recent = recentUpdates(data).take(6)
+    val pages = remember(data) { dashboardPages(data) }
+    val pagerState = rememberPagerState(pageCount = { pages.size })
+    val scrollState = rememberScrollState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(0.dp, 24.dp, 0.dp, 120.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        item {
-            Column(modifier = Modifier.padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                val greet = timeBasedGreeting()
-                Text(greet.first, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.72f), fontSize = 16.sp)
-                Text(
-                    data.profile.name.ifBlank { "Glaeth" },
-                    fontWeight = FontWeight.Black,
-                    fontSize = 36.sp,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        }
-        item {
-            StreakStrip(skinStreak = skinStreak, waterStreak = waterStreak, mealStreak = mealStreak)
-        }
-        item {
-            HeroScoreCard(
-                skinDays = data.skinEntries.size,
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
+            ScenicHeader(
+                profileName = data.profile.name.ifBlank { "Glaeth" },
+                pages = pages,
+                pagerState = pagerState,
+                onAction = onOpen,
+            )
+            BodyArea(
                 skinStreak = skinStreak,
-                waterMlToday = todayWaterMl,
+                waterStreak = waterStreak,
+                mealStreak = mealStreak,
+                todayWaterMl = todayWaterMl,
                 waterTarget = data.waterTargetMl,
-                onOpenSkin = { onOpen(Section.Skin) },
+                updates = recent,
+                onOpen = onOpen,
             )
+            Spacer(Modifier.height(120.dp))
         }
-        item {
-            QuickStatsRow(
-                averageSleepText = "${averageSleep.oneDecimal()} sa",
-                sleepReport = sleepReport.title,
-                waterPercent = (waterProgress * 100).roundToInt(),
-                budgetUsed = monthlyExpense(data),
-                currency = data.currency,
-            )
-        }
-        item {
-            LatestUpdatesSection(updates = recent, onSeeAll = { /* simple no-op for now */ })
-        }
-        item {
-            QuickActions(onOpen)
+    }
+}
+
+private data class DashboardPage(
+    val title: String,
+    val subtitle: String,
+    val score: Int,
+    val maxScore: Int,
+    val accent: Color,
+    val updateLabel: String,
+    val ctaLabel: String,
+    val targetSection: Section,
+)
+
+private fun dashboardPages(data: AppData): List<DashboardPage> {
+    val today = LocalDate.now().toString()
+    val skinDays = data.skinEntries.size
+    val skinScore = skinDays.coerceAtMost(1000)
+    val skinUpdate = data.skinEntries.maxByOrNull { it.date }?.date?.let { "Son fotoğraf $it" } ?: "Henüz fotoğraf yok"
+    val todayMl = data.waterEntries.filter { it.date == today }.sumOf { it.amountMl }
+    val waterScore = ((todayMl.toFloat() / data.waterTargetMl.coerceAtLeast(1)) * 1000).toInt().coerceIn(0, 1000)
+    val waterUpdate = "$todayMl / ${data.waterTargetMl} ml bugün"
+    val expense = monthlyExpense(data)
+    val income = data.transactions.filter { it.category.isIncome }.sumOf { it.amount }
+    val budgetMax = if (data.budgetLimit > 0) data.budgetLimit else (income.coerceAtLeast(1.0))
+    val ratio = (1.0 - (expense / budgetMax).coerceIn(0.0, 1.0)).coerceIn(0.0, 1.0)
+    val budgetScore = (ratio * 1000).toInt()
+    val budgetUpdate = "${data.currency.symbol}${expense.format()} bu ay gider"
+
+    return listOf(
+        DashboardPage(
+            title = "Cilt Skoru",
+            subtitle = "Eklenen yüz fotoğrafı",
+            score = skinScore,
+            maxScore = 1000,
+            accent = Color(0xFFFB923C),
+            updateLabel = skinUpdate,
+            ctaLabel = "Detayları Gör",
+            targetSection = Section.Skin,
+        ),
+        DashboardPage(
+            title = "Su Hedefi",
+            subtitle = "Günlük hedefe ilerleme",
+            score = waterScore,
+            maxScore = 1000,
+            accent = Color(0xFF38BDF8),
+            updateLabel = waterUpdate,
+            ctaLabel = "Su Geçmişi",
+            targetSection = Section.Water,
+        ),
+        DashboardPage(
+            title = "Bütçe Sağlığı",
+            subtitle = if (data.budgetLimit > 0) "Aylık limit kullanımı" else "Aylık gider/gelir oranı",
+            score = budgetScore,
+            maxScore = 1000,
+            accent = Color(0xFF14B8A6),
+            updateLabel = budgetUpdate,
+            ctaLabel = "Bütçeye Git",
+            targetSection = Section.Budget,
+        ),
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ScenicHeader(
+    profileName: String,
+    pages: List<DashboardPage>,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    onAction: (Section) -> Unit,
+) {
+    val isDark = LocalIsDark.current
+    val skyColors = if (isDark) {
+        listOf(
+            Color(0xFF1E1B4B),
+            Color(0xFF312E81),
+            Color(0xFF155E75),
+            Color(0xFF0F3D45),
+        )
+    } else {
+        listOf(
+            Color(0xFF7C3AED),
+            Color(0xFFEC4899),
+            Color(0xFFF97316),
+            Color(0xFF14B8A6),
+        )
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(610.dp)
+            .background(Brush.verticalGradient(skyColors)),
+    ) {
+        // Subtle wave layer at the bottom for ocean feeling
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color(0xFF0F4C5C).copy(alpha = 0.55f),
+                            Color(0xFF0E2939).copy(alpha = 0.85f),
+                        ),
+                    ),
+                ),
+        )
+        Column(modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(top = 6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
+                    val greet = timeBasedGreeting()
+                    Text(
+                        greet.first,
+                        color = Color.White.copy(alpha = 0.92f),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                    )
+                    Text(
+                        profileName,
+                        color = Color.White,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 38.sp,
+                    )
+                }
+                Spacer(Modifier.width(80.dp)) // reserved for the global TopProfileBar overlay
+            }
+            Spacer(Modifier.height(8.dp))
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 36.dp),
+                pageSpacing = 12.dp,
+            ) { page ->
+                ScorePageCard(page = pages[page], onAction = { onAction(pages[page].targetSection) })
+            }
+            Spacer(Modifier.height(14.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                repeat(pages.size) { index ->
+                    val active = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(if (active) 9.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(if (active) Color.White else Color.White.copy(alpha = 0.45f)),
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun StreakStrip(skinStreak: Int, waterStreak: Int, mealStreak: Int) {
-    Row(
+private fun ScorePageCard(page: DashboardPage, onAction: () -> Unit) {
+    val animated by animateFloatAsState(
+        targetValue = (page.score.toFloat() / page.maxScore.coerceAtLeast(1)).coerceIn(0f, 1f),
+        label = "scoreArc",
+    )
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
+            .height(360.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        StreakChip(label = "Cilt", days = skinStreak, color = Color(0xFFFB923C))
-        StreakChip(label = "Su", days = waterStreak, color = Color(0xFF38BDF8))
-        StreakChip(label = "Öğün", days = mealStreak, color = Color(0xFF22C55E))
+        Box(
+            modifier = Modifier
+                .size(320.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.12f))
+                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Canvas(modifier = Modifier.size(296.dp)) {
+                val stroke = 14.dp.toPx()
+                drawArc(
+                    color = Color.White.copy(alpha = 0.18f),
+                    startAngle = 135f,
+                    sweepAngle = 270f,
+                    useCenter = false,
+                    topLeft = Offset(stroke / 2, stroke / 2),
+                    size = Size(size.width - stroke, size.height - stroke),
+                    style = Stroke(width = stroke, cap = StrokeCap.Round),
+                )
+                drawArc(
+                    color = page.accent,
+                    startAngle = 135f,
+                    sweepAngle = 270f * animated,
+                    useCenter = false,
+                    topLeft = Offset(stroke / 2, stroke / 2),
+                    size = Size(size.width - stroke, size.height - stroke),
+                    style = Stroke(width = stroke, cap = StrokeCap.Round),
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(99.dp),
+                    color = Color.Black.copy(alpha = 0.45f),
+                ) {
+                    Text(
+                        page.updateLabel,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        color = Color.White,
+                        fontSize = 12.sp,
+                    )
+                }
+                Text(
+                    "${page.score}",
+                    color = Color.White,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 64.sp,
+                )
+                Text(
+                    "${page.title} · ${page.maxScore} üzerinden",
+                    color = Color.White.copy(alpha = 0.78f),
+                    fontSize = 12.sp,
+                )
+                Spacer(Modifier.height(6.dp))
+                Surface(
+                    shape = RoundedCornerShape(99.dp),
+                    color = page.accent.copy(alpha = 0.92f),
+                    modifier = Modifier.clickable(onClick = onAction),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null, tint = Color.Black)
+                        Spacer(Modifier.width(6.dp))
+                        Text(page.ctaLabel, color = Color.Black, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BodyArea(
+    skinStreak: Int,
+    waterStreak: Int,
+    mealStreak: Int,
+    todayWaterMl: Int,
+    waterTarget: Int,
+    updates: List<FeedItem>,
+    onOpen: (Section) -> Unit,
+) {
+    val shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .offset(y = (-32).dp)
+            .clip(shape),
+        shape = shape,
+        color = MaterialTheme.colorScheme.background,
+        tonalElevation = 0.dp,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(top = 22.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            // Drag handle
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .align(Alignment.CenterHorizontally)
+                    .width(48.dp)
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(99.dp))
+                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f)),
+            )
+            // Streak strip
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            ) {
+                StreakChip("Cilt", skinStreak, Color(0xFFFB923C))
+                StreakChip("Su", waterStreak, Color(0xFF38BDF8))
+                StreakChip("Öğün", mealStreak, Color(0xFF22C55E))
+            }
+            // Latest updates
+            LatestUpdatesSection(updates = updates)
+            // Quick actions
+            QuickActions(onOpen)
+            // Bottom water mini-card
+            BodyWaterPill(todayWaterMl, waterTarget, onOpen)
+        }
     }
 }
 
@@ -781,7 +1047,7 @@ private fun StreakChip(label: String, days: Int, color: Color) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(99.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.78f else 1f))
+            .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, color.copy(alpha = 0.55f), RoundedCornerShape(99.dp))
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -794,120 +1060,31 @@ private fun StreakChip(label: String, days: Int, color: Color) {
 }
 
 @Composable
-private fun HeroScoreCard(skinDays: Int, skinStreak: Int, waterMlToday: Int, waterTarget: Int, onOpenSkin: () -> Unit) {
-    val target = 1000
-    val scoreValue = skinDays.coerceAtMost(target)
-    val animated by animateFloatAsState(targetValue = (scoreValue.toFloat() / target).coerceIn(0f, 1f), label = "score")
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 22.dp)
-            .clip(RoundedCornerShape(34.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.80f else 1f),
-                    ),
-                ),
-            )
-            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.30f), RoundedCornerShape(34.dp))
-            .clickable(onClick = onOpenSkin)
-            .padding(20.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("Cilt yolculuğu", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.LocalFireDepartment, contentDescription = null, tint = Color(0xFFFB923C))
-                    Spacer(Modifier.width(4.dp))
-                    Text("$skinStreak günlük seri", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.78f), fontSize = 13.sp)
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                Box(modifier = Modifier.size(150.dp), contentAlignment = Alignment.Center) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val stroke = 14.dp.toPx()
-                        drawArc(
-                            color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.12f),
-                            startAngle = 130f, sweepAngle = 280f,
-                            useCenter = false,
-                            topLeft = Offset(stroke / 2, stroke / 2),
-                            size = Size(size.width - stroke, size.height - stroke),
-                            style = Stroke(width = stroke, cap = StrokeCap.Round),
-                        )
-                        drawArc(
-                            color = androidx.compose.ui.graphics.Color(0xFFFB923C),
-                            startAngle = 130f, sweepAngle = 280f * animated,
-                            useCenter = false,
-                            topLeft = Offset(stroke / 2, stroke / 2),
-                            size = Size(size.width - stroke, size.height - stroke),
-                            style = Stroke(width = stroke, cap = StrokeCap.Round),
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$skinDays", fontWeight = FontWeight.Black, fontSize = 44.sp, color = MaterialTheme.colorScheme.onBackground)
-                        Text("/ $target gün", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.62f), fontSize = 12.sp)
-                    }
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
-                    HeroPill("Bugün su", "$waterMlToday / $waterTarget ml", Icons.Filled.WaterDrop)
-                    HeroPill("Cilt arşivi", "$skinDays gün fotoğraf", Icons.Filled.Face)
-                    HeroPill("Aktif seri", "$skinStreak gün üst üste", Icons.Filled.LocalFireDepartment)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeroPill(title: String, value: String, icon: ImageVector) {
+private fun BodyWaterPill(todayMl: Int, target: Int, onOpen: (Section) -> Unit) {
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.55f else 0.82f))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(value, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
-            Text(title, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f), fontSize = 11.sp)
-        }
-    }
-}
-
-@Composable
-private fun QuickStatsRow(averageSleepText: String, sleepReport: String, waterPercent: Int, budgetUsed: Double, currency: Currency) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 22.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { StatTile("Ort. uyku", averageSleepText, sleepReport, Icons.Filled.DateRange) }
-        item { StatTile("Su", "$waterPercent%", "Günlük hedef", Icons.Filled.WaterDrop) }
-        item { StatTile("Bütçe", "${currency.symbol}${budgetUsed.format()}", "Bu ay gider", Icons.Filled.AttachMoney) }
-        item { StatTile("Ödev", "Yaklaşan", "Pano", Icons.Filled.School) }
-    }
-}
-
-@Composable
-private fun StatTile(title: String, value: String, helper: String, icon: ImageVector) {
-    Column(
-        modifier = Modifier
-            .width(160.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.85f else 1f))
+            .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), RoundedCornerShape(22.dp))
+            .clickable { onOpen(Section.Water) }
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Text(value, fontWeight = FontWeight.Black, fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-        Text(title, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f), fontSize = 13.sp)
-        Text(helper, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), fontSize = 11.sp, maxLines = 1)
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF38BDF8).copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Filled.WaterDrop, contentDescription = null, tint = Color(0xFF38BDF8)) }
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Bugün $todayMl / $target ml su", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text("Aç ve hızlıca bardak ekle", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+        }
+        Icon(Icons.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
     }
 }
 
@@ -938,11 +1115,11 @@ private fun recentUpdates(data: AppData): List<FeedItem> {
 }
 
 @Composable
-private fun LatestUpdatesSection(updates: List<FeedItem>, onSeeAll: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun LatestUpdatesSection(updates: List<FeedItem>, onSeeAll: () -> Unit = {}) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text("Son güncellemeler", fontWeight = FontWeight.Black, fontSize = 22.sp, color = MaterialTheme.colorScheme.onBackground)
-            TextButton(onClick = onSeeAll) { Text("Tümü") }
+            TextButton(onClick = onSeeAll) { Text("Tümü", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) }
         }
         if (updates.isEmpty()) {
             Surface(
@@ -987,7 +1164,7 @@ private fun LatestUpdatesSection(updates: List<FeedItem>, onSeeAll: () -> Unit) 
 
 @Composable
 private fun QuickActions(onOpen: (Section) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Hızlı erişim", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(listOf(Section.Sleep, Section.Meals, Section.Water, Section.Skin, Section.Homework, Section.Budget, Section.Settings)) { section ->
@@ -1848,30 +2025,50 @@ private fun GlassBottomBar(selected: Section, onSelect: (Section) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), RoundedCornerShape(28.dp)),
+            .padding(horizontal = 0.dp, vertical = 0.dp)
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
         tonalElevation = 0.dp,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = if (LocalIsDark.current) 0.94f else 1f),
+        color = MaterialTheme.colorScheme.surface,
     ) {
         LazyRow(
-            contentPadding = PaddingValues(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items(Section.entries) { item ->
                 val active = item == selected
-                Row(
+                Column(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f) else Color.Transparent)
+                        .width(78.dp)
+                        .clip(RoundedCornerShape(18.dp))
                         .clickable { onSelect(item) }
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        .padding(vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Icon(item.icon, contentDescription = item.label, tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
-                    Text(item.short, color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontSize = 12.sp, maxLines = 1)
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(if (active) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.30f) else Color.Transparent),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            item.icon,
+                            contentDescription = item.label,
+                            tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Text(
+                        item.short,
+                        color = if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
+                        fontSize = 11.sp,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                    )
                 }
             }
         }
