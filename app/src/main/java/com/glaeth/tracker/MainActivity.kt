@@ -121,6 +121,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -147,6 +148,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Canvas
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -421,8 +425,11 @@ private class GlaethDatabase(context: Context) : SQLiteOpenHelper(context.applic
         db.execSQL("CREATE TABLE app_state (state_key TEXT PRIMARY KEY, payload TEXT NOT NULL)")
     }
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS app_state")
-        onCreate(db)
+        // app_state schema is stable across versions; new fields live in version-tolerant JSON.
+        // Never DROP user data on upgrade — that wiped local trackers when version went 1 → 2.
+    }
+    override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // Keep existing payload; decode path uses opt* defaults for missing keys.
     }
 }
 
@@ -441,6 +448,15 @@ private class AppRepository(context: Context) {
             put("payload", encode(data).toString())
         }
         database.writableDatabase.insertWithOnConflict("app_state", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    /** Parse a backup JSON without writing. Rejects payloads that are not Glaeth backups. */
+    fun importFromJson(text: String): AppData {
+        val root = JSONObject(text)
+        if (!isGlaethBackup(root)) {
+            error("Unrecognized Glaeth backup")
+        }
+        return decode(root)
     }
 
     private fun decode(root: JSONObject): AppData = AppData(
@@ -540,6 +556,14 @@ private class AppRepository(context: Context) {
         .put("selectedBowl", data.selectedBowl)
         .put("selectedGlass", data.selectedGlass)
         .put("selectedBackground", data.selectedBackground)
+}
+
+internal fun isGlaethBackup(root: JSONObject): Boolean {
+    val markerKeys = listOf(
+        "sleep", "meals", "skin", "homework", "water", "people",
+        "accounts", "transactions", "trees", "profile", "currentPoints", "waterTargetMl",
+    )
+    return markerKeys.any { root.has(it) }
 }
 
 private fun demoData(): AppData {
@@ -656,9 +680,15 @@ private fun GlaethRoot() {
     val context = LocalContext.current
     val repository = remember { AppRepository(context) }
     var data by remember { mutableStateOf(repository.load()) }
+    val saveMutex = remember { Mutex() }
 
-    LaunchedEffect(data) {
-        withContext(Dispatchers.IO) { repository.save(data) }
+    // Serialize persistence so rapid edits cannot finish out of order and overwrite newer state.
+    LaunchedEffect(Unit) {
+        snapshotFlow { data }.collectLatest { latest ->
+            saveMutex.withLock {
+                withContext(Dispatchers.IO) { repository.save(latest) }
+            }
+        }
     }
 
     GlaethTheme(palette = data.palette, themeMode = data.themeMode) {
@@ -697,22 +727,10 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
             runCatching {
                 context.contentResolver.openInputStream(it)?.use { input ->
                     val text = BufferedReader(InputStreamReader(input)).readText()
-                    val tempData = repository.let { repo ->
-                        // reuse decode via writing to db then reading
-                        runCatching {
-                            val tempJson = JSONObject(text)
-                            // delegate to repository's private decode through reflection-free approach: re-save then load
-                            // simpler: temporarily save into prefs; here just write & reload
-                            val helper = GlaethDatabase(context)
-                            val cv = ContentValues().apply {
-                                put("state_key", "main")
-                                put("payload", tempJson.toString())
-                            }
-                            helper.writableDatabase.insertWithOnConflict("app_state", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
-                            repo.load()
-                        }.getOrThrow()
-                    }
-                    updateData(tempData)
+                    // Decode and validate before touching the DB so a bad file cannot wipe local data.
+                    val imported = repository.importFromJson(text)
+                    repository.save(imported)
+                    updateData(imported)
                 }
             }.onSuccess {
                 Toast.makeText(context, "Yedek geri yüklendi", Toast.LENGTH_SHORT).show()
