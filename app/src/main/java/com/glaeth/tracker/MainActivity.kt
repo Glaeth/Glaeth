@@ -119,6 +119,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -674,6 +675,9 @@ private fun GlaethRoot() {
 @Composable
 private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: AppRepository) {
     val context = LocalContext.current
+    // Keep a live view of app state for long-lived callbacks (e.g. forest timer) so they
+    // cannot overwrite newer purchases/edits with a snapshot from when the timer started.
+    val latestData by rememberUpdatedState(data)
     var section by rememberSaveable { mutableStateOf(Section.Dashboard) }
     var sheet by remember { mutableStateOf<Section?>(null) }
     var profileSheet by remember { mutableStateOf(false) }
@@ -785,12 +789,7 @@ private fun GlaethApp(data: AppData, updateData: (AppData) -> Unit, repository: 
                     Section.Forest -> ForestScreen(
                         data = data,
                         onComplete = { entry ->
-                            updateData(
-                                data.copy(
-                                    treeEntries = data.treeEntries + entry,
-                                    currentPoints = data.currentPoints + entry.durationMinutes,
-                                ),
-                            )
+                            updateData(applyForestCompletion(latestData, entry))
                             Toast.makeText(context, "+${entry.durationMinutes} puan kazandın", Toast.LENGTH_SHORT).show()
                         },
                         onSelectTree = { key -> updateData(data.copy(selectedTree = key)) },
@@ -2987,9 +2986,12 @@ private fun ForestScreen(data: AppData, onComplete: (TreeEntry) -> Unit, onSelec
     var duration by rememberSaveable { mutableIntStateOf(25) }
     var running by remember { mutableStateOf(false) }
     var remainingSec by remember { mutableIntStateOf(duration * 60) }
+    val latestOnComplete by rememberUpdatedState(onComplete)
 
     LaunchedEffect(running, duration) {
         if (running) {
+            // Seed is fixed for this session from the composition that started the timer.
+            val sessionTreeKey = activeTree.key
             remainingSec = duration * 60
             while (running && remainingSec > 0) {
                 kotlinx.coroutines.delay(1000)
@@ -2997,7 +2999,7 @@ private fun ForestScreen(data: AppData, onComplete: (TreeEntry) -> Unit, onSelec
             }
             if (running && remainingSec <= 0) {
                 running = false
-                onComplete(TreeEntry(newId(), LocalDate.now().toString(), duration, activeTree.key))
+                latestOnComplete(TreeEntry(newId(), LocalDate.now().toString(), duration, sessionTreeKey))
             }
         }
     }
@@ -3302,5 +3304,11 @@ private fun <T> JSONArray?.mapJsonObjects(transform: (JSONObject) -> T): List<T>
 }
 
 private fun newId(): String = UUID.randomUUID().toString()
+
+/** Merge a completed forest focus session into the latest app state (avoids stale-snapshot overwrites). */
+private fun applyForestCompletion(data: AppData, entry: TreeEntry): AppData = data.copy(
+    treeEntries = data.treeEntries + entry,
+    currentPoints = data.currentPoints + entry.durationMinutes,
+)
 
 // endregion
