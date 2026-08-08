@@ -2113,6 +2113,17 @@ private fun BudgetForm(data: AppData, onSave: (AppData) -> Unit) {
     var date by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
     var budgetLimit by rememberSaveable { mutableStateOf(data.budgetLimit.takeIf { it > 0 }?.toString().orEmpty()) }
 
+    // ChipSelector falls back visually to the person's first account, but selectedAccountId can
+    // still point at another person's account after a person switch — keep them in sync.
+    LaunchedEffect(selectedPersonId, accounts.map { it.id to it.personId }) {
+        selectedAccountId = resolveAccountIdForPerson(
+            accountIds = accounts.map { it.id },
+            accountPersonIds = accounts.map { it.personId },
+            personId = selectedPersonId,
+            selectedAccountId = selectedAccountId,
+        )
+    }
+
     FormShell(title = "Bütçe ekle") {
         Text("Kişi seç (Kasa)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         ChipSelector(people.toList(), people.firstOrNull { it.id == selectedPersonId } ?: people.firstOrNull(), { p -> p?.let { selectedPersonId = it.id } }) { it?.name ?: "" }
@@ -2156,11 +2167,17 @@ private fun BudgetForm(data: AppData, onSave: (AppData) -> Unit) {
         Button(
             onClick = {
                 val parsed = amount.toDoubleOrNull()
+                val accountId = resolveAccountIdForPerson(
+                    accountIds = accounts.map { it.id },
+                    accountPersonIds = accounts.map { it.personId },
+                    personId = selectedPersonId,
+                    selectedAccountId = selectedAccountId,
+                )
                 val newTxn = if (parsed != null && parsed > 0 && selectedPersonId.isNotBlank()) {
                     TxnEntry(
                         id = newId(),
                         personId = selectedPersonId,
-                        accountId = selectedAccountId,
+                        accountId = accountId,
                         category = category,
                         amount = parsed,
                         currency = data.currency,
@@ -2870,9 +2887,10 @@ private fun EditableDismissibleItem(onDelete: () -> Unit, onEdit: () -> Unit, co
 
 @Composable
 private fun SleepEditForm(initial: SleepEntry, onSave: (SleepEntry) -> Unit) {
-    var date by rememberSaveable { mutableStateOf(initial.date) }
-    var sleptAt by rememberSaveable { mutableStateOf(initial.sleptAt) }
-    var wokeAt by rememberSaveable { mutableStateOf(initial.wokeAt) }
+    // Key by entry id so reopening the sheet for another row does not restore the previous edit.
+    var date by rememberSaveable(initial.id) { mutableStateOf(initial.date) }
+    var sleptAt by rememberSaveable(initial.id) { mutableStateOf(initial.sleptAt) }
+    var wokeAt by rememberSaveable(initial.id) { mutableStateOf(initial.wokeAt) }
     FormShell(title = "Uyku düzenle ✏️") {
         DateField(date, { date = it })
         TimeField("Uyuma saati", sleptAt, { sleptAt = it })
