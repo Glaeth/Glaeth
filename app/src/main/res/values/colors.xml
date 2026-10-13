@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="smile_yellow">#FFC107</color>
+    <color name="smile_yellow_dark">#FFA000</color>
+    <color name="smile_green">#4CAF50</color>
+    <color name="whatsapp_green">#25D366</color>
+    <color name="ink_dark">#1F2430</color>
+    <color name="ink_light">#5B6472</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="background_light">#FFF8E1</color>
+    <color name="card_stroke">#F0E0A8</color>
+    <color name="danger_red">#E53935</color>
+
+    <color name="background_dark">#121212</color>
+</resources>

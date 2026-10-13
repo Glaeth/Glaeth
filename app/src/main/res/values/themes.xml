@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ClipSmile" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/smile_yellow</item>
+        <item name="colorPrimaryVariant">@color/smile_yellow_dark</item>
+        <item name="colorOnPrimary">@color/ink_dark</item>
+        <item name="colorSecondary">@color/whatsapp_green</item>
+        <item name="colorSecondaryVariant">@color/whatsapp_green</item>
+        <item name="colorOnSecondary">@color/surface_light</item>
+        <item name="android:statusBarColor">@color/smile_yellow_dark</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/background_light</item>
+    </style>
+</resources>

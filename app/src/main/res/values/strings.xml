@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">:)</string>
+
+    <string name="empty_state_title">Henüz bir şey kopyalamadınız</string>
+    <string name="empty_state_subtitle">Herhangi bir uygulamada bir metin kopyaladığınızda burada alt alta listelenecek.</string>
+
+    <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
+    <string name="action_clear_all">Tümünü Temizle</string>
+    <string name="action_copy">Kopyala</string>
+    <string name="action_share_item">WhatsApp\'a gönder</string>
+    <string name="action_delete_item">Sil</string>
+    <string name="action_undo">Geri Al</string>
+
+    <string name="monitoring_on">Pano izleniyor</string>
+    <string name="monitoring_off">Pano izlenmiyor</string>
+
+    <string name="notification_channel_name">Pano İzleme</string>
+    <string name="notification_channel_description">Kopyaladığınız metinleri kaydetmek için panoyu izler</string>
+    <string name="notification_title">:) panoyu izliyor</string>
+    <string name="notification_text">Kopyaladığınız her şey otomatik olarak kaydediliyor</string>
+
+    <string name="clear_all_confirm_title">Tümünü silmek istiyor musunuz?</string>
+    <string name="clear_all_confirm_message">Kaydedilen bütün kopyalar kalıcı olarak silinecek.</string>
+    <string name="action_cancel">Vazgeç</string>
+    <string name="action_confirm_delete">Sil</string>
+
+    <string name="delete_item_confirm_title">Bu kaydı silmek istiyor musunuz?</string>
+
+    <string name="toast_copied_to_clipboard">Panoya kopyalandı</string>
+    <string name="toast_nothing_to_send">Gönderilecek kayıt yok</string>
+    <string name="toast_whatsapp_not_found">WhatsApp yüklü değil</string>
+    <string name="toast_item_deleted">Kayıt silindi</string>
+    <string name="toast_all_cleared">Tüm kayıtlar silindi</string>
+
+    <string name="whatsapp_share_chooser_title">Gönder</string>
+
+    <string name="content_desc_more_options">Daha fazla seçenek</string>
+</resources>
