@@ -5,20 +5,21 @@ import android.app.Service
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.ClipSmileApp
 import com.clipsmile.app.R
-import com.clipsmile.app.data.ClipRepository
-import com.clipsmile.app.data.RemoteSyncManager
+import com.clipsmile.app.ui.ClipboardCaptureActivity
 import com.clipsmile.app.ui.MainActivity
+import com.clipsmile.app.util.ClipCapturePipeline
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 /**
  * Foreground service that keeps a [ClipboardManager.OnPrimaryClipChangedListener]
@@ -26,16 +27,13 @@ import kotlinx.coroutines.launch
  * happens, without requiring the user to keep the app open.
  *
  * Note: starting with Android 10 (API 29), the platform only delivers
- * clipboard content to the app that currently has input focus (or is the
- * default IME), as a privacy protection. This service still captures copies
- * made while [MainActivity] is in the foreground and copies made right
- * before switching back to this app; [MainActivity] also registers its own
- * listener while visible as a reliable fallback.
+ * clipboard content to the app that currently has input focus. When this
+ * app is not in front, the service cannot read the text itself and instead
+ * opens [ClipboardCaptureActivity] for a moment so the copy can be read.
  */
 class ClipboardWatcherService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
-    private lateinit var repository: ClipRepository
     private lateinit var clipboardManager: ClipboardManager
 
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
@@ -44,7 +42,6 @@ class ClipboardWatcherService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        repository = ClipRepository.getInstance(applicationContext)
         clipboardManager = getSystemService<ClipboardManager>()!!
         startForeground(NOTIFICATION_ID, buildNotification())
         clipboardManager.addPrimaryClipChangedListener(clipListener)
@@ -63,14 +60,30 @@ class ClipboardWatcherService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun handleClipboardChange() {
-        val clip = clipboardManager.primaryClip ?: return
-        if (clip.itemCount == 0) return
-        val text = clip.getItemAt(0).coerceToText(this)?.toString() ?: return
+        val behindAnotherApp = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            !AppVisibility.hasVisibleActivity
+        if (behindAnotherApp) {
+            ClipboardCaptureActivity.launch(this)
+            return
+        }
 
-        serviceScope.launch {
-            if (repository.saveIfNew(text)) {
-                RemoteSyncManager.notifyNewClip(applicationContext, text)
+        val text = readClipboardText()
+        if (text.isNullOrBlank()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ClipboardCaptureActivity.launch(this)
             }
+            return
+        }
+        ClipCapturePipeline.captureAsync(serviceScope, this, text)
+    }
+
+    private fun readClipboardText(): String? {
+        return try {
+            val clip = clipboardManager.primaryClip ?: return null
+            if (clip.itemCount == 0) return null
+            clip.getItemAt(0).coerceToText(this)?.toString()
+        } catch (e: SecurityException) {
+            null
         }
     }
 

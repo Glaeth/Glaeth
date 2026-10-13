@@ -1,10 +1,29 @@
 # :)
 
-Pokémon temalı bir Android uygulaması: cihazda kopyaladığınız her metni
-otomatik olarak algılar, alt alta (aralarında boşluk bırakarak) kaydeder;
-istediğiniz kaydı veya tüm listeyi WhatsApp üzerinden başkasına gönderebilir,
-ayrıca her yeni kopyayı internet üzerinden anında ulaşabileceğiniz bir adrese
-de gönderebilir.
+Arkadaşının her seferinde bir linki kopyalayıp WhatsApp'tan elle atmasına
+gerek kalmasın diye yazılmış bir Android uygulaması.
+
+Telefonuna kurduğunda, kopyaladığı her metin veya link otomatik kaydedilir
+ve Ayarlar'a yazdığın numarayla WhatsApp sohbeti **mesaj hazır** şekilde
+açılır. Yapılacak tek şey Gönder'e basmaktır. İstersen "Tam Otomatik" ile
+o dokunuş da uygulamanın kendisi tarafından yapılır.
+
+Kayıtlar uygulama içinde alt alta durur; hepsini tek seferde WhatsApp'tan
+da gönderebilirsin. İstersen her kopya aynı anda internette sana özel bir
+adrese de düşer, böylece başka bir cihazdan bakabilirsin.
+
+## APK'yı indir ve kur
+
+Hazır derlenmiş dosya: [`dist/clipsmile.apk`](dist/clipsmile.apk)
+
+1. APK'yı telefona indir.
+2. Dosyayı aç ve "yine de yükle" / bilinmeyen kaynaklara izin ver.
+3. Uygulamayı aç. Sarı şerit çıkarsa ona dokunup **diğer uygulamaların üzerinde göster** iznini aç (arka planda kopyaları yakalamak için şart).
+4. Bildirim iznini de kabul et.
+5. Sağ üstteki dişliden **WhatsApp'a Otomatik Gönder**'i aç ve mesajın gideceği numarayı ülke koduyla yaz (Türkiye için `90` ile, örn. `905551112233`).
+6. Bir link kopyala. WhatsApp, o kişiyle sohbeti ve metni hazır açar; Gönder'e bas.
+
+Aynı imzayla yeniden kurulursa uygulama güncellenir, veriler silinmez.
 
 ## Özellikler
 
@@ -17,10 +36,15 @@ de gönderebilir.
 - **Alt alta, boşluklu liste** — Her kopyalanan metin kendi kartında, en
   yeniden en eskiye doğru sıralanmış şekilde listelenir. Dışa aktarılan/
   paylaşılan metinde kayıtlar arasına boş satır bırakılır.
-- **WhatsApp'a gönderme** — Tek bir kaydı ya da tüm listeyi "WhatsApp'a
-  Gönder" düğmesiyle paylaşabilirsiniz. WhatsApp kurulu değilse genel paylaşım
-  menüsüne geri döner; çok uzun bir metin listesi paylaşılacaksa otomatik
-  olarak bir `.txt` dosyası olarak eklenir.
+- **WhatsApp'a otomatik gönderme** — Ayarlar'dan bir telefon numarası
+  kaydedilince, her yeni kopyada o kişinin sohbeti mesaj dolu şekilde açılır.
+  "Tam Otomatik" açıkken ve erişilebilirlik izni verildiyse Gönder düğmesine
+  de uygulama basar. Bu ikinci mod WhatsApp'ın kendi ekranına bağlı olduğu
+  için deneyseldir; bozulursa tek dokunuşlu moda dönülür.
+- **WhatsApp'a elle gönderme** — Tek bir kaydı ya da tüm listeyi "WhatsApp'a
+  Gönder" düğmesiyle de paylaşabilirsiniz. WhatsApp kurulu değilse genel
+  paylaşım menüsüne geri döner; çok uzun bir metin listesi paylaşılacaksa
+  otomatik olarak bir `.txt` dosyası olarak eklenir.
 - **İnternete anlık gönderme** — Ayarlar ekranından açıldığında, kopyaladığınız
   her şey [ntfy.sh](https://ntfy.sh) üzerinden kendi özel kanalınıza anında
   gönderilir. Bu kanalın adresini (`https://ntfy.sh/<kanal-adı>`) tarayıcınızda
@@ -45,11 +69,12 @@ app/
     ClipSmileApp.kt              Uygulama sınıfı, bildirim kanalını oluşturur
     data/                        Room veritabanı, DAO, repository ve internet
                                   senkronizasyon tercihleri/yöneticisi
-    service/                     Panoyu izleyen ön planda (foreground) servis
-    ui/                          MainActivity, SettingsActivity, RecyclerView
-                                  adapter, kaydırarak silme
-    util/                        WhatsApp paylaşımı, ntfy.sh istemcisi,
-                                  tarih/biçimlendirme yardımcıları
+    service/                     Panoyu izleyen ön planda servis ve isteğe
+                                  bağlı WhatsApp erişilebilirlik servisi
+    ui/                          MainActivity, SettingsActivity, anlık pano
+                                  okuma ekranı, RecyclerView adapter
+    util/                        WhatsApp paylaşımı ve otomatik gönderim,
+                                  ntfy.sh istemcisi, tarih yardımcıları
   src/main/res/                  Layout, string, renk, yazı tipi ve ikon
                                   kaynakları
 ```
@@ -68,10 +93,15 @@ derleyebilirsiniz:
 ./gradlew :app:assembleDebug
 ```
 
-Üretilen APK: `app/build/outputs/apk/debug/app-debug.apk`
+Üretilen APK: `app/build/outputs/apk/release/app-release.apk`
+(Depodaki indirilebilir kopya: `dist/clipsmile.apk`)
 
 ## Notlar
 
+- Android 10 ve sonrasında pano içeriğini yalnızca o an ekranda olan
+  uygulama görebilir. Bu yüzden uygulama, arka plandayken kopyayı okuyabilmek
+  için kısa bir an öne çıkar. Bunun çalışması için **diğer uygulamaların
+  üzerinde göster** izni gerekir; izin yoksa ana ekranda sarı bir uyarı çıkar.
 - Bildirim izni (Android 13+) ve pano izleme servisi, uygulama ilk açıldığında
   ve anahtar her açıldığında istenir/başlatılır.
 - WhatsApp paylaşımı `com.whatsapp` paketini, yoksa `com.whatsapp.w4b`

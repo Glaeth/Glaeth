@@ -7,8 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,12 +24,13 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.R
 import com.clipsmile.app.data.ClipEntry
 import com.clipsmile.app.data.ClipRepository
-import com.clipsmile.app.data.RemoteSyncManager
 import com.clipsmile.app.databinding.ActivityMainBinding
 import com.clipsmile.app.service.ClipboardWatcherService
+import com.clipsmile.app.util.ClipCapturePipeline
 import com.clipsmile.app.util.ClipFormatter
 import com.clipsmile.app.util.WhatsAppShareHelper
 import com.google.android.material.snackbar.Snackbar
@@ -50,11 +53,7 @@ class MainActivity : AppCompatActivity() {
         val clip = clipboardManager.primaryClip ?: return@OnPrimaryClipChangedListener
         if (clip.itemCount == 0) return@OnPrimaryClipChangedListener
         val text = clip.getItemAt(0).coerceToText(this)?.toString() ?: return@OnPrimaryClipChangedListener
-        lifecycleScope.launch {
-            if (repository.saveIfNew(text)) {
-                RemoteSyncManager.notifyNewClip(applicationContext, text)
-            }
-        }
+        ClipCapturePipeline.captureAsync(lifecycleScope, this, text)
     }
 
     private val notificationPermissionLauncher =
@@ -83,10 +82,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        AppVisibility.hasVisibleActivity = true
         clipboardManager.addPrimaryClipChangedListener(foregroundClipListener)
+        updateOverlayHint()
     }
 
     override fun onPause() {
+        AppVisibility.hasVisibleActivity = false
         clipboardManager.removePrimaryClipChangedListener(foregroundClipListener)
         super.onPause()
     }
@@ -157,6 +159,21 @@ class MainActivity : AppCompatActivity() {
         binding.settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        binding.overlayHintText.setOnClickListener { openOverlaySettings() }
+    }
+
+    private fun updateOverlayHint() {
+        val needsOverlay = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            !Settings.canDrawOverlays(this)
+        binding.overlayHintText.visibility = if (needsOverlay) View.VISIBLE else View.GONE
+    }
+
+    private fun openOverlaySettings() {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:$packageName")
+        )
+        startActivity(intent)
     }
 
     private fun observeEntries() {

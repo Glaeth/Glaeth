@@ -12,17 +12,32 @@ android {
         applicationId = "com.clipsmile.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         vectorDrawables {
             useSupportLibrary = true
         }
     }
 
+    signingConfigs {
+        create("sideload") {
+            // Personal sideload key, checked in so every rebuild installs as an
+            // update over the same app. This is not a Play Store signing key.
+            storeFile = rootProject.file("keystore/clipsmile-release.jks")
+            storePassword = "clipsmile"
+            keyAlias = "clipsmile"
+            keyPassword = "clipsmile"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("sideload")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("sideload")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

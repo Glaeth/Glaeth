@@ -2,8 +2,9 @@
 <resources>
     <string name="app_name">:)</string>
 
-    <string name="empty_state_title">Pokédex Boş!</string>
-    <string name="empty_state_subtitle">Herhangi bir uygulamada bir metin kopyaladığında burada alt alta listelenecek.</string>
+    <string name="empty_state_title">Hazır!</string>
+    <string name="empty_state_subtitle">Bir linki veya metni kopyalaman yeterli. Uygulama onu burada saklar ve WhatsApp\'ta seçtiğin kişiye hazırlar; sen sadece Gönder\'e basarsın.</string>
+    <string name="overlay_permission_hint">Arka planda kopyaları yakalamak için buraya dokun ve \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
 
     <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
     <string name="action_clear_all">Tümünü Temizle</string>
@@ -61,4 +62,22 @@
     <string name="toast_test_sent">Test mesajı gönderildi</string>
     <string name="toast_test_failed">Test mesajı gönderilemedi, internet bağlantınızı kontrol edin</string>
     <string name="toast_invalid_channel">Kanal adı en az 4 karakter olmalı ve yalnızca harf, rakam ve tire (-) içerebilir</string>
+
+    <!-- WhatsApp auto-forward (Settings screen) -->
+    <string name="settings_autosend_section_title">WhatsApp\'a Otomatik Gönder</string>
+    <string name="settings_autosend_description">Arkadaşının her seferinde linki kopyalayıp WhatsApp\'tan elle atmasına gerek kalmasın diye: bir şey kopyalandığında aşağıdaki kişinin sohbeti, mesaj hazır şekilde açılır. Tek dokunuşla Gönder\'e basmak yeter.</string>
+    <string name="settings_autosend_phone_label">Alıcının telefon numarası</string>
+    <string name="settings_autosend_phone_hint">Örn: 905551112233</string>
+    <string name="settings_autosend_phone_helper">Ülke koduyla birlikte, boşluksuz ve + işaretsiz yazın (Türkiye için 90 ile başlar)</string>
+    <string name="settings_autosend_test">Test Gönder</string>
+    <string name="settings_autosend_test_message">Bu bir test mesajıdır. :) uygulaması artık kopyaladıklarını otomatik olarak WhatsApp\'a gönderebiliyor!</string>
+    <string name="settings_autosend_fully_automatic_title">Tam Otomatik (Gönder\'e basmadan) — Deneysel</string>
+    <string name="settings_autosend_fully_automatic_warning">Bu mod, Gönder düğmesine sizin yerinize basmak için Erişilebilirlik (Accessibility) iznini kullanır. WhatsApp güncellemeleriyle bozulabilir; çalışmazsa kapatıp tek dokunuşla gönderme moduna dönebilirsiniz.</string>
+    <string name="settings_autosend_open_accessibility">Erişilebilirlik İznini Aç</string>
+    <string name="settings_autosend_accessibility_on">Erişilebilirlik izni: Açık ✓</string>
+    <string name="settings_autosend_accessibility_off">Erişilebilirlik izni: Kapalı — Tam Otomatik için izin vermeniz gerekir</string>
+    <string name="toast_invalid_phone">Geçerli bir telefon numarası girin (ülke kodu dahil, 10 ile 15 rakam)</string>
+    <string name="toast_autosend_test_sent">WhatsApp sohbeti açıldı, Gönder\'e basmanız yeterli</string>
+
+    <string name="accessibility_service_description">":)" uygulamasının, Tam Otomatik modu açıkken kopyaladığınız metni WhatsApp\'a gönderirken Gönder düğmesine sizin yerinize basabilmesi için gereklidir.</string>
 </resources>
