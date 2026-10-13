@@ -12,6 +12,7 @@ import androidx.core.content.getSystemService
 import com.clipsmile.app.ClipSmileApp
 import com.clipsmile.app.R
 import com.clipsmile.app.data.ClipRepository
+import com.clipsmile.app.data.RemoteSyncManager
 import com.clipsmile.app.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,7 +68,9 @@ class ClipboardWatcherService : Service() {
         val text = clip.getItemAt(0).coerceToText(this)?.toString() ?: return
 
         serviceScope.launch {
-            repository.saveIfNew(text)
+            if (repository.saveIfNew(text)) {
+                RemoteSyncManager.notifyNewClip(applicationContext, text)
+            }
         }
     }
 

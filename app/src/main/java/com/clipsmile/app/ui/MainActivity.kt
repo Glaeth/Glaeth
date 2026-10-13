@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
@@ -24,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.clipsmile.app.R
 import com.clipsmile.app.data.ClipEntry
 import com.clipsmile.app.data.ClipRepository
+import com.clipsmile.app.data.RemoteSyncManager
 import com.clipsmile.app.databinding.ActivityMainBinding
 import com.clipsmile.app.service.ClipboardWatcherService
 import com.clipsmile.app.util.ClipFormatter
@@ -48,7 +50,11 @@ class MainActivity : AppCompatActivity() {
         val clip = clipboardManager.primaryClip ?: return@OnPrimaryClipChangedListener
         if (clip.itemCount == 0) return@OnPrimaryClipChangedListener
         val text = clip.getItemAt(0).coerceToText(this)?.toString() ?: return@OnPrimaryClipChangedListener
-        lifecycleScope.launch { repository.saveIfNew(text) }
+        lifecycleScope.launch {
+            if (repository.saveIfNew(text)) {
+                RemoteSyncManager.notifyNewClip(applicationContext, text)
+            }
+        }
     }
 
     private val notificationPermissionLauncher =
@@ -148,6 +154,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.clearAllButton.setOnClickListener { confirmClearAll() }
+        binding.settingsButton.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
     }
 
     private fun observeEntries() {
