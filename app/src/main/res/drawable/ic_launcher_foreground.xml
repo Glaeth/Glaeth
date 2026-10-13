@@ -4,19 +4,77 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Left eye -->
+
+    <!-- Left ear -->
     <path
-        android:fillColor="#1F2430"
-        android:pathData="M38,42 a6,6 0 1,0 0.1,0 Z" />
-    <!-- Right eye -->
+        android:fillColor="@color/pikachu_yellow"
+        android:pathData="M34,46 L14,4 L50,40 Z" />
     <path
-        android:fillColor="#1F2430"
-        android:pathData="M70,42 a6,6 0 1,0 0.1,0 Z" />
-    <!-- Smile -->
+        android:fillColor="@color/poke_ball_black"
+        android:pathData="M14,4 L10,16 L28,20 Z" />
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#1F2430"
-        android:strokeWidth="6"
+        android:strokeColor="@color/poke_ball_black"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round"
+        android:pathData="M34,46 L14,4 L50,40" />
+
+    <!-- Right ear -->
+    <path
+        android:fillColor="@color/pikachu_yellow"
+        android:pathData="M74,46 L94,4 L58,40 Z" />
+    <path
+        android:fillColor="@color/poke_ball_black"
+        android:pathData="M94,4 L98,16 L80,20 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="@color/poke_ball_black"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round"
+        android:pathData="M74,46 L94,4 L58,40" />
+
+    <!-- Face -->
+    <path
+        android:fillColor="@color/pikachu_yellow"
+        android:pathData="M26,64 a28,28 0 1,0 56,0 a28,28 0 1,0 -56,0 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="@color/poke_ball_black"
+        android:strokeWidth="3"
+        android:pathData="M26,64 a28,28 0 1,0 56,0 a28,28 0 1,0 -56,0 Z" />
+
+    <!-- Cheeks -->
+    <path
+        android:fillColor="@color/pikachu_cheek_red"
+        android:pathData="M31,70 a6.5,6.5 0 1,0 13,0 a6.5,6.5 0 1,0 -13,0 Z" />
+    <path
+        android:fillColor="@color/pikachu_cheek_red"
+        android:pathData="M64,70 a6.5,6.5 0 1,0 13,0 a6.5,6.5 0 1,0 -13,0 Z" />
+
+    <!-- Eyes -->
+    <path
+        android:fillColor="@color/poke_ball_black"
+        android:pathData="M41,59 a4.6,5.4 0 1,0 9.2,0 a4.6,5.4 0 1,0 -9.2,0 Z" />
+    <path
+        android:fillColor="@color/poke_ball_black"
+        android:pathData="M57.8,59 a4.6,5.4 0 1,0 9.2,0 a4.6,5.4 0 1,0 -9.2,0 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,56.2 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60.8,56.2 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0 Z" />
+
+    <!-- Nose -->
+    <path
+        android:fillColor="@color/poke_ball_black"
+        android:pathData="M54,65 L51.3,69 L56.7,69 Z" />
+
+    <!-- Mouth -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="@color/poke_ball_black"
+        android:strokeWidth="2.2"
         android:strokeLineCap="round"
-        android:pathData="M34,62 C40,78 68,78 74,62" />
+        android:pathData="M44,74 Q54,82 64,74" />
 </vector>

@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">:)</string>
 
-    <string name="empty_state_title">Henüz bir şey kopyalamadınız</string>
-    <string name="empty_state_subtitle">Herhangi bir uygulamada bir metin kopyaladığınızda burada alt alta listelenecek.</string>
+    <string name="empty_state_title">Pokédex Boş!</string>
+    <string name="empty_state_subtitle">Herhangi bir uygulamada bir metin kopyaladığında burada alt alta listelenecek.</string>
 
     <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
     <string name="action_clear_all">Tümünü Temizle</string>
@@ -11,6 +11,7 @@
     <string name="action_share_item">WhatsApp\'a gönder</string>
     <string name="action_delete_item">Sil</string>
     <string name="action_undo">Geri Al</string>
+    <string name="action_settings">Ayarlar</string>
 
     <string name="monitoring_on">Pano izleniyor</string>
     <string name="monitoring_off">Pano izlenmiyor</string>
@@ -36,4 +37,28 @@
     <string name="whatsapp_share_chooser_title">Gönder</string>
 
     <string name="content_desc_more_options">Daha fazla seçenek</string>
+
+    <!-- Internet sync (Settings screen) -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="settings_sync_section_title">İnternete Gönderme</string>
+    <string name="settings_sync_description">Açıldığında, kopyaladığınız her şey internet üzerinden aşağıdaki adrese anında gönderilir. Bu adresi tarayıcınızda açarak ya da ücretsiz \"ntfy\" uygulamasıyla takip ederek başka bir cihazdan, her yerden ulaşabilirsiniz.</string>
+    <string name="settings_sync_channel_label">Kanal adı</string>
+    <string name="settings_sync_regenerate">Yeni Kanal</string>
+    <string name="settings_sync_link_label">Ulaşabileceğiniz adres</string>
+    <string name="settings_sync_link_format" translatable="false">https://ntfy.sh/%1$s</string>
+    <string name="settings_sync_copy_link">Kopyala</string>
+    <string name="settings_sync_share_link">Paylaş</string>
+    <string name="settings_sync_open_link">Tarayıcıda Aç</string>
+    <string name="settings_sync_test">Test Gönder</string>
+    <string name="settings_sync_warning">Bu adresi bilen herkes gönderdiklerinizi görebilir; bağlantıyı yalnızca güvendiğiniz kişilerle paylaşın.</string>
+    <string name="settings_sync_last_status_idle">Henüz bir şey gönderilmedi</string>
+    <string name="settings_sync_last_status_sending">Gönderiliyor…</string>
+    <string name="settings_sync_last_status_success">Son gönderim başarılı · %1$s</string>
+    <string name="settings_sync_last_status_failed">Son gönderim başarısız · %1$s</string>
+
+    <string name="toast_link_copied">Bağlantı kopyalandı</string>
+    <string name="toast_channel_regenerated">Yeni kanal oluşturuldu</string>
+    <string name="toast_test_sent">Test mesajı gönderildi</string>
+    <string name="toast_test_failed">Test mesajı gönderilemedi, internet bağlantınızı kontrol edin</string>
+    <string name="toast_invalid_channel">Kanal adı en az 4 karakter olmalı ve yalnızca harf, rakam ve tire (-) içerebilir</string>
 </resources>

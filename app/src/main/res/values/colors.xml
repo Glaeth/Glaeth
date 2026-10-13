@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="smile_yellow">#FFC107</color>
-    <color name="smile_yellow_dark">#FFA000</color>
-    <color name="smile_green">#4CAF50</color>
-    <color name="whatsapp_green">#25D366</color>
-    <color name="ink_dark">#1F2430</color>
-    <color name="ink_light">#5B6472</color>
-    <color name="surface_light">#FFFFFF</color>
-    <color name="background_light">#FFF8E1</color>
-    <color name="card_stroke">#F0E0A8</color>
-    <color name="danger_red">#E53935</color>
+    <!-- Pokémon-inspired palette -->
+    <color name="pikachu_yellow">#FFCB05</color>
+    <color name="pikachu_cheek_red">#F23030</color>
+    <color name="pokemon_red">#E3350D</color>
+    <color name="pokemon_red_dark">#B8290A</color>
+    <color name="pokemon_blue">#2A75BB</color>
+    <color name="pokemon_blue_dark">#1C4F80</color>
+    <color name="poke_ball_black">#232323</color>
+    <color name="pokedex_cream">#FFF6DC</color>
+    <color name="card_border">#2B2B2B</color>
 
-    <color name="background_dark">#121212</color>
+    <color name="whatsapp_green">#25D366</color>
+    <color name="status_active_green">#3DAE2B</color>
+
+    <color name="ink_dark">#232323</color>
+    <color name="ink_light">#6B6457</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="background_light">@color/pokedex_cream</color>
+    <color name="card_stroke">@color/card_border</color>
+    <color name="danger_red">@color/pokemon_red</color>
+
+    <color name="background_dark">#171615</color>
 </resources>
