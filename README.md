@@ -5,8 +5,7 @@ gerek kalmasın diye yazılmış bir Android uygulaması.
 
 Telefonuna kurduğunda, kopyaladığı her metin veya link otomatik kaydedilir
 ve Ayarlar'a yazdığın numarayla WhatsApp sohbeti **mesaj hazır** şekilde
-açılır. Yapılacak tek şey Gönder'e basmaktır. İstersen "Tam Otomatik" ile
-o dokunuş da uygulamanın kendisi tarafından yapılır.
+açılır. Yapılacak tek şey Gönder'e basmaktır.
 
 Kayıtlar uygulama içinde alt alta durur; hepsini tek seferde WhatsApp'tan
 da gönderebilirsin. İstersen her kopya aynı anda internette sana özel bir
@@ -36,11 +35,9 @@ Aynı imzayla yeniden kurulursa uygulama güncellenir, veriler silinmez.
 - **Alt alta, boşluklu liste** — Her kopyalanan metin kendi kartında, en
   yeniden en eskiye doğru sıralanmış şekilde listelenir. Dışa aktarılan/
   paylaşılan metinde kayıtlar arasına boş satır bırakılır.
-- **WhatsApp'a otomatik gönderme** — Ayarlar'dan bir telefon numarası
+- **WhatsApp'a hazır açma** — Ayarlar'dan bir telefon numarası
   kaydedilince, her yeni kopyada o kişinin sohbeti mesaj dolu şekilde açılır.
-  "Tam Otomatik" açıkken ve erişilebilirlik izni verildiyse Gönder düğmesine
-  de uygulama basar. Bu ikinci mod WhatsApp'ın kendi ekranına bağlı olduğu
-  için deneyseldir; bozulursa tek dokunuşlu moda dönülür.
+  Gönder düğmesine sen basarsın.
 - **WhatsApp'a elle gönderme** — Tek bir kaydı ya da tüm listeyi "WhatsApp'a
   Gönder" düğmesiyle de paylaşabilirsiniz. WhatsApp kurulu değilse genel
   paylaşım menüsüne geri döner; çok uzun bir metin listesi paylaşılacaksa
@@ -69,8 +66,7 @@ app/
     ClipSmileApp.kt              Uygulama sınıfı, bildirim kanalını oluşturur
     data/                        Room veritabanı, DAO, repository ve internet
                                   senkronizasyon tercihleri/yöneticisi
-    service/                     Panoyu izleyen ön planda servis ve isteğe
-                                  bağlı WhatsApp erişilebilirlik servisi
+    service/                     Panoyu izleyen ön planda servis
     ui/                          MainActivity, SettingsActivity, anlık pano
                                   okuma ekranı, RecyclerView adapter
     util/                        WhatsApp paylaşımı ve otomatik gönderim,

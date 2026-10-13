@@ -141,61 +141,6 @@
                         android:textAllCaps="false"
                         app:icon="@drawable/ic_send"
                         app:iconGravity="textStart" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="18dp"
-                        android:background="@color/card_border" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/settings_autosend_fully_automatic_title"
-                            android:textColor="@color/ink_dark"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/fullyAutomaticSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="#1F2A75BB"
-                        android:padding="10dp"
-                        android:text="@string/settings_autosend_fully_automatic_warning"
-                        android:textColor="@color/pokemon_blue_dark"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/accessibilityStatusText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:textColor="@color/ink_light"
-                        android:textSize="12sp"
-                        tools:text="Erişilebilirlik izni: Kapalı" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/openAccessibilitySettingsButton"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_autosend_open_accessibility"
-                        android:textAllCaps="false" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
