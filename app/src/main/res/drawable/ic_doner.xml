@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+
+    <!-- Ekmek arası döner -->
+    <path
+        android:fillColor="#E7B565"
+        android:pathData="M16,62 Q48,46 80,62 Q48,78 16,62 Z" />
+    <path
+        android:fillColor="#6E3A22"
+        android:pathData="M22,56 Q48,42 74,56 Q48,66 22,56 Z" />
+    <path
+        android:fillColor="#A15C34"
+        android:pathData="M26,52 Q48,44 70,52 Q48,58 26,52 Z" />
+    <path
+        android:fillColor="#3F9A45"
+        android:pathData="M24,50 Q32,40 40,50 Q48,38 56,50 Q64,40 72,50 Q60,56 48,52 Q36,56 24,50 Z" />
+    <path
+        android:fillColor="#E24B3B"
+        android:pathData="M34,54 a4,3.2 0 1,0 0.1,0 Z M48,53 a4,3.2 0 1,0 0.1,0 Z M62,54 a4,3.2 0 1,0 0.1,0 Z" />
+    <path
+        android:fillColor="#F6E2B8"
+        android:pathData="M20,44 Q48,26 76,44 Q48,54 20,44 Z" />
+    <path
+        android:fillColor="#FFF8EC"
+        android:pathData="M34,38 a2,1.4 0 1,0 0.1,0 Z M46,34 a2,1.4 0 1,0 0.1,0 Z M58,38 a2,1.4 0 1,0 0.1,0 Z M52,42 a1.6,1.2 0 1,0 0.1,0 Z" />
+</vector>

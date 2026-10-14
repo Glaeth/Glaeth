@@ -80,16 +80,32 @@
             android:paddingEnd="24dp"
             android:paddingBottom="12dp">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/petImage"
-                android:layout_width="128dp"
-                android:layout_height="128dp"
-                android:contentDescription="@string/app_name"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_pug_icon"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.ClipSmile.Circle"
-                app:strokeColor="@color/night_raised"
-                app:strokeWidth="4dp" />
+            <FrameLayout
+                android:layout_width="160dp"
+                android:layout_height="150dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/petImage"
+                    android:layout_width="128dp"
+                    android:layout_height="128dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@string/app_name"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_pug_icon"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.ClipSmile.Circle"
+                    app:strokeColor="@color/night_raised"
+                    app:strokeWidth="4dp" />
+
+                <ImageView
+                    android:id="@+id/feedDoner"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_gravity="bottom|end"
+                    android:contentDescription="@string/action_feed_doner"
+                    android:src="@drawable/ic_doner"
+                    android:visibility="invisible"
+                    tools:visibility="visible" />
+            </FrameLayout>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -110,6 +126,22 @@
                 android:textColor="@color/text_muted"
                 android:textSize="14sp"
                 tools:text="İlk gün. Şapka yerinde." />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/feedButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginTop="10dp"
+                android:text="@string/action_feed_doner"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                app:cornerRadius="22dp"
+                app:icon="@drawable/ic_doner"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconTint="@null"
+                app:strokeColor="@color/glass_stroke" />
         </LinearLayout>
 
         <LinearLayout

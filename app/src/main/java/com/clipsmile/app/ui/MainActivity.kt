@@ -1,5 +1,7 @@
 package com.clipsmile.app.ui
 
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -13,6 +15,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -49,6 +52,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clipboardManager: ClipboardManager
 
     private var latestEntries: List<ClipEntry> = emptyList()
+    private var idleBob: ObjectAnimator? = null
+    private var idleTilt: ObjectAnimator? = null
+    private var feeding = false
 
     /** Fallback listener: captures copies made while this screen is visible,
      * which also works reliably on Android 10+ where background clipboard
@@ -92,12 +98,14 @@ class MainActivity : AppCompatActivity() {
         updateOverlayHint()
         updateServerStatus()
         updatePet()
+        startIdleMotion()
         captureCurrentClipboard()
     }
 
     override fun onPause() {
         AppVisibility.hasVisibleActivity = false
         clipboardManager.removePrimaryClipChangedListener(foregroundClipListener)
+        stopIdleMotion()
         super.onPause()
     }
 
@@ -172,11 +180,101 @@ class MainActivity : AppCompatActivity() {
         binding.settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        binding.feedButton.setOnClickListener { feedDoner() }
         binding.overlayHintText.setOnClickListener { openOverlaySettings() }
         binding.autoSendStatusText.setOnClickListener {
             val url = RemoteSyncPrefs(this).channelUrl
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
+    }
+
+    private fun startIdleMotion() {
+        if (idleBob?.isRunning == true) return
+        val pet = binding.petImage
+        idleBob = ObjectAnimator.ofFloat(pet, View.TRANSLATION_Y, 0f, -16f).apply {
+            duration = 720
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            start()
+        }
+        idleTilt = ObjectAnimator.ofFloat(pet, View.ROTATION, -5f, 5f).apply {
+            duration = 980
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            start()
+        }
+    }
+
+    private fun stopIdleMotion() {
+        idleBob?.cancel()
+        idleTilt?.cancel()
+        idleBob = null
+        idleTilt = null
+        binding.feedDoner.animate().cancel()
+        binding.petImage.animate().cancel()
+        binding.petImage.translationY = 0f
+        binding.petImage.rotation = 0f
+        binding.petImage.scaleX = 1f
+        binding.petImage.scaleY = 1f
+        binding.feedDoner.visibility = View.INVISIBLE
+        feeding = false
+    }
+
+    private fun feedDoner() {
+        if (feeding) return
+        feeding = true
+        idleBob?.pause()
+        idleTilt?.pause()
+
+        val pet = binding.petImage
+        val doner = binding.feedDoner
+        doner.animate().cancel()
+        doner.visibility = View.VISIBLE
+        doner.alpha = 1f
+        doner.scaleX = 1f
+        doner.scaleY = 1f
+        doner.translationX = 36f
+        doner.translationY = 28f
+        doner.animate()
+            .translationX(-8f)
+            .translationY(-46f)
+            .scaleX(0.45f)
+            .scaleY(0.45f)
+            .setDuration(560)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .withEndAction {
+                doner.animate().alpha(0f).setDuration(160).withEndAction {
+                    doner.visibility = View.INVISIBLE
+                    doner.translationX = 0f
+                    doner.translationY = 0f
+                    doner.scaleX = 1f
+                    doner.scaleY = 1f
+                }.start()
+                pet.animate()
+                    .scaleX(1.14f)
+                    .scaleY(0.88f)
+                    .setDuration(110)
+                    .withEndAction {
+                        pet.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .rotation(8f)
+                            .setDuration(140)
+                            .withEndAction {
+                                pet.animate().rotation(0f).setDuration(160).withEndAction {
+                                    feeding = false
+                                    idleBob?.resume()
+                                    idleTilt?.resume()
+                                }.start()
+                            }
+                            .start()
+                    }
+                    .start()
+                binding.petMoodText.setText(R.string.pet_fed)
+            }
+            .start()
     }
 
     private fun updatePet() {
