@@ -1,6 +1,8 @@
 package com.clipsmile.app.service
 
 import android.app.Notification
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.content.BroadcastReceiver
 import android.content.ClipboardManager
 import android.content.Context
@@ -180,6 +182,23 @@ class ClipboardWatcherService : android.app.Service() {
         @Volatile
         private var statusLine: String? = null
 
+        @Volatile
+        private var artCache: Bitmap? = null
+
+        private fun notificationArt(context: Context): Bitmap? {
+            artCache?.let { return it }
+            val decoded = BitmapFactory.decodeResource(context.resources, R.drawable.ic_pug_icon)
+                ?: return null
+            val size = 256
+            val scaled = if (decoded.width == size && decoded.height == size) {
+                decoded
+            } else {
+                Bitmap.createScaledBitmap(decoded, size, size, true)
+            }
+            artCache = scaled
+            return scaled
+        }
+
         fun postStatus(context: Context, text: String) {
             statusLine = text
             val manager = context.getSystemService(android.app.NotificationManager::class.java)
@@ -194,7 +213,7 @@ class ClipboardWatcherService : android.app.Service() {
                     0,
                     android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
                 )
-            return NotificationCompat.Builder(context, ClipSmileApp.NOTIFICATION_CHANNEL_ID)
+            val builder = NotificationCompat.Builder(context, ClipSmileApp.NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(context.getString(R.string.notification_title))
                 .setContentText(text)
@@ -202,7 +221,8 @@ class ClipboardWatcherService : android.app.Service() {
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
                 .setContentIntent(pendingIntent)
-                .build()
+            notificationArt(context)?.let { builder.setLargeIcon(it) }
+            return builder.build()
         }
 
         fun start(context: Context) {
