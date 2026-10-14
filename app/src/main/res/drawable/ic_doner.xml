@@ -5,26 +5,31 @@
     android:viewportWidth="96"
     android:viewportHeight="96">
 
-    <!-- Ekmek arası döner -->
-    <path
-        android:fillColor="#E7B565"
-        android:pathData="M16,62 Q48,46 80,62 Q48,78 16,62 Z" />
-    <path
-        android:fillColor="#6E3A22"
-        android:pathData="M22,56 Q48,42 74,56 Q48,66 22,56 Z" />
-    <path
-        android:fillColor="#A15C34"
-        android:pathData="M26,52 Q48,44 70,52 Q48,58 26,52 Z" />
-    <path
-        android:fillColor="#3F9A45"
-        android:pathData="M24,50 Q32,40 40,50 Q48,38 56,50 Q64,40 72,50 Q60,56 48,52 Q36,56 24,50 Z" />
-    <path
-        android:fillColor="#E24B3B"
-        android:pathData="M34,54 a4,3.2 0 1,0 0.1,0 Z M48,53 a4,3.2 0 1,0 0.1,0 Z M62,54 a4,3.2 0 1,0 0.1,0 Z" />
-    <path
-        android:fillColor="#F6E2B8"
-        android:pathData="M20,44 Q48,26 76,44 Q48,54 20,44 Z" />
-    <path
-        android:fillColor="#FFF8EC"
-        android:pathData="M34,38 a2,1.4 0 1,0 0.1,0 Z M46,34 a2,1.4 0 1,0 0.1,0 Z M58,38 a2,1.4 0 1,0 0.1,0 Z M52,42 a1.6,1.2 0 1,0 0.1,0 Z" />
+    <!-- Hatay dürüm: ince lavaş, ızgara izi, ucunda et -->
+    <group
+        android:pivotX="48"
+        android:pivotY="48"
+        android:rotation="-24">
+        <path
+            android:fillColor="#F3D7A4"
+            android:pathData="M10,38 h64 a8,8 0 0,1 8,8 v6 a8,8 0 0,1 -8,8 h-64 a8,8 0 0,1 -8,-8 v-6 a8,8 0 0,1 8,-8 z" />
+        <path
+            android:fillColor="#6A432C"
+            android:pathData="M8,44 h76 v2.2 h-76 z M8,51 h76 v2.2 h-76 z M8,57.5 h76 v1.6 h-76 z" />
+        <path
+            android:fillColor="#3A2418"
+            android:pathData="M22,40 a3.2,2 0 1,0 0.1,0 z M40,59 a2.6,1.6 0 1,0 0.1,0 z M58,41 a2.2,1.4 0 1,0 0.1,0 z" />
+        <path
+            android:fillColor="#7A3E24"
+            android:pathData="M66,38 h12 a6,6 0 0,1 6,6 v8 a6,6 0 0,1 -6,6 h-12 z" />
+        <path
+            android:fillColor="#C46B38"
+            android:pathData="M70,42 h6 v3.2 h-6 z M70,48 h7 v3.2 h-7 z M70,54 h5 v3 h-5 z" />
+        <path
+            android:fillColor="#E23B32"
+            android:pathData="M74,46.5 a1.6,1.6 0 1,0 0.1,0 z M78,52 a1.4,1.4 0 1,0 0.1,0 z" />
+        <path
+            android:fillColor="#F2E2A8"
+            android:pathData="M68,44 h2 v12 h-2 z" />
+    </group>
 </vector>

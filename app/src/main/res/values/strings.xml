@@ -8,13 +8,24 @@
     <string name="server_status_off">Sunucu kapalı. Ayarlardan aç.</string>
     <string name="overlay_permission_hint">Köpeğin arkadan da kopya görmesi için bir kez \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
     <string name="pet_streak">%1$d gün seri</string>
+    <string name="pet_streak_label">SERİ</string>
     <string name="pet_level">Seviye %1$d</string>
+    <string name="pet_level_label">SEVİYE</string>
+    <string name="pet_name_default">Çirkin</string>
+    <string name="action_rename_pet">Köpeğin adı</string>
+    <string name="action_save_name">Kaydet</string>
+    <string name="pet_mood_full">Karnı tok. Hatay dürüm hâlâ aklında.</string>
+    <string name="pet_mood_ok">İyi. Bir dürüm daha ister.</string>
+    <string name="pet_mood_hungry">Acıktı. Hatay dürüm bakıyor.</string>
+    <string name="pet_mood_starving">Çok aç. Dürüm ver.</string>
     <string name="pet_mood_1">İlk gün. Şapka yerinde, yeni evcil dost.</string>
     <string name="pet_mood_low">Alışıyor. Her gün uğrarsan seri uzar.</string>
     <string name="pet_mood_mid">Evcil dost oldu. Seviye yükseliyor.</string>
     <string name="pet_mood_high">Efsane seri. Şapka hiç düşmedi.</string>
-    <string name="action_feed_doner">Döner ver</string>
-    <string name="pet_fed">Döner gitti. Karnı tok, hali yerinde.</string>
+    <string name="action_feed_doner">Hatay dürüm ver</string>
+    <string name="pet_fed">Hatay dürüm gitti. Lokmayı yuttu.</string>
+    <string name="settings_clips_title">Kopyalar</string>
+    <string name="settings_open_overlay">Arka plan iznini aç</string>
 
     <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
     <string name="action_export_email">Export Data</string>

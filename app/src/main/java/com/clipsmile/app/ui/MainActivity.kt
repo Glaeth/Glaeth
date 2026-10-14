@@ -1,64 +1,44 @@
 package com.clipsmile.app.ui
 
+import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
-import android.Manifest
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.Toast
+import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.R
-import com.clipsmile.app.data.ClipEntry
-import com.clipsmile.app.data.ClipRepository
 import com.clipsmile.app.data.PetProgress
-import com.clipsmile.app.data.RemoteSyncPrefs
 import com.clipsmile.app.databinding.ActivityMainBinding
 import com.clipsmile.app.service.ClipboardWatcherService
 import com.clipsmile.app.util.ClipCapturePipeline
-import com.clipsmile.app.util.ClipFormatter
-import com.clipsmile.app.util.EmailExportHelper
-import com.clipsmile.app.util.WhatsAppShareHelper
-import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.launch
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var repository: ClipRepository
-    private lateinit var adapter: ClipAdapter
     private lateinit var prefs: SharedPreferences
     private lateinit var clipboardManager: ClipboardManager
+    private lateinit var petProgress: PetProgress
 
-    private var latestEntries: List<ClipEntry> = emptyList()
     private var idleBob: ObjectAnimator? = null
     private var idleTilt: ObjectAnimator? = null
     private var feeding = false
 
-    /** Fallback listener: captures copies made while this screen is visible,
-     * which also works reliably on Android 10+ where background clipboard
-     * reads are restricted to the focused app. */
     private val foregroundClipListener = ClipboardManager.OnPrimaryClipChangedListener {
         val clip = clipboardManager.primaryClip ?: return@OnPrimaryClipChangedListener
         if (clip.itemCount == 0) return@OnPrimaryClipChangedListener
@@ -69,9 +49,7 @@ class MainActivity : AppCompatActivity() {
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                startMonitoringService()
-            } else {
-                binding.monitoringSwitch.isChecked = false
+                ClipboardWatcherService.start(this)
             }
         }
 
@@ -80,14 +58,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        repository = ClipRepository.getInstance(this)
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         clipboardManager = getSystemService<ClipboardManager>()!!
+        petProgress = PetProgress(this)
 
-        setupRecyclerView()
-        setupMonitoringSwitch()
-        setupActionButtons()
-        observeEntries()
+        ensureMonitoring()
+        setupActions()
         maybeAskBatteryExemption()
     }
 
@@ -95,9 +71,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         AppVisibility.hasVisibleActivity = true
         clipboardManager.addPrimaryClipChangedListener(foregroundClipListener)
-        updateOverlayHint()
-        updateServerStatus()
-        updatePet()
+        showPet()
         startIdleMotion()
         captureCurrentClipboard()
     }
@@ -109,97 +83,86 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    private fun setupRecyclerView() {
-        adapter = ClipAdapter(
-            onCopyClick = ::copyEntryToClipboard,
-            onShareClick = { entry -> WhatsAppShareHelper.shareText(this, entry.content) },
-            onDeleteClick = { entry -> confirmDeleteItem(entry) }
-        )
-        binding.clipRecyclerView.layoutManager = LinearLayoutManager(this)
-        binding.clipRecyclerView.adapter = adapter
-
-        ItemTouchHelper(SwipeToDeleteCallback { position ->
-            if (position == RecyclerView.NO_POSITION) return@SwipeToDeleteCallback
-            val entry = adapter.entryAt(position)
-            deleteEntry(entry)
-        }).attachToRecyclerView(binding.clipRecyclerView)
-    }
-
-    private fun setupMonitoringSwitch() {
-        val shouldMonitor = prefs.getBoolean(KEY_MONITORING_ENABLED, true)
-        binding.monitoringSwitch.isChecked = shouldMonitor
-        updateMonitoringStatusText(shouldMonitor)
-        if (shouldMonitor) {
-            requestNotificationPermissionAndStart()
+    private fun setupActions() {
+        binding.settingsButton.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
-
-        binding.monitoringSwitch.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean(KEY_MONITORING_ENABLED, isChecked).apply()
-            updateMonitoringStatusText(isChecked)
-            if (isChecked) {
-                requestNotificationPermissionAndStart()
-            } else {
-                ClipboardWatcherService.stop(this)
-            }
-        }
+        binding.feedButton.setOnClickListener { feedDoner() }
+        binding.nameRow.setOnClickListener { renamePet() }
+        binding.petImage.setOnClickListener { nuzzle() }
     }
 
-    private fun updateMonitoringStatusText(isOn: Boolean) {
-        binding.monitoringStatusText.text =
-            getString(if (isOn) R.string.monitoring_on else R.string.monitoring_off)
-        binding.monitoringDot.alpha = if (isOn) 1f else 0.35f
-    }
-
-    private fun requestNotificationPermissionAndStart() {
+    private fun ensureMonitoring() {
+        if (!prefs.getBoolean(KEY_MONITORING_ENABLED, true)) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            startMonitoringService()
+            ClipboardWatcherService.start(this)
         }
     }
 
-    private fun startMonitoringService() {
-        ClipboardWatcherService.start(this)
+    private fun showPet() {
+        val progress = petProgress.recordVisit()
+        binding.streakText.text = progress.streak.toString()
+        binding.levelText.text = progress.level.toString()
+        binding.petNameText.text = progress.name
+        binding.fullnessBar.progress = progress.fullness
+        binding.petMoodText.setText(moodFor(progress.fullness))
     }
 
-    private fun setupActionButtons() {
-        binding.sendAllWhatsAppButton.setOnClickListener {
-            val text = ClipFormatter.joinForExport(latestEntries)
-            WhatsAppShareHelper.shareText(this, text)
-        }
+    private fun moodFor(fullness: Int): Int = when {
+        fullness >= 80 -> R.string.pet_mood_full
+        fullness >= 40 -> R.string.pet_mood_ok
+        fullness >= 15 -> R.string.pet_mood_hungry
+        else -> R.string.pet_mood_starving
+    }
 
-        binding.exportEmailButton.setOnClickListener {
-            val text = ClipFormatter.joinForExport(latestEntries)
-            EmailExportHelper.export(this, text)
+    private fun renamePet() {
+        val input = EditText(this).apply {
+            setText(petProgress.petName)
+            setSelection(text.length)
+            setSingleLine()
         }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.action_rename_pet)
+            .setView(input)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.action_save_name) { _, _ ->
+                petProgress.petName = input.text?.toString().orEmpty()
+                binding.petNameText.text = petProgress.petName
+            }
+            .show()
+    }
 
-        binding.clearAllButton.setOnClickListener { confirmClearAll() }
-        binding.settingsButton.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-        binding.feedButton.setOnClickListener { feedDoner() }
-        binding.overlayHintText.setOnClickListener { openOverlaySettings() }
-        binding.autoSendStatusText.setOnClickListener {
-            val url = RemoteSyncPrefs(this).channelUrl
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        }
+    private fun nuzzle() {
+        if (feeding) return
+        val pet = binding.petImage
+        pet.animate().cancel()
+        pet.animate()
+            .scaleX(1.08f)
+            .scaleY(0.94f)
+            .setDuration(90)
+            .withEndAction {
+                pet.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
+            }
+            .start()
     }
 
     private fun startIdleMotion() {
         if (idleBob?.isRunning == true) return
         val pet = binding.petImage
-        idleBob = ObjectAnimator.ofFloat(pet, View.TRANSLATION_Y, 0f, -16f).apply {
-            duration = 720
+        idleBob = ObjectAnimator.ofFloat(pet, View.TRANSLATION_Y, 0f, -18f).apply {
+            duration = 780
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
             interpolator = AccelerateDecelerateInterpolator()
             start()
         }
-        idleTilt = ObjectAnimator.ofFloat(pet, View.ROTATION, -5f, 5f).apply {
-            duration = 980
+        idleTilt = ObjectAnimator.ofFloat(pet, View.ROTATION, -4f, 4f).apply {
+            duration = 1100
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
             interpolator = AccelerateDecelerateInterpolator()
@@ -235,16 +198,19 @@ class MainActivity : AppCompatActivity() {
         doner.alpha = 1f
         doner.scaleX = 1f
         doner.scaleY = 1f
-        doner.translationX = 36f
-        doner.translationY = 28f
+        doner.translationX = 48f
+        doner.translationY = 36f
         doner.animate()
-            .translationX(-8f)
-            .translationY(-46f)
-            .scaleX(0.45f)
-            .scaleY(0.45f)
-            .setDuration(560)
+            .translationX(-6f)
+            .translationY(-70f)
+            .scaleX(0.4f)
+            .scaleY(0.4f)
+            .setDuration(620)
             .setInterpolator(AccelerateDecelerateInterpolator())
             .withEndAction {
+                val fullness = petProgress.feed()
+                binding.fullnessBar.progress = fullness
+                binding.petMoodText.setText(R.string.pet_fed)
                 doner.animate().alpha(0f).setDuration(160).withEndAction {
                     doner.visibility = View.INVISIBLE
                     doner.translationX = 0f
@@ -253,15 +219,15 @@ class MainActivity : AppCompatActivity() {
                     doner.scaleY = 1f
                 }.start()
                 pet.animate()
-                    .scaleX(1.14f)
-                    .scaleY(0.88f)
+                    .scaleX(1.16f)
+                    .scaleY(0.86f)
                     .setDuration(110)
                     .withEndAction {
                         pet.animate()
                             .scaleX(1f)
                             .scaleY(1f)
-                            .rotation(8f)
-                            .setDuration(140)
+                            .rotation(10f)
+                            .setDuration(150)
                             .withEndAction {
                                 pet.animate().rotation(0f).setDuration(160).withEndAction {
                                     feeding = false
@@ -272,31 +238,8 @@ class MainActivity : AppCompatActivity() {
                             .start()
                     }
                     .start()
-                binding.petMoodText.setText(R.string.pet_fed)
             }
             .start()
-    }
-
-    private fun updatePet() {
-        val progress = PetProgress(this).recordVisit()
-        binding.streakText.text = getString(R.string.pet_streak, progress.streak)
-        binding.levelText.text = getString(R.string.pet_level, progress.level)
-        val mood = when {
-            progress.level <= 1 -> R.string.pet_mood_1
-            progress.level < 7 -> R.string.pet_mood_low
-            progress.level < 14 -> R.string.pet_mood_mid
-            else -> R.string.pet_mood_high
-        }
-        binding.petMoodText.setText(mood)
-    }
-
-    private fun updateServerStatus() {
-        val sync = RemoteSyncPrefs(this)
-        binding.autoSendStatusText.text = if (sync.isEnabled) {
-            getString(R.string.server_status_on, sync.channelUrl)
-        } else {
-            getString(R.string.server_status_off)
-        }
     }
 
     private fun captureCurrentClipboard() {
@@ -306,12 +249,6 @@ class MainActivity : AppCompatActivity() {
         ClipCapturePipeline.captureAsync(lifecycleScope, this, text)
     }
 
-    private fun updateOverlayHint() {
-        val needsOverlay = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-            !Settings.canDrawOverlays(this)
-        binding.overlayHintText.visibility = if (needsOverlay) View.VISIBLE else View.GONE
-    }
-
     private fun maybeAskBatteryExemption() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
         if (prefs.getBoolean(KEY_BATTERY_ASKED, false)) return
@@ -319,79 +256,13 @@ class MainActivity : AppCompatActivity() {
         if (power.isIgnoringBatteryOptimizations(packageName)) return
         prefs.edit().putBoolean(KEY_BATTERY_ASKED, true).apply()
         val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-            data = Uri.parse("package:$packageName")
+            data = android.net.Uri.parse("package:$packageName")
         }
         try {
             startActivity(intent)
         } catch (_: Exception) {
             // The settings screen is missing on this device.
         }
-    }
-
-    private fun openOverlaySettings() {
-        val intent = Intent(
-            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            Uri.parse("package:$packageName")
-        )
-        startActivity(intent)
-    }
-
-    private fun observeEntries() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                repository.observeEntries().collect { entries ->
-                    latestEntries = entries
-                    val newestFirst = entries.asReversed()
-                    adapter.submitList(newestFirst)
-                    binding.emptyStateLayout.visibility =
-                        if (entries.isEmpty()) View.VISIBLE else View.GONE
-                }
-            }
-        }
-    }
-
-    private fun copyEntryToClipboard(entry: ClipEntry) {
-        val clip = ClipData.newPlainText(getString(R.string.app_name), entry.content)
-        clipboardManager.setPrimaryClip(clip)
-        Toast.makeText(this, R.string.toast_copied_to_clipboard, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun confirmDeleteItem(entry: ClipEntry) {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.delete_item_confirm_title)
-            .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_confirm_delete) { _, _ -> deleteEntry(entry) }
-            .show()
-    }
-
-    private fun deleteEntry(entry: ClipEntry) {
-        lifecycleScope.launch {
-            repository.delete(entry)
-            showUndoSnackbar(entry)
-        }
-    }
-
-    private fun showUndoSnackbar(deletedEntry: ClipEntry) {
-        Snackbar.make(binding.root, R.string.toast_item_deleted, Snackbar.LENGTH_LONG)
-            .setAction(R.string.action_undo) {
-                lifecycleScope.launch { repository.restore(deletedEntry) }
-            }
-            .setAnchorView(binding.sendAllWhatsAppButton)
-            .show()
-    }
-
-    private fun confirmClearAll() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.clear_all_confirm_title)
-            .setMessage(R.string.clear_all_confirm_message)
-            .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_confirm_delete) { _, _ ->
-                lifecycleScope.launch {
-                    repository.clearAll()
-                    Toast.makeText(this@MainActivity, R.string.toast_all_cleared, Toast.LENGTH_SHORT).show()
-                }
-            }
-            .show()
     }
 
     companion object {
