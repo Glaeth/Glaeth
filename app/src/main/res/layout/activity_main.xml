@@ -106,6 +106,13 @@
                 android:layout_marginTop="8dp">
 
                 <View
+                    android:id="@+id/frameGlow"
+                    android:layout_width="232dp"
+                    android:layout_height="232dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_slot_on" />
+
+                <View
                     android:layout_width="150dp"
                     android:layout_height="28dp"
                     android:layout_gravity="bottom|center_horizontal"
@@ -114,15 +121,21 @@
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/petImage"
-                    android:layout_width="220dp"
-                    android:layout_height="220dp"
+                    android:layout_width="210dp"
+                    android:layout_height="210dp"
                     android:layout_gravity="center"
                     android:contentDescription="@string/pet_name_default"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_pug_icon"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.ClipSmile.Circle"
-                    app:strokeColor="#3B2918"
+                    app:strokeColor="#8A6844"
                     app:strokeWidth="5dp" />
+
+                <com.clipsmile.app.ui.BubbleLayer
+                    android:id="@+id/bubbles"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="invisible" />
 
                 <ImageView
                     android:id="@+id/feedDoner"
@@ -169,6 +182,16 @@
                 tools:text="Şapkalı pug" />
 
             <TextView
+                android:id="@+id/frameText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#C4622D"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="Bakır çerçeve" />
+
+            <TextView
                 android:id="@+id/petMoodText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -188,21 +211,45 @@
                 android:progress="70"
                 android:progressDrawable="@drawable/bg_fullness" />
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/feedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="54dp"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:background="@drawable/bg_candy_orange"
-                android:minWidth="180dp"
-                android:paddingStart="22dp"
-                android:paddingEnd="22dp"
-                android:stateListAnimator="@null"
-                android:text="@string/food_durum"
-                android:textAllCaps="false"
-                android:textColor="#3B2918"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:orientation="horizontal">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/feedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:maxLines="2"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_candy_orange"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:stateListAnimator="@null"
+                    android:text="@string/food_durum"
+                    android:textAllCaps="false"
+                    android:textColor="#3B2918"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/bathButton"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_candy_blue"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:stateListAnimator="@null"
+                    android:text="@string/action_bath"
+                    android:textAllCaps="false"
+                    android:textColor="#F7F4EF"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -281,129 +328,18 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:letterSpacing="0.14"
-                android:text="@string/dogs_label"
-                android:textColor="#8A6844"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/collectionButton"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:id="@+id/dog0"
-                        android:layout_width="58dp"
-                        android:layout_height="58dp"
-                        android:background="@drawable/bg_slot_on"
-                        android:contentDescription="@string/dog_pug_title"
-                        android:padding="4dp"
-                        android:src="@drawable/ic_pug_icon" />
-
-                    <TextView
-                        android:id="@+id/lock0"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:gravity="center"
-                        android:maxLines="1"
-                        android:textColor="#8A6844"
-                        android:textSize="11sp"
-                        tools:text="1" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:id="@+id/dog1"
-                        android:layout_width="58dp"
-                        android:layout_height="58dp"
-                        android:contentDescription="@string/dog_brown_title"
-                        android:padding="4dp"
-                        android:src="@drawable/ic_dog_brown" />
-
-                    <TextView
-                        android:id="@+id/lock1"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:gravity="center"
-                        android:maxLines="1"
-                        android:textColor="#8A6844"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:id="@+id/dog2"
-                        android:layout_width="58dp"
-                        android:layout_height="58dp"
-                        android:contentDescription="@string/dog_spot_title"
-                        android:padding="4dp"
-                        android:src="@drawable/ic_dog_spot" />
-
-                    <TextView
-                        android:id="@+id/lock2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:gravity="center"
-                        android:maxLines="1"
-                        android:textColor="#8A6844"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <ImageView
-                        android:id="@+id/dog3"
-                        android:layout_width="58dp"
-                        android:layout_height="58dp"
-                        android:contentDescription="@string/dog_crown_title"
-                        android:padding="4dp"
-                        android:src="@drawable/ic_dog_crown" />
-
-                    <TextView
-                        android:id="@+id/lock3"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:gravity="center"
-                        android:maxLines="1"
-                        android:textColor="#8A6844"
-                        android:textSize="11sp" />
-                </LinearLayout>
-            </LinearLayout>
+                android:layout_height="48dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_badge"
+                android:stateListAnimator="@null"
+                android:text="@string/collection_open"
+                android:textAllCaps="false"
+                android:textColor="#3B2918"
+                android:textSize="15sp"
+                android:textStyle="bold" />
         </LinearLayout>
     </ScrollView>
 

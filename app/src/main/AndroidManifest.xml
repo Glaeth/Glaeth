@@ -38,6 +38,12 @@
         </activity>
 
         <activity
+            android:name=".ui.CollectionActivity"
+            android:exported="false"
+            android:label="@string/collection_title"
+            android:theme="@style/Theme.ClipSmile.Room" />
+
+        <activity
             android:name=".ui.FoodDropActivity"
             android:exported="false"
             android:screenOrientation="portrait"
