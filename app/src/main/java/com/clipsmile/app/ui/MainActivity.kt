@@ -178,10 +178,10 @@ class MainActivity : AppCompatActivity() {
     private fun updateAutoSendStatus() {
         val auto = AutoWhatsAppPrefs(this)
         val ready = auto.isEnabled && WhatsAppAutoSender.isValidPhone(auto.phoneNumber)
-        binding.autoSendStatusText.text = if (ready) {
-            getString(R.string.autosend_status_on, auto.phoneNumber)
-        } else {
-            getString(R.string.autosend_status_off)
+        binding.autoSendStatusText.text = when {
+            ready && auto.isAutoClickEnabled -> getString(R.string.autosend_status_on_autoclick, auto.phoneNumber)
+            ready -> getString(R.string.autosend_status_on, auto.phoneNumber)
+            else -> getString(R.string.autosend_status_off)
         }
     }
 

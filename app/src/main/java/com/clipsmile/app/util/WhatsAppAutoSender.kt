@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.clipsmile.app.data.AutoWhatsAppPrefs
+import com.clipsmile.app.service.WhatsAppSendClickService
 
 /**
  * Launches a direct WhatsApp conversation with a pre-configured contact and
@@ -37,7 +38,12 @@ object WhatsAppAutoSender {
         val phone = normalizePhone(rawPhone)
         if (phone.isBlank() || text.isBlank()) return
 
-        val uri = Uri.parse("https://wa.me/$phone?text=${Uri.encode(truncate(text))}")
+        if (AutoWhatsAppPrefs(context).isAutoClickEnabled) {
+            WhatsAppSendClickService.arm()
+        }
+
+        val encoded = Uri.encode(truncate(text))
+        val uri = Uri.parse("whatsapp://send?phone=$phone&text=$encoded")
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -54,6 +60,7 @@ object WhatsAppAutoSender {
 
         try {
             intent.setPackage(null)
+            intent.data = Uri.parse("https://wa.me/$phone?text=$encoded")
             context.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
             // WhatsApp isn't installed; nothing more we can do automatically.

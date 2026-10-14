@@ -21,9 +21,14 @@ class AutoWhatsAppPrefs(context: Context) {
         get() = prefs.getString(KEY_PHONE, null).orEmpty()
         set(value) = prefs.edit().putString(KEY_PHONE, value).apply()
 
+    var isAutoClickEnabled: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_CLICK, false)
+        set(value) = prefs.edit().putBoolean(KEY_AUTO_CLICK, value).apply()
+
     companion object {
         private const val PREFS_NAME = "clipsmile_auto_whatsapp"
         private const val KEY_ENABLED = "auto_enabled"
         private const val KEY_PHONE = "auto_phone"
+        private const val KEY_AUTO_CLICK = "auto_click_send"
     }
 }

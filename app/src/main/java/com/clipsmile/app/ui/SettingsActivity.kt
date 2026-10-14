@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
@@ -19,6 +20,7 @@ import com.clipsmile.app.data.RemoteSyncManager
 import com.clipsmile.app.data.RemoteSyncPrefs
 import com.clipsmile.app.data.SyncStatus
 import com.clipsmile.app.databinding.ActivitySettingsBinding
+import com.clipsmile.app.service.WhatsAppSendClickService
 import com.clipsmile.app.util.ClipFormatter
 import com.clipsmile.app.util.WhatsAppAutoSender
 import kotlinx.coroutines.launch
@@ -51,6 +53,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         AppVisibility.hasVisibleActivity = true
+        updateAccessibilityStatus()
     }
 
     override fun onPause() {
@@ -61,6 +64,8 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupAutoWhatsAppSection() {
         binding.autoWhatsAppSwitch.isChecked = autoWhatsAppPrefs.isEnabled
         binding.phoneEditText.setText(autoWhatsAppPrefs.phoneNumber)
+        binding.autoClickSwitch.isChecked = autoWhatsAppPrefs.isAutoClickEnabled
+        updateAccessibilityStatus()
 
         binding.autoWhatsAppSwitch.setOnCheckedChangeListener { _, isChecked ->
             autoWhatsAppPrefs.isEnabled = isChecked
@@ -76,6 +81,17 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
+        binding.autoClickSwitch.setOnCheckedChangeListener { _, isChecked ->
+            autoWhatsAppPrefs.isAutoClickEnabled = isChecked
+            if (isChecked && !WhatsAppSendClickService.isEnabled(this)) {
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+        }
+
+        binding.openAccessibilitySettingsButton.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
         binding.sendAutoWhatsAppTestButton.setOnClickListener {
             val phone = binding.phoneEditText.text?.toString().orEmpty()
             if (!WhatsAppAutoSender.isValidPhone(phone)) {
@@ -89,6 +105,13 @@ class SettingsActivity : AppCompatActivity() {
             )
             Toast.makeText(this, R.string.toast_autosend_test_sent, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun updateAccessibilityStatus() {
+        val enabled = WhatsAppSendClickService.isEnabled(this)
+        binding.accessibilityStatusText.text = getString(
+            if (enabled) R.string.settings_autoclick_on else R.string.settings_autoclick_off
+        )
     }
 
     private fun setupSyncSection() {

@@ -6,6 +6,7 @@
     <string name="empty_state_subtitle">Henüz kopya yok. Bir metin kopyala. Üstteki satırda numara yazıyorsa WhatsApp o sohbeti kendiliğinden açar.</string>
     <string name="autosend_status_off">Otomatik gönderim kapalı. Dokun, numarayı yaz ve anahtarı aç. Yoksa kopya sadece bu listede kalır.</string>
     <string name="autosend_status_on">Kopyaladığın metin, uygulama kapalı olsa da WhatsApp\'ta %1$s sohbetini açar. Gönder\'e sen basarsın. Üstteki bildirimi silme.</string>
+    <string name="autosend_status_on_autoclick">Kopyaladığın metin %1$s numarasına gider. Gönder\'e uygulama basar, sonra geri döner. Bildirimi silme.</string>
     <string name="overlay_permission_hint">Arka planda kopyaları yakalamak için buraya dokun ve \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
 
     <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
@@ -77,5 +78,10 @@
     <string name="settings_autosend_test">Test Gönder</string>
     <string name="settings_autosend_test_message">Bu bir test mesajıdır. :) uygulaması kopyaladığın metni WhatsApp sohbetine hazırlıyor.</string>
     <string name="toast_invalid_phone">Geçerli bir telefon numarası girin (ülke kodu dahil, 10 ile 15 rakam)</string>
-    <string name="toast_autosend_test_sent">WhatsApp sohbeti açıldı, Gönder\'e basmanız yeterli</string>
+    <string name="toast_autosend_test_sent">WhatsApp sohbeti açıldı</string>
+    <string name="settings_autoclick_title">Gönder\'e kendisi bassın</string>
+    <string name="settings_autoclick_open_settings">Erişilebilirlik iznini aç</string>
+    <string name="settings_autoclick_on">Erişilebilirlik izni açık. Sohbet açılınca Gönder\'e basılır.</string>
+    <string name="settings_autoclick_off">Erişilebilirlik izni kapalı. İzin olmadan Gönder\'e sen basarsın.</string>
+    <string name="accessibility_service_description">Kopyalanan metin için açılan WhatsApp sohbetinde Gönder düğmesine basar ve geri döner. Yalnızca bu uygulama bir sohbet açtıktan sonraki kısa süre içinde çalışır.</string>
 </resources>
