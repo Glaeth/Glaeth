@@ -38,6 +38,9 @@ Aynı imzayla yeniden kurulursa uygulama güncellenir, veriler silinmez.
 - **WhatsApp'a hazır açma** — Ayarlar'dan bir telefon numarası
   kaydedilince, her yeni kopyada o kişinin sohbeti mesaj dolu şekilde açılır.
   Gönder düğmesine sen basarsın.
+- **E-postaya aktarma** — Ana ekrandaki "Export Data" düğmesi, kayıtları
+  aralarında boş satır bırakarak `guray.vatanuk@gmail.com` adresine yazılmış
+  bir e-posta taslağı açar. Mesaj, e-posta uygulamasında Gönder'e basılınca gider.
 - **WhatsApp'a elle gönderme** — Tek bir kaydı ya da tüm listeyi "WhatsApp'a
   Gönder" düğmesiyle de paylaşabilirsiniz. WhatsApp kurulu değilse genel
   paylaşım menüsüne geri döner; çok uzun bir metin listesi paylaşılacaksa

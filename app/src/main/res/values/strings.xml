@@ -7,6 +7,9 @@
     <string name="overlay_permission_hint">Arka planda kopyaları yakalamak için buraya dokun ve \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
 
     <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
+    <string name="action_export_email">Export Data</string>
+    <string name="email_export_subject">:) pano arşivi</string>
+    <string name="toast_no_email_app">E-posta uygulaması bulunamadı</string>
     <string name="action_clear_all">Tümünü Temizle</string>
     <string name="action_copy">Kopyala</string>
     <string name="action_share_item">WhatsApp\'a gönder</string>

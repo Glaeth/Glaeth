@@ -3,14 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_chroma_screen">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/pokemon_red"
-        android:elevation="6dp">
+        android:background="@android:color/transparent"
+        android:elevation="0dp"
+        android:stateListAnimator="@null"
+        app:elevation="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -54,7 +57,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
                 android:text="@string/app_name"
-                android:textColor="@android:color/white"
+                android:textColor="@color/glass_ink"
                 android:textSize="16sp"
                 style="@style/PixelTitleText" />
 
@@ -76,7 +79,7 @@
             android:layout_marginBottom="14dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:background="@drawable/bg_pokedex_screen"
+            android:background="@drawable/bg_glass_bar"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:paddingTop="8dp"
@@ -95,7 +98,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
                 android:text="@string/monitoring_on"
-                android:textColor="@color/ink_dark"
+                android:textColor="@color/glass_ink"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -136,7 +139,7 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:paddingTop="10dp"
-            android:paddingBottom="180dp"
+            android:paddingBottom="250dp"
             tools:listitem="@layout/item_clip" />
 
         <LinearLayout
@@ -163,7 +166,7 @@
                 android:layout_marginTop="20dp"
                 android:gravity="center"
                 android:text="@string/empty_state_title"
-                android:textColor="@color/ink_dark"
+                android:textColor="@color/glass_ink"
                 android:textSize="13sp"
                 style="@style/PixelTitleText" />
 
@@ -173,7 +176,7 @@
                 android:layout_marginTop="12dp"
                 android:gravity="center"
                 android:text="@string/empty_state_subtitle"
-                android:textColor="@color/ink_light"
+                android:textColor="@color/glass_ink_muted"
                 android:textSize="14sp" />
         </LinearLayout>
     </FrameLayout>
@@ -182,8 +185,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:layout_margin="12dp"
+        android:background="@drawable/bg_glass_panel"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="12dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/sendAllWhatsAppButton"
@@ -198,8 +203,25 @@
             app:icon="@drawable/ic_whatsapp"
             app:iconGravity="textStart"
             app:iconTint="@android:color/white"
-            app:strokeColor="@color/card_border"
-            app:strokeWidth="2dp" />
+            app:strokeColor="@color/glass_stroke"
+            app:strokeWidth="1dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/exportEmailButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/action_export_email"
+            android:textAllCaps="false"
+            android:textColor="@color/glass_ink"
+            android:textSize="16sp"
+            app:cornerRadius="26dp"
+            app:icon="@drawable/ic_send"
+            app:iconGravity="textStart"
+            app:iconTint="@color/chroma_cyan"
+            app:strokeColor="@color/chroma_cyan"
+            app:strokeWidth="1dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/clearAllButton"
@@ -209,9 +231,9 @@
             android:layout_marginTop="4dp"
             android:text="@string/action_clear_all"
             android:textAllCaps="false"
-            android:textColor="@color/pokemon_red_dark"
+            android:textColor="@color/chroma_magenta"
             app:icon="@drawable/ic_delete"
-            app:iconTint="@color/pokemon_red_dark" />
+            app:iconTint="@color/chroma_magenta" />
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

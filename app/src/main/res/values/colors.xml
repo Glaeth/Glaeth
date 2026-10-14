@@ -22,4 +22,13 @@
     <color name="danger_red">@color/pokemon_red</color>
 
     <color name="background_dark">#171615</color>
+
+    <color name="chroma_bg">#12081F</color>
+    <color name="chroma_violet">#7C5CFF</color>
+    <color name="chroma_magenta">#FF4D8D</color>
+    <color name="chroma_cyan">#3DDCFF</color>
+    <color name="glass_fill">#2EFFFFFF</color>
+    <color name="glass_stroke">#80FFFFFF</color>
+    <color name="glass_ink">#F7F4FF</color>
+    <color name="glass_ink_muted">#D5CEE8</color>
 </resources>

@@ -32,6 +32,7 @@ import com.clipsmile.app.databinding.ActivityMainBinding
 import com.clipsmile.app.service.ClipboardWatcherService
 import com.clipsmile.app.util.ClipCapturePipeline
 import com.clipsmile.app.util.ClipFormatter
+import com.clipsmile.app.util.EmailExportHelper
 import com.clipsmile.app.util.WhatsAppShareHelper
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
@@ -153,6 +154,11 @@ class MainActivity : AppCompatActivity() {
         binding.sendAllWhatsAppButton.setOnClickListener {
             val text = ClipFormatter.joinForExport(latestEntries)
             WhatsAppShareHelper.shareText(this, text)
+        }
+
+        binding.exportEmailButton.setOnClickListener {
+            val text = ClipFormatter.joinForExport(latestEntries)
+            EmailExportHelper.export(this, text)
         }
 
         binding.clearAllButton.setOnClickListener { confirmClearAll() }
