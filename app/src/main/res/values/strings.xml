@@ -3,7 +3,9 @@
     <string name="app_name">:)</string>
 
     <string name="empty_state_title">Hazır!</string>
-    <string name="empty_state_subtitle">Bir linki veya metni kopyalaman yeterli. Uygulama onu burada saklar ve WhatsApp\'ta seçtiğin kişiye hazırlar; sen sadece Gönder\'e basarsın.</string>
+    <string name="empty_state_subtitle">Henüz kopya yok. Bir metin kopyala. Üstteki satırda numara yazıyorsa WhatsApp o sohbeti kendiliğinden açar.</string>
+    <string name="autosend_status_off">Otomatik gönderim kapalı. Dokun, numarayı yaz ve anahtarı aç. Yoksa kopya sadece bu listede kalır.</string>
+    <string name="autosend_status_on">Kopyaladığın metin, uygulama kapalı olsa da WhatsApp\'ta %1$s sohbetini açar. Gönder\'e sen basarsın. Üstteki bildirimi silme.</string>
     <string name="overlay_permission_hint">Arka planda kopyaları yakalamak için buraya dokun ve \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
 
     <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
@@ -23,7 +25,7 @@
     <string name="notification_channel_name">Pano İzleme</string>
     <string name="notification_channel_description">Kopyaladığınız metinleri kaydetmek için panoyu izler</string>
     <string name="notification_title">:) panoyu izliyor</string>
-    <string name="notification_text">Kopyaladığınız her şey otomatik olarak kaydediliyor</string>
+    <string name="notification_text">Bu bildirim durursa kopyalar yakalanmaz. Silme.</string>
 
     <string name="clear_all_confirm_title">Tümünü silmek istiyor musunuz?</string>
     <string name="clear_all_confirm_message">Kaydedilen bütün kopyalar kalıcı olarak silinecek.</string>

@@ -19,7 +19,7 @@ class ClipSmileApp : Application() {
         val channel = NotificationChannel(
             NOTIFICATION_CHANNEL_ID,
             getString(R.string.notification_channel_name),
-            NotificationManager.IMPORTANCE_MIN
+            NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = getString(R.string.notification_channel_description)
             setShowBadge(false)
@@ -29,6 +29,6 @@ class ClipSmileApp : Application() {
     }
 
     companion object {
-        const val NOTIFICATION_CHANNEL_ID = "clipboard_watcher_channel"
+        const val NOTIFICATION_CHANNEL_ID = "clipboard_watcher_channel_v2"
     }
 }

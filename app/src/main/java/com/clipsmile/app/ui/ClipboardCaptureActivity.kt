@@ -3,10 +3,12 @@ package com.clipsmile.app.ui
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.WindowManager
+import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
 import androidx.lifecycle.lifecycleScope
@@ -34,11 +36,25 @@ class ClipboardCaptureActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         startedAtMillis = System.currentTimeMillis()
-        window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
+        // A window with no content never becomes the focused app, so Android
+        // keeps hiding the clipboard. A transparent full-screen view is enough
+        // to take focus, read the copy, then close.
+        setContentView(View(this).apply {
+            setBackgroundColor(Color.TRANSPARENT)
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        })
         overridePendingTransition(0, 0)
         timeoutHandler.postDelayed({
             if (!handled) finishQuietly()
         }, FOCUS_TIMEOUT_MILLIS)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        timeoutHandler.post { handleClipboard() }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
