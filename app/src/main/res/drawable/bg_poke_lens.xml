@@ -4,5 +4,5 @@
     <solid android:color="@color/pokemon_blue" />
     <stroke
         android:width="3dp"
-        android:color="@android:color/white" />
+        android:color="@color/pikachu_yellow" />
 </shape>

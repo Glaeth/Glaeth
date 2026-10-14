@@ -19,7 +19,7 @@
         <View
             android:layout_width="6dp"
             android:layout_height="match_parent"
-            android:background="@color/chroma_cyan" />
+            android:background="@color/pokemon_red" />
 
     <LinearLayout
         android:layout_width="match_parent"

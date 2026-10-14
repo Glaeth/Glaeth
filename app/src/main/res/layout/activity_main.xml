@@ -68,7 +68,8 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/action_settings"
                 android:padding="8dp"
-                android:src="@drawable/ic_settings" />
+                android:src="@drawable/ic_settings"
+                app:tint="@color/pikachu_yellow" />
         </LinearLayout>
 
         <LinearLayout
@@ -215,11 +216,12 @@
             android:backgroundTint="@color/whatsapp_green"
             android:text="@string/action_send_all_whatsapp"
             android:textAllCaps="false"
+            android:textColor="@color/ink_on_yellow"
             android:textSize="16sp"
             app:cornerRadius="27dp"
             app:icon="@drawable/ic_whatsapp"
             app:iconGravity="textStart"
-            app:iconTint="@android:color/white"
+            app:iconTint="@color/ink_on_yellow"
             app:strokeColor="@color/glass_stroke"
             app:strokeWidth="1dp" />
 
@@ -237,7 +239,7 @@
             app:icon="@drawable/ic_send"
             app:iconGravity="textStart"
             app:iconTint="@color/chroma_cyan"
-            app:strokeColor="@color/chroma_cyan"
+            app:strokeColor="@color/pikachu_yellow"
             app:strokeWidth="1dp" />
 
         <com.google.android.material.button.MaterialButton

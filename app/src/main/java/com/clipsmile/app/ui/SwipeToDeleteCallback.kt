@@ -1,7 +1,6 @@
 package com.clipsmile.app.ui
 
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -71,6 +70,6 @@ class SwipeToDeleteCallback(
 
     private fun deleteIcon(recyclerView: RecyclerView): Drawable =
         ContextCompat.getDrawable(recyclerView.context, R.drawable.ic_delete)!!.apply {
-            setTint(Color.WHITE)
+            setTint(ContextCompat.getColor(recyclerView.context, R.color.pikachu_yellow))
         }
 }

@@ -1,20 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ClipSmile" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/pokemon_red</item>
-        <item name="colorPrimaryVariant">@color/pokemon_red_dark</item>
-        <item name="colorOnPrimary">@color/surface_light</item>
-        <item name="colorSecondary">@color/pokemon_blue</item>
-        <item name="colorSecondaryVariant">@color/pokemon_blue_dark</item>
-        <item name="colorOnSecondary">@color/surface_light</item>
-        <item name="android:statusBarColor">@color/pokemon_red_dark</item>
+    <style name="Theme.ClipSmile" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/pikachu_yellow</item>
+        <item name="colorPrimaryVariant">@color/pokemon_red</item>
+        <item name="colorOnPrimary">@color/ink_on_yellow</item>
+        <item name="colorSecondary">@color/pokemon_red</item>
+        <item name="colorSecondaryVariant">@color/pokemon_red_dark</item>
+        <item name="colorOnSecondary">@color/pikachu_yellow</item>
+        <item name="android:statusBarColor">@color/night_bg</item>
+        <item name="android:navigationBarColor">@color/night_bg</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowBackground">@color/background_light</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowBackground">@color/night_bg</item>
+        <item name="colorSurface">@color/night_card</item>
+        <item name="colorOnSurface">@color/ink_gold</item>
+        <item name="android:textColorPrimary">@color/ink_gold</item>
+        <item name="android:textColorSecondary">@color/ink_gold_muted</item>
+        <item name="android:textColor">@color/ink_gold</item>
+        <item name="colorControlActivated">@color/pikachu_yellow</item>
+        <item name="switchStyle">@style/Widget.ClipSmile.Switch</item>
+        <item name="popupMenuStyle">@style/Widget.ClipSmile.PopupMenu</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.ClipSmile.Dialog</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ClipSmile.Dialog</item>
+        <item name="snackbarStyle">@style/Widget.ClipSmile.Snackbar</item>
     </style>
 
     <style name="PixelTitleText">
         <item name="android:fontFamily">@font/press_start_2p</item>
         <item name="android:includeFontPadding">false</item>
         <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <style name="Widget.ClipSmile.PopupMenu" parent="Widget.MaterialComponents.PopupMenu">
+        <item name="android:popupBackground">@color/night_raised</item>
+        <item name="android:textColor">@color/ink_gold</item>
+    </style>
+
+    <style name="ThemeOverlay.ClipSmile.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorSurface">@color/night_card</item>
+        <item name="colorOnSurface">@color/ink_gold</item>
+        <item name="colorPrimary">@color/pikachu_yellow</item>
+        <item name="colorOnPrimary">@color/ink_on_yellow</item>
+        <item name="android:textColorPrimary">@color/ink_gold</item>
+        <item name="android:background">@color/night_card</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.ClipSmile.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.ClipSmile.DialogButton</item>
+    </style>
+
+    <style name="Widget.ClipSmile.DialogButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/pikachu_yellow</item>
+    </style>
+
+    <style name="Widget.ClipSmile.Snackbar" parent="Widget.MaterialComponents.Snackbar">
+        <item name="backgroundTint">@color/night_raised</item>
+    </style>
+
+    <style name="Widget.ClipSmile.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+        <item name="thumbTint">@color/switch_thumb</item>
+        <item name="trackTint">@color/switch_track</item>
     </style>
 </resources>

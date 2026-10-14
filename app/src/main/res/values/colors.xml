@@ -7,28 +7,35 @@
     <color name="pokemon_red_dark">#B8290A</color>
     <color name="pokemon_blue">#2A75BB</color>
     <color name="pokemon_blue_dark">#1C4F80</color>
-    <color name="poke_ball_black">#232323</color>
-    <color name="pokedex_cream">#FFF6DC</color>
-    <color name="card_border">#2B2B2B</color>
+    <color name="poke_ball_black">#16120E</color>
+    <color name="pokedex_cream">#241C16</color>
+    <color name="card_border">#FFCB05</color>
 
-    <color name="whatsapp_green">#25D366</color>
+    <color name="whatsapp_green">#1E8C45</color>
     <color name="status_active_green">#3DAE2B</color>
 
-    <color name="ink_dark">#232323</color>
-    <color name="ink_light">#6B6457</color>
-    <color name="surface_light">#FFFFFF</color>
-    <color name="background_light">@color/pokedex_cream</color>
+    <color name="night_bg">#0C0A0E</color>
+    <color name="night_card">#1A1418</color>
+    <color name="night_raised">#261C18</color>
+    <color name="ink_gold">#FFCB05</color>
+    <color name="ink_gold_muted">#C6A15A</color>
+    <color name="ink_on_yellow">#1A1206</color>
+
+    <color name="ink_dark">@color/ink_gold</color>
+    <color name="ink_light">@color/ink_gold_muted</color>
+    <color name="surface_light">@color/night_card</color>
+    <color name="background_light">@color/night_bg</color>
     <color name="card_stroke">@color/card_border</color>
     <color name="danger_red">@color/pokemon_red</color>
 
-    <color name="background_dark">#171615</color>
+    <color name="background_dark">@color/night_bg</color>
 
-    <color name="chroma_bg">#12081F</color>
-    <color name="chroma_violet">#7C5CFF</color>
-    <color name="chroma_magenta">#FF4D8D</color>
-    <color name="chroma_cyan">#3DDCFF</color>
-    <color name="glass_fill">#2EFFFFFF</color>
-    <color name="glass_stroke">#80FFFFFF</color>
-    <color name="glass_ink">#F7F4FF</color>
-    <color name="glass_ink_muted">#D5CEE8</color>
+    <color name="chroma_bg">#0C0A0E</color>
+    <color name="chroma_violet">#8A2BE2</color>
+    <color name="chroma_magenta">#E3350D</color>
+    <color name="chroma_cyan">#FFCB05</color>
+    <color name="glass_fill">#E61A1418</color>
+    <color name="glass_stroke">#66FFCB05</color>
+    <color name="glass_ink">@color/ink_gold</color>
+    <color name="glass_ink_muted">@color/ink_gold_muted</color>
 </resources>
