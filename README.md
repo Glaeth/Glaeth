@@ -16,18 +16,17 @@ Hazır derlenmiş dosya: [`dist/clipsmile.apk`](dist/clipsmile.apk)
 3. Uygulamayı aç. Sarı şerit çıkarsa ona dokunup **diğer uygulamaların üzerinde göster** iznini aç (arka planda kopyaları yakalamak için şart).
 4. Bildirim iznini de kabul et. Üstteki bildirimi silme; silinirse arka plan izleme durur.
 5. Ana ekrandaki adresi aç. Bu, kopyaların düştüğü sunucu sayfasıdır. Adresi Ayarlar'dan kopyalayıp başka telefonda da açabilirsin.
-6. Bir link kopyala. Samsung klavyesi açık kalabilir. Metin listede görünür ve aynı adrese gider.
+6. Uygulamayı kapat. Herhangi bir yerde bir link kopyala. Bir iki saniye içinde o adrese düşer. Her kopyada uygulamayı açmana veya bir düğmeye basmana gerek yok.
 
 Aynı imzayla yeniden kurulursa uygulama güncellenir, veriler silinmez.
 
 ## Özellikler
 
-- **Otomatik pano izleme** — Herhangi bir uygulamada bir metin kopyaladığınızda
-  arka planda çalışan bir servis bunu yakalar ve yerel veritabanına kaydeder.
-  Android 10 ve üzerinde işletim sistemi, pano içeriğini yalnızca o an odakta
-  olan uygulamaya verir; bu yüzden uygulama hem arka planda çalışan bir
-  bildirim servisi hem de uygulama ekranı açıkken devreye giren ikinci bir
-  dinleyici kullanarak yakalamayı güvenilir hale getirir.
+- **Otomatik pano izleme** — Ekran açıkken arka plan servisi panoyu kendisi
+  kontrol eder. Android 10 ve sonrası pano metnini yalnızca o an odaktaki
+  uygulamaya verdiği için servis, "diğer uygulamaların üzerinde göster" izniyle
+  görünmez bir pencereyi kısa bir an öne alır, metni okur ve sunucuya yollar.
+  Samsung klavyesini değiştirmene gerek yoktur.
 - **Alt alta, boşluklu liste** — Her kopyalanan metin kendi kartında, en
   yeniden en eskiye doğru sıralanmış şekilde listelenir. Dışa aktarılan/
   paylaşılan metinde kayıtlar arasına boş satır bırakılır.
@@ -60,8 +59,8 @@ app/
     data/                        Room veritabanı, DAO, repository ve internet
                                   senkronizasyon tercihleri/yöneticisi
     service/                     Panoyu izleyen ön planda servis
-    ui/                          MainActivity, SettingsActivity, anlık pano
-                                  okuma ekranı, RecyclerView adapter
+    ui/                          MainActivity, SettingsActivity, RecyclerView
+                                  adapter
     util/                        Elle WhatsApp paylaşımı, ntfy.sh istemcisi,
                                   tarih yardımcıları
   src/main/res/                  Layout, string, renk, yazı tipi ve ikon
@@ -87,10 +86,12 @@ derleyebilirsiniz:
 
 ## Notlar
 
-- Android 10 ve sonrasında pano içeriğini yalnızca o an ekranda olan
-  uygulama görebilir. Bu yüzden uygulama, arka plandayken kopyayı okuyabilmek
-  için kısa bir an öne çıkar. Bunun çalışması için **diğer uygulamaların
-  üzerinde göster** izni gerekir; izin yoksa ana ekranda sarı bir uyarı çıkar.
+- Android 10 ve sonrasında pano içeriğini yalnızca o an odakta olan
+  uygulama görebilir ve arka plandaki uygulamaya "kopyalandı" demez.
+  Bu yüzden servis, ekran açıkken yaklaşık iki saniyede bir panoyu okur.
+  Bunun çalışması için **diğer uygulamaların üzerinde göster** izni bir kez
+  açılmalıdır; izin yoksa ana ekranda sarı bir uyarı çıkar. Üstteki bildirimi
+  silersen izleme durur.
 - Bildirim izni (Android 13+) ve pano izleme servisi, uygulama ilk açıldığında
   ve anahtar her açıldığında istenir/başlatılır.
 - WhatsApp paylaşımı `com.whatsapp` paketini, yoksa `com.whatsapp.w4b`

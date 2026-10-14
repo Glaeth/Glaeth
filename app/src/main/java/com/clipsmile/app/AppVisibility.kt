@@ -2,10 +2,9 @@ package com.clipsmile.app
 
 /**
  * True while [com.clipsmile.app.ui.MainActivity] or
- * [com.clipsmile.app.ui.SettingsActivity] is resumed. The clipboard watcher
- * uses this to decide whether it can read the clipboard directly (Android 10+
- * only allows that for the focused app) or needs the momentary capture
- * activity.
+ * [com.clipsmile.app.ui.SettingsActivity] is resumed. The watcher skips its
+ * background sample while one of those screens is open, because that screen
+ * already reads the clipboard.
  */
 object AppVisibility {
     @Volatile
