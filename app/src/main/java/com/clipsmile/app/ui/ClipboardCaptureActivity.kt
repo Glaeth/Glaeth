@@ -24,8 +24,8 @@ import kotlinx.coroutines.launch
  * was copied, but it cannot read the text itself. It brings this activity
  * up for a moment (allowed once the user grants "display over other apps"),
  * this activity reads the text as soon as it has window focus, hands it to
- * [ClipCapturePipeline], and closes immediately so the user lands back where
- * they were — or in WhatsApp, if automatic forwarding is on.
+ * [ClipCapturePipeline], and closes immediately so the user lands back
+ * where they were. The pipeline uploads the text to the configured server.
  */
 class ClipboardCaptureActivity : AppCompatActivity() {
 
@@ -93,9 +93,8 @@ class ClipboardCaptureActivity : AppCompatActivity() {
         }
         handled = true
 
-        // Stay open until the text is saved and WhatsApp (if enabled) has
-        // been launched. This window is the foreground app for that instant,
-        // which is what lets the launch succeed on Android 10+.
+        // Stay open until the text is saved. This window is the foreground app
+        // for that instant, which is what lets Android reveal the clipboard.
         lifecycleScope.launch {
             try {
                 ClipCapturePipeline.capture(

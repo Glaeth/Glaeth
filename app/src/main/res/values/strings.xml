@@ -3,11 +3,10 @@
     <string name="app_name">:)</string>
 
     <string name="empty_state_title">Hazır!</string>
-    <string name="empty_state_subtitle">Henüz kopya yok. Bir metin kopyala. Üstteki satırda numara yazıyorsa WhatsApp o sohbeti kendiliğinden açar.</string>
-    <string name="autosend_status_off">Otomatik gönderim kapalı. Dokun, numarayı yaz ve anahtarı aç. Yoksa kopya sadece bu listede kalır.</string>
-    <string name="autosend_status_on">Kopyaladığın metin, uygulama kapalı olsa da WhatsApp\'ta %1$s sohbetini açar. Gönder\'e sen basarsın. Üstteki bildirimi silme.</string>
-    <string name="autosend_status_on_autoclick">Kopyaladığın metin %1$s numarasına gider. Gönder\'e uygulama basar, sonra geri döner. Bildirimi silme.</string>
-    <string name="overlay_permission_hint">Arka planda kopyaları yakalamak için buraya dokun ve \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
+    <string name="empty_state_subtitle">Henüz kopya yok. Bir metin kopyala. Kayıt üstteki sunucu adresine gider.</string>
+    <string name="server_status_on">Kopyalar bu adrese gider: %1$s\nAdrese dokun. Samsung klavyesi açık kalsın. Arka planda yakalamak için sarı izni aç ve üstteki bildirimi silme.</string>
+    <string name="server_status_off">Sunucuya gönderim kapalı. Ayarlardan aç.</string>
+    <string name="overlay_permission_hint">Arka planda kopyaları sunucuya göndermek için buraya dokun ve \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
 
     <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
     <string name="action_export_email">Export Data</string>

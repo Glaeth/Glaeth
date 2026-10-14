@@ -4,14 +4,11 @@ import android.content.Context
 import com.clipsmile.app.data.ClipRepository
 import com.clipsmile.app.data.RemoteSyncManager
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Single path for "a new piece of text was just copied": persist it once,
- * mirror it to the internet channel if that is turned on, and open the
- * pre-configured WhatsApp chat if automatic forwarding is turned on.
+ * mirror it to the internet channel if that is turned on.
  */
 object ClipCapturePipeline {
 
@@ -31,9 +28,6 @@ object ClipCapturePipeline {
         if (!saved && !forwardDuplicates) return
         if (saved) {
             RemoteSyncManager.notifyNewClip(appContext, text)
-        }
-        withContext(Dispatchers.Main) {
-            WhatsAppAutoSender.autoSendIfEnabled(appContext, text)
         }
     }
 }

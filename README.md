@@ -1,15 +1,11 @@
 # :)
 
-Arkadaşının her seferinde bir linki kopyalayıp WhatsApp'tan elle atmasına
-gerek kalmasın diye yazılmış bir Android uygulaması.
+Kopyalanan her metin veya linki telefonda saklayan ve aynı anda sana özel
+bir sunucu adresine gönderen bir Android uygulaması.
 
-Telefonuna kurduğunda, kopyaladığı her metin veya link otomatik kaydedilir
-ve Ayarlar'a yazdığın numarayla WhatsApp sohbeti **mesaj hazır** şekilde
-açılır. Yapılacak tek şey Gönder'e basmaktır.
-
-Kayıtlar uygulama içinde alt alta durur; hepsini tek seferde WhatsApp'tan
-da gönderebilirsin. İstersen her kopya aynı anda internette sana özel bir
-adrese de düşer, böylece başka bir cihazdan bakabilirsin.
+WhatsApp sohbeti açılmaz. Kayıt, uygulama listesine düşer ve açık olan
+internet gönderimiyle `https://ntfy.sh/<kanal>` adresine gider. O adresi
+tarayıcıda veya ücretsiz ntfy uygulamasında açınca kopyaları görürsün.
 
 ## APK'yı indir ve kur
 
@@ -18,9 +14,9 @@ Hazır derlenmiş dosya: [`dist/clipsmile.apk`](dist/clipsmile.apk)
 1. APK'yı telefona indir.
 2. Dosyayı aç ve "yine de yükle" / bilinmeyen kaynaklara izin ver.
 3. Uygulamayı aç. Sarı şerit çıkarsa ona dokunup **diğer uygulamaların üzerinde göster** iznini aç (arka planda kopyaları yakalamak için şart).
-4. Bildirim iznini de kabul et.
-5. Sağ üstteki dişliden **WhatsApp'a Otomatik Gönder**'i aç ve mesajın gideceği numarayı ülke koduyla yaz (Türkiye için `90` ile, örn. `905551112233`).
-6. Bir link kopyala. WhatsApp, o kişiyle sohbeti ve metni hazır açar; Gönder'e bas.
+4. Bildirim iznini de kabul et. Üstteki bildirimi silme; silinirse arka plan izleme durur.
+5. Ana ekrandaki adresi aç. Bu, kopyaların düştüğü sunucu sayfasıdır. Adresi Ayarlar'dan kopyalayıp başka telefonda da açabilirsin.
+6. Bir link kopyala. Samsung klavyesi açık kalabilir. Metin listede görünür ve aynı adrese gider.
 
 Aynı imzayla yeniden kurulursa uygulama güncellenir, veriler silinmez.
 
@@ -35,9 +31,10 @@ Aynı imzayla yeniden kurulursa uygulama güncellenir, veriler silinmez.
 - **Alt alta, boşluklu liste** — Her kopyalanan metin kendi kartında, en
   yeniden en eskiye doğru sıralanmış şekilde listelenir. Dışa aktarılan/
   paylaşılan metinde kayıtlar arasına boş satır bırakılır.
-- **WhatsApp'a hazır açma** — Ayarlar'dan bir telefon numarası
-  kaydedilince, her yeni kopyada o kişinin sohbeti mesaj dolu şekilde açılır.
-  Gönder düğmesine sen basarsın.
+- **Sunucuya otomatik gönderme** — İnternete gönderme varsayılan olarak
+  açıktır. Her yeni kopya [ntfy.sh](https://ntfy.sh) üzerindeki sana özel
+  kanala gider. Adresi ana ekranda görürsün; Ayarlar'dan kapatabilir,
+  kanal adını değiştirebilir veya test mesajı gönderebilirsin.
 - **E-postaya aktarma** — Ana ekrandaki "Export Data" düğmesi, kayıtları
   aralarında boş satır bırakarak `guray.vatanuk@gmail.com` adresine yazılmış
   bir e-posta taslağı açar. Mesaj, e-posta uygulamasında Gönder'e basılınca gider.
@@ -45,13 +42,6 @@ Aynı imzayla yeniden kurulursa uygulama güncellenir, veriler silinmez.
   Gönder" düğmesiyle de paylaşabilirsiniz. WhatsApp kurulu değilse genel
   paylaşım menüsüne geri döner; çok uzun bir metin listesi paylaşılacaksa
   otomatik olarak bir `.txt` dosyası olarak eklenir.
-- **İnternete anlık gönderme** — Ayarlar ekranından açıldığında, kopyaladığınız
-  her şey [ntfy.sh](https://ntfy.sh) üzerinden kendi özel kanalınıza anında
-  gönderilir. Bu kanalın adresini (`https://ntfy.sh/<kanal-adı>`) tarayıcınızda
-  açarak ya da ücretsiz ntfy uygulamasıyla takip ederek başka bir cihazdan,
-  her yerden ulaşabilirsiniz. Kanal adı değiştirilebilir/yeniden
-  oluşturulabilir, bağlantı kopyalanabilir/paylaşılabilir ve bir test mesajı
-  gönderilerek bağlantı doğrulanabilir.
 - **Kayıt yönetimi** — Tek tek kopya/sil/paylaş, tümünü temizle, kaydırarak
   silme ve "geri al" bildirimi (Snackbar) desteklenir.
 - **Pano izleme anahtarı** — Üst çubuktaki anahtar ile izlemeyi açıp
@@ -72,8 +62,8 @@ app/
     service/                     Panoyu izleyen ön planda servis
     ui/                          MainActivity, SettingsActivity, anlık pano
                                   okuma ekranı, RecyclerView adapter
-    util/                        WhatsApp paylaşımı ve otomatik gönderim,
-                                  ntfy.sh istemcisi, tarih yardımcıları
+    util/                        Elle WhatsApp paylaşımı, ntfy.sh istemcisi,
+                                  tarih yardımcıları
   src/main/res/                  Layout, string, renk, yazı tipi ve ikon
                                   kaynakları
 ```

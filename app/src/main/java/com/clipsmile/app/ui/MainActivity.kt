@@ -13,7 +13,6 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
-import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -28,15 +27,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.R
-import com.clipsmile.app.data.AutoWhatsAppPrefs
 import com.clipsmile.app.data.ClipEntry
 import com.clipsmile.app.data.ClipRepository
+import com.clipsmile.app.data.RemoteSyncPrefs
 import com.clipsmile.app.databinding.ActivityMainBinding
 import com.clipsmile.app.service.ClipboardWatcherService
 import com.clipsmile.app.util.ClipCapturePipeline
 import com.clipsmile.app.util.ClipFormatter
 import com.clipsmile.app.util.EmailExportHelper
-import com.clipsmile.app.util.WhatsAppAutoSender
 import com.clipsmile.app.util.WhatsAppShareHelper
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
@@ -91,8 +89,7 @@ class MainActivity : AppCompatActivity() {
         AppVisibility.hasVisibleActivity = true
         clipboardManager.addPrimaryClipChangedListener(foregroundClipListener)
         updateOverlayHint()
-        updateKeyboardHint()
-        updateAutoSendStatus()
+        updateServerStatus()
         captureCurrentClipboard()
     }
 
@@ -174,19 +171,18 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         binding.overlayHintText.setOnClickListener { openOverlaySettings() }
-        binding.keyboardHintText.setOnClickListener { openKeyboardSettings() }
         binding.autoSendStatusText.setOnClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
+            val url = RemoteSyncPrefs(this).channelUrl
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
     }
 
-    private fun updateAutoSendStatus() {
-        val auto = AutoWhatsAppPrefs(this)
-        val ready = auto.isEnabled && WhatsAppAutoSender.isValidPhone(auto.phoneNumber)
-        binding.autoSendStatusText.text = when {
-            ready && auto.isAutoClickEnabled -> getString(R.string.autosend_status_on_autoclick, auto.phoneNumber)
-            ready -> getString(R.string.autosend_status_on, auto.phoneNumber)
-            else -> getString(R.string.autosend_status_off)
+    private fun updateServerStatus() {
+        val sync = RemoteSyncPrefs(this)
+        binding.autoSendStatusText.text = if (sync.isEnabled) {
+            getString(R.string.server_status_on, sync.channelUrl)
+        } else {
+            getString(R.string.server_status_off)
         }
     }
 
@@ -195,25 +191,6 @@ class MainActivity : AppCompatActivity() {
         if (clip.itemCount == 0) return
         val text = clip.getItemAt(0).coerceToText(this)?.toString() ?: return
         ClipCapturePipeline.captureAsync(lifecycleScope, this, text)
-    }
-
-    private fun updateKeyboardHint() {
-        val selected = Settings.Secure.getString(
-            contentResolver,
-            Settings.Secure.DEFAULT_INPUT_METHOD
-        ).orEmpty()
-        val ours = selected.startsWith(packageName)
-        binding.keyboardHintText.visibility = if (ours) View.GONE else View.VISIBLE
-    }
-
-    private fun openKeyboardSettings() {
-        val manager = getSystemService(InputMethodManager::class.java)
-        val enabled = manager.enabledInputMethodList.any { it.packageName == packageName }
-        if (!enabled) {
-            startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
-        } else {
-            manager.showInputMethodPicker()
-        }
     }
 
     private fun updateOverlayHint() {

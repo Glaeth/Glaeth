@@ -17,7 +17,7 @@ class RemoteSyncPrefs(context: Context) {
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     var isEnabled: Boolean
-        get() = prefs.getBoolean(KEY_ENABLED, false)
+        get() = prefs.getBoolean(KEY_ENABLED, true)
         set(value) = prefs.edit().putBoolean(KEY_ENABLED, value).apply()
 
     var channel: String

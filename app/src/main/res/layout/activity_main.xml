@@ -122,22 +122,8 @@
             android:paddingTop="10dp"
             android:paddingEnd="12dp"
             android:paddingBottom="10dp"
-            android:text="@string/autosend_status_off"
+            android:text="@string/server_status_off"
             android:textColor="@color/glass_ink"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/keyboardHintText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/chroma_cyan"
-            android:foreground="?attr/selectableItemBackground"
-            android:paddingStart="16dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="10dp"
-            android:text="@string/keyboard_hint"
-            android:textColor="@color/ink_dark"
             android:textSize="13sp" />
 
         <TextView
