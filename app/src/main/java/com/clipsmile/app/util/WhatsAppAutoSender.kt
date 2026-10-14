@@ -30,7 +30,15 @@ object WhatsAppAutoSender {
         send(context, phoneNumber, text)
     }
 
-    fun normalizePhone(rawPhone: String): String = rawPhone.filter { it.isDigit() }
+    fun normalizePhone(rawPhone: String): String {
+        var digits = rawPhone.filter { it.isDigit() }
+        if (digits.length == 11 && digits.startsWith("0")) {
+            digits = "90" + digits.drop(1)
+        } else if (digits.length == 10 && digits.startsWith("5")) {
+            digits = "90$digits"
+        }
+        return digits
+    }
 
     fun isValidPhone(rawPhone: String): Boolean = normalizePhone(rawPhone).length in 10..15
 
@@ -43,7 +51,7 @@ object WhatsAppAutoSender {
         }
 
         val encoded = Uri.encode(truncate(text))
-        val uri = Uri.parse("whatsapp://send?phone=$phone&text=$encoded")
+        val uri = Uri.parse("https://api.whatsapp.com/send?phone=$phone&text=$encoded")
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }

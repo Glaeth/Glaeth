@@ -27,6 +27,7 @@
     <string name="notification_channel_description">Kopyaladığınız metinleri kaydetmek için panoyu izler</string>
     <string name="notification_title">:) panoyu izliyor</string>
     <string name="notification_text">Bu bildirim durursa kopyalar yakalanmaz. Silme.</string>
+    <string name="notification_need_overlay">Kopya oldu ama okunamadı. Diğer uygulamaların üzerinde göster iznini aç.</string>
 
     <string name="clear_all_confirm_title">Tümünü silmek istiyor musunuz?</string>
     <string name="clear_all_confirm_message">Kaydedilen bütün kopyalar kalıcı olarak silinecek.</string>

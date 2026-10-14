@@ -90,7 +90,11 @@ class ClipboardCaptureActivity : AppCompatActivity() {
         // which is what lets the launch succeed on Android 10+.
         lifecycleScope.launch {
             try {
-                ClipCapturePipeline.capture(this@ClipboardCaptureActivity, text)
+                ClipCapturePipeline.capture(
+                    this@ClipboardCaptureActivity,
+                    text,
+                    forwardDuplicates = true
+                )
             } finally {
                 finishQuietly()
             }

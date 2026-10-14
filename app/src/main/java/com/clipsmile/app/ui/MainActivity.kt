@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
 import android.widget.Toast
@@ -81,6 +82,7 @@ class MainActivity : AppCompatActivity() {
         setupMonitoringSwitch()
         setupActionButtons()
         observeEntries()
+        maybeAskBatteryExemption()
     }
 
     override fun onResume() {
@@ -198,6 +200,22 @@ class MainActivity : AppCompatActivity() {
         binding.overlayHintText.visibility = if (needsOverlay) View.VISIBLE else View.GONE
     }
 
+    private fun maybeAskBatteryExemption() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        if (prefs.getBoolean(KEY_BATTERY_ASKED, false)) return
+        val power = getSystemService(PowerManager::class.java)
+        if (power.isIgnoringBatteryOptimizations(packageName)) return
+        prefs.edit().putBoolean(KEY_BATTERY_ASKED, true).apply()
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:$packageName")
+        }
+        try {
+            startActivity(intent)
+        } catch (_: Exception) {
+            // The settings screen is missing on this device.
+        }
+    }
+
     private fun openOverlaySettings() {
         val intent = Intent(
             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -267,5 +285,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val PREFS_NAME = "clipsmile_prefs"
         private const val KEY_MONITORING_ENABLED = "monitoring_enabled"
+        private const val KEY_BATTERY_ASKED = "battery_prompt_shown"
     }
 }

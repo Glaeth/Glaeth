@@ -27,6 +27,7 @@ class WhatsAppSendClickService : AccessibilityService() {
         }
 
         val root = rootInActiveWindow ?: return
+        if (!messageIsReady(root)) return
         val button = findSendButton(root) ?: return
         if (!clickNode(button)) return
 
@@ -43,6 +44,16 @@ class WhatsAppSendClickService : AccessibilityService() {
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
+    }
+
+    private fun messageIsReady(root: AccessibilityNodeInfo): Boolean {
+        for (resourceId in ENTRY_IDS) {
+            val fields = root.findAccessibilityNodeInfosByViewId(resourceId)
+            val value = fields?.firstOrNull()?.text?.toString().orEmpty()
+            if (value.isNotBlank()) return true
+        }
+        val armedAt = armedAtMillis
+        return armedAt != 0L && System.currentTimeMillis() - armedAt >= ENTRY_WAIT_MILLIS
     }
 
     private fun findSendButton(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
@@ -82,18 +93,30 @@ class WhatsAppSendClickService : AccessibilityService() {
 
     companion object {
         private const val ARM_WINDOW_MILLIS = 15_000L
-        private const val BACK_DELAY_MILLIS = 500L
+        private const val ENTRY_WAIT_MILLIS = 1_500L
+        private const val BACK_DELAY_MILLIS = 1_200L
         private val SEND_BUTTON_IDS = listOf(
             "com.whatsapp:id/send",
             "com.whatsapp.w4b:id/send"
         )
-        private val SEND_DESCRIPTIONS = listOf("Gönder", "Send")
+        private val ENTRY_IDS = listOf(
+            "com.whatsapp:id/entry",
+            "com.whatsapp:id/entry_text",
+            "com.whatsapp.w4b:id/entry",
+            "com.whatsapp.w4b:id/entry_text"
+        )
+        private val SEND_DESCRIPTIONS = listOf("Gönder", "Send", "Mesaj gönder", "Send message")
+
+        @Volatile
+        private var armedAtMillis: Long = 0L
 
         @Volatile
         private var armedUntilMillis: Long = 0L
 
         fun arm() {
-            armedUntilMillis = System.currentTimeMillis() + ARM_WINDOW_MILLIS
+            val now = System.currentTimeMillis()
+            armedAtMillis = now
+            armedUntilMillis = now + ARM_WINDOW_MILLIS
         }
 
         fun isEnabled(context: Context): Boolean {
@@ -114,6 +137,7 @@ class WhatsAppSendClickService : AccessibilityService() {
         }
 
         private fun disarm() {
+            armedAtMillis = 0L
             armedUntilMillis = 0L
         }
     }

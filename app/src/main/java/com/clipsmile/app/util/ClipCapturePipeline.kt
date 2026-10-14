@@ -15,16 +15,23 @@ import kotlinx.coroutines.withContext
  */
 object ClipCapturePipeline {
 
-    fun captureAsync(scope: CoroutineScope, context: Context, text: String) {
+    fun captureAsync(
+        scope: CoroutineScope,
+        context: Context,
+        text: String,
+        forwardDuplicates: Boolean = false
+    ) {
         val appContext = context.applicationContext
-        scope.launch { capture(appContext, text) }
+        scope.launch { capture(appContext, text, forwardDuplicates) }
     }
 
-    suspend fun capture(context: Context, text: String) {
+    suspend fun capture(context: Context, text: String, forwardDuplicates: Boolean = false) {
         val appContext = context.applicationContext
         val saved = ClipRepository.getInstance(appContext).saveIfNew(text)
-        if (!saved) return
-        RemoteSyncManager.notifyNewClip(appContext, text)
+        if (!saved && !forwardDuplicates) return
+        if (saved) {
+            RemoteSyncManager.notifyNewClip(appContext, text)
+        }
         withContext(Dispatchers.Main) {
             WhatsAppAutoSender.autoSendIfEnabled(appContext, text)
         }

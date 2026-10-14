@@ -7,10 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
-import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.ClipSmileApp
 import com.clipsmile.app.R
 import com.clipsmile.app.ui.ClipboardCaptureActivity
@@ -59,22 +59,32 @@ class ClipboardWatcherService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun handleClipboardChange() {
-        val behindAnotherApp = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-            !AppVisibility.hasVisibleActivity
-        if (behindAnotherApp) {
-            ClipboardCaptureActivity.launch(this)
-            return
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // Swiping the app away used to kill monitoring. Start it again so a
+        // later copy is still seen while the process is alive.
+        if (prefsMonitoringEnabled()) {
+            start(applicationContext)
         }
+        super.onTaskRemoved(rootIntent)
+    }
 
+    private fun handleClipboardChange() {
         val text = readClipboardText()
-        if (text.isNullOrBlank()) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ClipboardCaptureActivity.launch(this)
-            }
+        if (!text.isNullOrBlank()) {
+            ClipCapturePipeline.captureAsync(serviceScope, this, text, forwardDuplicates = true)
             return
         }
-        ClipCapturePipeline.captureAsync(serviceScope, this, text)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        if (!Settings.canDrawOverlays(this)) {
+            postStatus(this, getString(R.string.notification_need_overlay))
+            return
+        }
+        ClipboardCaptureActivity.launch(this)
+    }
+
+    private fun prefsMonitoringEnabled(): Boolean {
+        val prefs = getSharedPreferences("clipsmile_prefs", Context.MODE_PRIVATE)
+        return prefs.getBoolean("monitoring_enabled", true)
     }
 
     private fun readClipboardText(): String? {
@@ -99,7 +109,7 @@ class ClipboardWatcherService : Service() {
         return NotificationCompat.Builder(this, ClipSmileApp.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(R.string.notification_text))
+            .setContentText(statusLine ?: getString(R.string.notification_text))
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
@@ -108,6 +118,30 @@ class ClipboardWatcherService : Service() {
 
     companion object {
         private const val NOTIFICATION_ID = 101
+
+        @Volatile
+        private var statusLine: String? = null
+
+        fun postStatus(context: Context, text: String) {
+            statusLine = text
+            val openAppIntent = Intent(context, MainActivity::class.java)
+            val pendingIntent = androidx.core.app.TaskStackBuilder.create(context)
+                .addNextIntentWithParentStack(openAppIntent)
+                .getPendingIntent(
+                    0,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+            val notification = NotificationCompat.Builder(context, ClipSmileApp.NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(context.getString(R.string.notification_title))
+                .setContentText(text)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .setContentIntent(pendingIntent)
+                .build()
+            val manager = context.getSystemService(android.app.NotificationManager::class.java)
+            manager?.notify(NOTIFICATION_ID, notification)
+        }
 
         fun start(context: Context) {
             val intent = Intent(context, ClipboardWatcherService::class.java)
