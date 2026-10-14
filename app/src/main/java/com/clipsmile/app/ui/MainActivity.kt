@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -15,6 +17,8 @@ import android.provider.Settings
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -38,6 +42,10 @@ class MainActivity : AppCompatActivity() {
     private var idleBob: ObjectAnimator? = null
     private var idleTilt: ObjectAnimator? = null
     private var feeding = false
+    private var companion = DogRoster.all.first()
+    private var soundPool: SoundPool? = null
+    private var barkId = 0
+    private var barkReady = false
 
     private val foregroundClipListener = ClipboardManager.OnPrimaryClipChangedListener {
         val clip = clipboardManager.primaryClip ?: return@OnPrimaryClipChangedListener
@@ -62,9 +70,16 @@ class MainActivity : AppCompatActivity() {
         clipboardManager = getSystemService<ClipboardManager>()!!
         petProgress = PetProgress(this)
 
+        prepareBark()
         ensureMonitoring()
         setupActions()
         maybeAskBatteryExemption()
+    }
+
+    override fun onDestroy() {
+        soundPool?.release()
+        soundPool = null
+        super.onDestroy()
     }
 
     override fun onResume() {
@@ -90,6 +105,52 @@ class MainActivity : AppCompatActivity() {
         binding.feedButton.setOnClickListener { feedDoner() }
         binding.nameRow.setOnClickListener { renamePet() }
         binding.petImage.setOnClickListener { nuzzle() }
+        binding.playDrop.setOnClickListener { openGame(FoodDropActivity::class.java) }
+        binding.playFlappy.setOnClickListener { openGame(FlappyDogActivity::class.java) }
+        listOf(binding.dog0, binding.dog1, binding.dog2, binding.dog3).forEachIndexed { index, view ->
+            view.setOnClickListener { pickDog(index) }
+        }
+    }
+
+    private fun prepareBark() {
+        val pool = SoundPool.Builder()
+            .setMaxStreams(2)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_GAME)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+            .build()
+        pool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status == 0 && sampleId == barkId) barkReady = true
+        }
+        barkId = pool.load(this, R.raw.dog_bark, 1)
+        soundPool = pool
+    }
+
+    private fun bark(rate: Float) {
+        if (!barkReady) return
+        soundPool?.play(barkId, 0.85f, 0.85f, 1, 0, rate)
+    }
+
+    private fun openGame(activity: Class<*>) {
+        startActivity(
+            Intent(this, activity)
+                .putExtra(FoodDropActivity.EXTRA_PORTRAIT, companion.portraitRes)
+                .putExtra(FoodDropActivity.EXTRA_FOOD, companion.foodRes)
+        )
+    }
+
+    private fun pickDog(index: Int) {
+        val dog = DogRoster.all[index]
+        val level = petProgress.level()
+        if (level < dog.minLevel) {
+            Toast.makeText(this, getString(R.string.dog_locked, dog.minLevel), Toast.LENGTH_SHORT).show()
+            return
+        }
+        prefs.edit().putInt(KEY_DOG, dog.minLevel).apply()
+        showPet()
     }
 
     private fun ensureMonitoring() {
@@ -106,18 +167,53 @@ class MainActivity : AppCompatActivity() {
 
     private fun showPet() {
         val progress = petProgress.recordVisit()
+        companion = currentDog(progress.level)
         binding.streakText.text = progress.streak.toString()
         binding.levelText.text = progress.level.toString()
         binding.petNameText.text = progress.name
+        binding.dogTitle.setText(companion.titleRes)
         binding.fullnessBar.progress = progress.fullness
-        binding.petMoodText.setText(moodFor(progress.fullness))
+        binding.petMoodText.text = moodLine(progress.fullness)
+        binding.feedButton.text = getString(R.string.action_feed_named, getString(companion.foodNameRes))
+        binding.feedDoner.setImageResource(companion.foodRes)
+        binding.petImage.setImageResource(companion.portraitRes)
+        binding.petImage.scaleType = if (companion.photo) {
+            ImageView.ScaleType.CENTER_CROP
+        } else {
+            ImageView.ScaleType.FIT_CENTER
+        }
+        binding.petImage.strokeWidth = if (companion.photo) 5f * resources.displayMetrics.density else 0f
+        binding.dropBest.text = getString(R.string.game_best, GameScores.best(this, GameScores.BEST_DROP))
+        binding.flappyBest.text = getString(R.string.game_best, GameScores.best(this, GameScores.BEST_FLAP))
+        bindRoster(progress.level)
     }
 
-    private fun moodFor(fullness: Int): Int = when {
-        fullness >= 80 -> R.string.pet_mood_full
-        fullness >= 40 -> R.string.pet_mood_ok
-        fullness >= 15 -> R.string.pet_mood_hungry
-        else -> R.string.pet_mood_starving
+    private fun currentDog(level: Int): DogCompanion {
+        val unlocked = DogRoster.all.filter { level >= it.minLevel }
+        val picked = prefs.getInt(KEY_DOG, unlocked.last().minLevel)
+        return unlocked.find { it.minLevel == picked } ?: unlocked.last()
+    }
+
+    private fun bindRoster(level: Int) {
+        val portraits = listOf(binding.dog0, binding.dog1, binding.dog2, binding.dog3)
+        val locks = listOf(binding.lock0, binding.lock1, binding.lock2, binding.lock3)
+        DogRoster.all.forEachIndexed { index, dog ->
+            val open = level >= dog.minLevel
+            val selected = dog.minLevel == companion.minLevel
+            portraits[index].alpha = if (open) 1f else 0.35f
+            portraits[index].setBackgroundResource(if (selected) R.drawable.bg_slot_on else 0)
+            locks[index].text = if (open) getString(dog.titleRes) else getString(R.string.dog_level_short, dog.minLevel)
+        }
+    }
+
+    private fun moodLine(fullness: Int): String {
+        val food = getString(companion.foodNameRes)
+        return when {
+            fullness >= 80 -> getString(R.string.pet_mood_full, food)
+            fullness >= 40 -> getString(R.string.pet_mood_ok)
+            fullness >= 15 -> getString(R.string.pet_mood_hungry, food)
+            else -> getString(R.string.pet_mood_starving, food)
+        }
     }
 
     private fun renamePet() {
@@ -139,6 +235,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun nuzzle() {
         if (feeding) return
+        bark(1.08f)
         val pet = binding.petImage
         pet.animate().cancel()
         pet.animate()
@@ -210,7 +307,8 @@ class MainActivity : AppCompatActivity() {
             .withEndAction {
                 val fullness = petProgress.feed()
                 binding.fullnessBar.progress = fullness
-                binding.petMoodText.setText(R.string.pet_fed)
+                binding.petMoodText.setText(companion.fedRes)
+                bark(0.86f)
                 doner.animate().alpha(0f).setDuration(160).withEndAction {
                     doner.visibility = View.INVISIBLE
                     doner.translationX = 0f
@@ -269,5 +367,6 @@ class MainActivity : AppCompatActivity() {
         private const val PREFS_NAME = "clipsmile_prefs"
         private const val KEY_MONITORING_ENABLED = "monitoring_enabled"
         private const val KEY_BATTERY_ASKED = "battery_prompt_shown"
+        private const val KEY_DOG = "selected_dog_level"
     }
 }

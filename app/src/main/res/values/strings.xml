@@ -14,10 +14,30 @@
     <string name="pet_name_default">Çirkin</string>
     <string name="action_rename_pet">Köpeğin adı</string>
     <string name="action_save_name">Kaydet</string>
-    <string name="pet_mood_full">Karnı tok. Hatay dürüm hâlâ aklında.</string>
-    <string name="pet_mood_ok">İyi. Bir dürüm daha ister.</string>
-    <string name="pet_mood_hungry">Acıktı. Hatay dürüm bakıyor.</string>
-    <string name="pet_mood_starving">Çok aç. Dürüm ver.</string>
+    <string name="pet_mood_full">Karnı tok. %1$s hâlâ aklında.</string>
+    <string name="pet_mood_ok">İyi. Bir lokma daha ister.</string>
+    <string name="pet_mood_hungry">Acıktı. %1$s bakıyor.</string>
+    <string name="pet_mood_starving">Çok aç. %1$s ver.</string>
+    <string name="dog_pug_title">Şapkalı pug</string>
+    <string name="dog_brown_title">Tarçın</string>
+    <string name="dog_spot_title">Benek</string>
+    <string name="dog_crown_title">Kral</string>
+    <string name="dog_locked">Seviye %1$d olunca açılır</string>
+    <string name="dog_level_short">Sv %1$d</string>
+    <string name="food_durum">Hatay dürüm</string>
+    <string name="food_bone">Kemik</string>
+    <string name="food_meat">Köfte</string>
+    <string name="food_cookie">Kurabiye</string>
+    <string name="action_feed_named">%1$s ver</string>
+    <string name="fed_durum">Hatay dürüm gitti. Lokmayı yuttu.</string>
+    <string name="fed_bone">Kemiği kaptı, kuyruk döndü.</string>
+    <string name="fed_meat">Köfteyi tek seferde indirdi.</string>
+    <string name="fed_cookie">Kurabiyeden kırıntı kaldı.</string>
+    <string name="games_label">OYUN</string>
+    <string name="dogs_label">KÖPEKLER</string>
+    <string name="game_drop">Dürüm yakala</string>
+    <string name="game_flappy">Uçuş</string>
+    <string name="game_best">En iyi %1$d</string>
     <string name="pet_mood_1">İlk gün. Şapka yerinde, yeni evcil dost.</string>
     <string name="pet_mood_low">Alışıyor. Her gün uğrarsan seri uzar.</string>
     <string name="pet_mood_mid">Evcil dost oldu. Seviye yükseliyor.</string>
@@ -45,6 +65,16 @@
     <string name="notification_channel_description">Kopyaladığınız metinleri kaydetmek için panoyu izler</string>
     <string name="notification_title">Çirkin Köpek izliyor</string>
     <string name="notification_text">Kopyalar kendiliğinden sunucuya gider. Bu bildirimi silme.</string>
+    <string-array name="notification_lines">
+        <item>%1$s kopyaları sunucuya taşıyor</item>
+        <item>%1$s şapkasını düzeltti, izlemeye devam</item>
+        <item>Acıktı. Uygulamayı açıp %1$s besle</item>
+        <item>Seri bozulmasın. %1$s seni bekliyor</item>
+        <item>Kopyalar kendiliğinden gidiyor. Bildirimi silme</item>
+        <item>%1$s pencereden bakıyor</item>
+        <item>Seviye yükseldikçe yeni bir köpek açılır</item>
+        <item>%1$s bir lokma hayali kuruyor</item>
+    </string-array>
     <string name="notification_sent">Son kopya sunucuya gitti</string>
     <string name="notification_need_overlay">Bir kez \"diğer uygulamaların üzerinde göster\" iznini aç. Sonra kopyalaman yeterli.</string>
     <string name="notification_focus_failed">Pano okunamadı. Sarı izni kontrol et, bildirimi silme.</string>

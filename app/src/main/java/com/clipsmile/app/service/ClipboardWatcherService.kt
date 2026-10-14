@@ -13,6 +13,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import java.util.Calendar
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -20,6 +21,7 @@ import androidx.core.content.getSystemService
 import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.ClipSmileApp
 import com.clipsmile.app.R
+import com.clipsmile.app.data.PetProgress
 import com.clipsmile.app.ui.MainActivity
 import com.clipsmile.app.util.ClipCapturePipeline
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +50,7 @@ class ClipboardWatcherService : android.app.Service() {
     private var lastDelivered: String? = null
     private var focusMisses = 0
     private var overlayMissingNotified = false
+    private var captionHour = -1
 
     private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
         // Fires only while this app already has focus (or on older Android).
@@ -117,6 +120,7 @@ class ClipboardWatcherService : android.app.Service() {
 
     private fun sampleClipboard() {
         if (!polling) return
+        refreshCaption()
         if (!powerManager.isInteractive) return
         if (AppVisibility.hasVisibleActivity) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
@@ -168,8 +172,18 @@ class ClipboardWatcherService : android.app.Service() {
         }
     }
 
+    private fun refreshCaption() {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        if (hour == captionHour) return
+        if (statusLine != null && System.currentTimeMillis() < statusUntil) return
+        captionHour = hour
+        statusLine = null
+        val manager = getSystemService(android.app.NotificationManager::class.java)
+        manager?.notify(NOTIFICATION_ID, notification(this, rotatingLine(this)))
+    }
+
     private fun buildNotification(): Notification {
-        return notification(this, statusLine ?: getString(R.string.notification_text))
+        return notification(this, statusLine ?: rotatingLine(this))
     }
 
     companion object {
@@ -181,6 +195,9 @@ class ClipboardWatcherService : android.app.Service() {
 
         @Volatile
         private var statusLine: String? = null
+
+        @Volatile
+        private var statusUntil: Long = 0L
 
         @Volatile
         private var artCache: Bitmap? = null
@@ -201,8 +218,18 @@ class ClipboardWatcherService : android.app.Service() {
 
         fun postStatus(context: Context, text: String) {
             statusLine = text
+            statusUntil = System.currentTimeMillis() + 30 * 60 * 1000L
             val manager = context.getSystemService(android.app.NotificationManager::class.java)
             manager?.notify(NOTIFICATION_ID, notification(context, text))
+        }
+
+        private fun rotatingLine(context: Context): String {
+            val pet = PetProgress(context)
+            val lines = context.resources.getStringArray(R.array.notification_lines)
+            if (lines.isEmpty()) return context.getString(R.string.notification_text)
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val line = lines[(hour + pet.level()) % lines.size]
+            return line.format(pet.petName)
         }
 
         private fun notification(context: Context, text: String): Notification {

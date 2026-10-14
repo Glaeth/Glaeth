@@ -25,8 +25,12 @@ class PetProgress(context: Context) {
 
     fun fullness(): Int = decayedFullness()
 
-    fun feed(): Int {
-        val next = (decayedFullness() + FEED_AMOUNT).coerceAtMost(100)
+    fun level(): Int = prefs.getInt(KEY_LEVEL, 1).coerceAtLeast(1)
+
+    fun feed(): Int = snack(FEED_AMOUNT)
+
+    fun snack(amount: Int): Int {
+        val next = (decayedFullness() + amount).coerceAtMost(100)
         prefs.edit()
             .putInt(KEY_FULL, next)
             .putLong(KEY_FULL_AT, System.currentTimeMillis())

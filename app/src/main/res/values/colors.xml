@@ -14,6 +14,8 @@
     <color name="whatsapp_green">#1E8C45</color>
     <color name="status_active_green">#3DAE2B</color>
 
+    <color name="room_bg">#F6E2B8</color>
+    <color name="room_floor">#E7C98A</color>
     <color name="night_bg">#0C0A0E</color>
     <color name="night_card">#1A1418</color>
     <color name="night_raised">#261C18</color>

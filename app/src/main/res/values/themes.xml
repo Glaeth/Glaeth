@@ -25,6 +25,14 @@
         <item name="snackbarStyle">@style/Widget.ClipSmile.Snackbar</item>
     </style>
 
+    <style name="Theme.ClipSmile.Room" parent="Theme.ClipSmile">
+        <item name="android:windowBackground">@color/room_bg</item>
+        <item name="android:statusBarColor">@color/room_bg</item>
+        <item name="android:navigationBarColor">@color/room_floor</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
     <style name="ShapeAppearance.ClipSmile.Circle" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
