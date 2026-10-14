@@ -21,8 +21,10 @@
     <color name="ink_gold_muted">#C6A15A</color>
     <color name="ink_on_yellow">#1A1206</color>
 
-    <color name="ink_dark">@color/ink_gold</color>
-    <color name="ink_light">@color/ink_gold_muted</color>
+    <color name="ink_dark">#1A1206</color>
+    <color name="ink_light">#8C7B68</color>
+    <color name="text_primary">#F4EFE6</color>
+    <color name="text_muted">#C4B6A6</color>
     <color name="surface_light">@color/night_card</color>
     <color name="background_light">@color/night_bg</color>
     <color name="card_stroke">@color/card_border</color>
@@ -35,7 +37,7 @@
     <color name="chroma_magenta">#E3350D</color>
     <color name="chroma_cyan">#FFCB05</color>
     <color name="glass_fill">#E61A1418</color>
-    <color name="glass_stroke">#66FFCB05</color>
-    <color name="glass_ink">@color/ink_gold</color>
-    <color name="glass_ink_muted">@color/ink_gold_muted</color>
+    <color name="glass_stroke">#3A312C</color>
+    <color name="glass_ink">@color/text_primary</color>
+    <color name="glass_ink_muted">@color/text_muted</color>
 </resources>

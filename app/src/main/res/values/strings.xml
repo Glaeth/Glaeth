@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">:)</string>
+    <string name="app_name">Sakaryalı Mal Köpek</string>
 
-    <string name="empty_state_title">Hazır!</string>
-    <string name="empty_state_subtitle">Henüz kopya yok. Bir metin kopyala; uygulamayı açmana gerek yok, kayıt üstteki adrese kendiliğinden gider.</string>
-    <string name="server_status_on">Kopyalaman yeterli, başka bir şeye basma. Metin kendiliğinden buraya gider: %1$s\nBir kez sarı izni aç ve üstteki bildirimi silme. Samsung klavyesi açık kalabilir.</string>
-    <string name="server_status_off">Sunucuya gönderim kapalı. Ayarlardan aç.</string>
-    <string name="overlay_permission_hint">Bir kez buraya dokun ve \"diğer uygulamaların üzerinde göster\" iznini aç. Ondan sonra kopyalaman yeterli; her seferinde uygulamayı açmana gerek yok.</string>
+    <string name="empty_state_title">Henüz kopya yok</string>
+    <string name="empty_state_subtitle">Bir metin kopyala. Köpek onu sunucuya taşır.</string>
+    <string name="server_status_on">Kopyalar bu adrese gidiyor\n%1$s</string>
+    <string name="server_status_off">Sunucu kapalı. Ayarlardan aç.</string>
+    <string name="overlay_permission_hint">Köpeğin arkadan da kopya görmesi için bir kez \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
+    <string name="pet_streak">%1$d gün seri</string>
+    <string name="pet_level">Seviye %1$d</string>
+    <string name="pet_mood_1">İlk gün. Şapka yerinde, yeni evcil dost.</string>
+    <string name="pet_mood_low">Alışıyor. Her gün uğrarsan seri uzar.</string>
+    <string name="pet_mood_mid">Evcil dost oldu. Seviye yükseliyor.</string>
+    <string name="pet_mood_high">Efsane seri. Şapka hiç düşmedi.</string>
 
     <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
     <string name="action_export_email">Export Data</string>
-    <string name="email_export_subject">:) pano arşivi</string>
+    <string name="email_export_subject">Sakaryalı Mal Köpek arşivi</string>
     <string name="toast_no_email_app">E-posta uygulaması bulunamadı</string>
     <string name="action_clear_all">Tümünü Temizle</string>
     <string name="action_copy">Kopyala</string>
@@ -24,7 +30,7 @@
 
     <string name="notification_channel_name">Pano İzleme</string>
     <string name="notification_channel_description">Kopyaladığınız metinleri kaydetmek için panoyu izler</string>
-    <string name="notification_title">:) panoyu izliyor</string>
+    <string name="notification_title">Sakaryalı Mal Köpek izliyor</string>
     <string name="notification_text">Kopyalar kendiliğinden sunucuya gider. Bu bildirimi silme.</string>
     <string name="notification_sent">Son kopya sunucuya gitti</string>
     <string name="notification_need_overlay">Bir kez \"diğer uygulamaların üzerinde göster\" iznini aç. Sonra kopyalaman yeterli.</string>

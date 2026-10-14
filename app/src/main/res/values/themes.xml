@@ -13,16 +13,21 @@
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowBackground">@color/night_bg</item>
         <item name="colorSurface">@color/night_card</item>
-        <item name="colorOnSurface">@color/ink_gold</item>
-        <item name="android:textColorPrimary">@color/ink_gold</item>
-        <item name="android:textColorSecondary">@color/ink_gold_muted</item>
-        <item name="android:textColor">@color/ink_gold</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_muted</item>
+        <item name="android:textColor">@color/text_primary</item>
         <item name="colorControlActivated">@color/pikachu_yellow</item>
         <item name="switchStyle">@style/Widget.ClipSmile.Switch</item>
         <item name="popupMenuStyle">@style/Widget.ClipSmile.PopupMenu</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.ClipSmile.Dialog</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.ClipSmile.Dialog</item>
         <item name="snackbarStyle">@style/Widget.ClipSmile.Snackbar</item>
+    </style>
+
+    <style name="ShapeAppearance.ClipSmile.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
     </style>
 
     <style name="PixelTitleText">
@@ -33,15 +38,15 @@
 
     <style name="Widget.ClipSmile.PopupMenu" parent="Widget.MaterialComponents.PopupMenu">
         <item name="android:popupBackground">@color/night_raised</item>
-        <item name="android:textColor">@color/ink_gold</item>
+        <item name="android:textColor">@color/text_primary</item>
     </style>
 
     <style name="ThemeOverlay.ClipSmile.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="colorSurface">@color/night_card</item>
-        <item name="colorOnSurface">@color/ink_gold</item>
+        <item name="colorOnSurface">@color/text_primary</item>
         <item name="colorPrimary">@color/pikachu_yellow</item>
         <item name="colorOnPrimary">@color/ink_on_yellow</item>
-        <item name="android:textColorPrimary">@color/ink_gold</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:background">@color/night_card</item>
         <item name="buttonBarPositiveButtonStyle">@style/Widget.ClipSmile.DialogButton</item>
         <item name="buttonBarNegativeButtonStyle">@style/Widget.ClipSmile.DialogButton</item>

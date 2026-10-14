@@ -29,6 +29,7 @@ import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.R
 import com.clipsmile.app.data.ClipEntry
 import com.clipsmile.app.data.ClipRepository
+import com.clipsmile.app.data.PetProgress
 import com.clipsmile.app.data.RemoteSyncPrefs
 import com.clipsmile.app.databinding.ActivityMainBinding
 import com.clipsmile.app.service.ClipboardWatcherService
@@ -90,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         clipboardManager.addPrimaryClipChangedListener(foregroundClipListener)
         updateOverlayHint()
         updateServerStatus()
+        updatePet()
         captureCurrentClipboard()
     }
 
@@ -175,6 +177,19 @@ class MainActivity : AppCompatActivity() {
             val url = RemoteSyncPrefs(this).channelUrl
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         }
+    }
+
+    private fun updatePet() {
+        val progress = PetProgress(this).recordVisit()
+        binding.streakText.text = getString(R.string.pet_streak, progress.streak)
+        binding.levelText.text = getString(R.string.pet_level, progress.level)
+        val mood = when {
+            progress.level <= 1 -> R.string.pet_mood_1
+            progress.level < 7 -> R.string.pet_mood_low
+            progress.level < 14 -> R.string.pet_mood_mid
+            else -> R.string.pet_mood_high
+        }
+        binding.petMoodText.setText(mood)
     }
 
     private fun updateServerStatus() {
