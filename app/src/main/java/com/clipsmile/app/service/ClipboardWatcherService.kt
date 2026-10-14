@@ -11,6 +11,7 @@ import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.ClipSmileApp
 import com.clipsmile.app.R
 import com.clipsmile.app.ui.ClipboardCaptureActivity
@@ -70,16 +71,11 @@ class ClipboardWatcherService : Service() {
 
     private fun handleClipboardChange() {
         val text = readClipboardText()
-        if (!text.isNullOrBlank()) {
-            ClipCapturePipeline.captureAsync(serviceScope, this, text, forwardDuplicates = true)
-            return
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
-        if (!Settings.canDrawOverlays(this)) {
+        if (AppVisibility.hasVisibleActivity) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !Settings.canDrawOverlays(this)) {
             postStatus(this, getString(R.string.notification_need_overlay))
-            return
         }
-        ClipboardCaptureActivity.launch(this)
+        ClipboardCaptureActivity.launch(this, text)
     }
 
     private fun prefsMonitoringEnabled(): Boolean {

@@ -57,6 +57,14 @@ class ClipboardCaptureActivity : AppCompatActivity() {
         timeoutHandler.post { handleClipboard() }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handled = false
+        startedAtMillis = System.currentTimeMillis()
+        timeoutHandler.post { handleClipboard() }
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
@@ -72,7 +80,7 @@ class ClipboardCaptureActivity : AppCompatActivity() {
     private fun handleClipboard() {
         if (handled || isFinishing) return
 
-        val text = readClipboardText()
+        val text = intent.getStringExtra(EXTRA_TEXT)?.takeIf { it.isNotBlank() } ?: readClipboardText()
         if (text.isNullOrBlank()) {
             val stillWaiting = System.currentTimeMillis() - startedAtMillis < FOCUS_TIMEOUT_MILLIS
             if (stillWaiting) {
@@ -126,7 +134,9 @@ class ClipboardCaptureActivity : AppCompatActivity() {
         @Volatile
         private var lastLaunchAtMillis: Long = 0L
 
-        fun launch(context: Context) {
+        const val EXTRA_TEXT = "clip_text"
+
+        fun launch(context: Context, knownText: String? = null) {
             val now = System.currentTimeMillis()
             if (now - lastLaunchAtMillis < RELAUNCH_DEBOUNCE_MILLIS) return
             lastLaunchAtMillis = now
@@ -135,6 +145,7 @@ class ClipboardCaptureActivity : AppCompatActivity() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
                 addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
+                if (!knownText.isNullOrBlank()) putExtra(EXTRA_TEXT, knownText)
             }
             try {
                 context.startActivity(intent)

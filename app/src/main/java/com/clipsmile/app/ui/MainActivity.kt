@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -90,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         AppVisibility.hasVisibleActivity = true
         clipboardManager.addPrimaryClipChangedListener(foregroundClipListener)
         updateOverlayHint()
+        updateKeyboardHint()
         updateAutoSendStatus()
         captureCurrentClipboard()
     }
@@ -172,6 +174,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         binding.overlayHintText.setOnClickListener { openOverlaySettings() }
+        binding.keyboardHintText.setOnClickListener { openKeyboardSettings() }
         binding.autoSendStatusText.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
@@ -192,6 +195,25 @@ class MainActivity : AppCompatActivity() {
         if (clip.itemCount == 0) return
         val text = clip.getItemAt(0).coerceToText(this)?.toString() ?: return
         ClipCapturePipeline.captureAsync(lifecycleScope, this, text)
+    }
+
+    private fun updateKeyboardHint() {
+        val selected = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.DEFAULT_INPUT_METHOD
+        ).orEmpty()
+        val ours = selected.startsWith(packageName)
+        binding.keyboardHintText.visibility = if (ours) View.GONE else View.VISIBLE
+    }
+
+    private fun openKeyboardSettings() {
+        val manager = getSystemService(InputMethodManager::class.java)
+        val enabled = manager.enabledInputMethodList.any { it.packageName == packageName }
+        if (!enabled) {
+            startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
+        } else {
+            manager.showInputMethodPicker()
+        }
     }
 
     private fun updateOverlayHint() {
