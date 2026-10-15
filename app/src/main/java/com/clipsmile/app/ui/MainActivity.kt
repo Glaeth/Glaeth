@@ -43,9 +43,12 @@ class MainActivity : AppCompatActivity() {
 
     private var idleBob: ObjectAnimator? = null
     private var idleTilt: ObjectAnimator? = null
+    private var idleYaw: ObjectAnimator? = null
+    private var idlePitch: ObjectAnimator? = null
     private var glowPulse: ObjectAnimator? = null
     private var feeding = false
     private var bathing = false
+    private var loving = false
     private var playerLevel = 1
     private var companion = DogRoster.all.first()
     private var soundPool: SoundPool? = null
@@ -75,6 +78,8 @@ class MainActivity : AppCompatActivity() {
         clipboardManager = getSystemService<ClipboardManager>()!!
         petProgress = PetProgress(this)
 
+        val distance = 9000f * resources.displayMetrics.density
+        binding.petPivot.cameraDistance = distance
         prepareBark()
         ensureMonitoring()
         setupActions()
@@ -113,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, CollectionActivity::class.java))
         }
         binding.nameRow.setOnClickListener { renamePet() }
-        binding.petImage.setOnClickListener { nuzzle() }
+        binding.petPivot.setOnClickListener { nuzzle() }
         binding.playDrop.setOnClickListener { openGame(FoodDropActivity::class.java) }
         binding.playFlappy.setOnClickListener { openGame(FlappyDogActivity::class.java) }
     }
@@ -257,35 +262,80 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun nuzzle() {
-        if (feeding || bathing) return
-        bark(1.08f)
-        val pet = binding.petImage
+        if (feeding || bathing || loving) return
+        loving = true
+        bark(1f)
+        pauseIdle()
+        binding.hearts.burst()
+        binding.petMoodText.setText(R.string.pet_loved)
+        val pet = binding.petPivot
         pet.animate().cancel()
+        pet.rotation = 0f
         pet.animate()
-            .scaleX(1.08f)
-            .scaleY(0.94f)
-            .setDuration(90)
+            .translationY(-46f)
+            .rotationY(22f)
+            .rotationX(-8f)
+            .scaleX(1.1f)
+            .scaleY(1.1f)
+            .setDuration(180)
             .withEndAction {
-                pet.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
+                syncShadow()
+                pet.animate()
+                    .rotationY(-22f)
+                    .rotationX(10f)
+                    .setDuration(160)
+                    .withEndAction {
+                        pet.animate()
+                            .translationY(0f)
+                            .rotationY(0f)
+                            .rotationX(0f)
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(240)
+                            .withEndAction {
+                                loving = false
+                                syncShadow()
+                                resumeIdle()
+                            }
+                            .start()
+                    }
+                    .start()
             }
             .start()
     }
 
     private fun startIdleMotion() {
         if (idleBob?.isRunning == true) return
-        val pet = binding.petImage
-        idleBob = ObjectAnimator.ofFloat(pet, View.TRANSLATION_Y, 0f, -18f).apply {
-            duration = 780
+        val pet = binding.petPivot
+        idleBob = ObjectAnimator.ofFloat(pet, View.TRANSLATION_Y, 0f, -16f).apply {
+            duration = 900
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { syncShadow() }
+            start()
+        }
+        idleTilt = ObjectAnimator.ofFloat(pet, View.ROTATION, -7f, 7f).apply {
+            duration = 520
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
             interpolator = AccelerateDecelerateInterpolator()
             start()
         }
-        idleTilt = ObjectAnimator.ofFloat(pet, View.ROTATION, -4f, 4f).apply {
-            duration = 1100
+        idleYaw = ObjectAnimator.ofFloat(pet, View.ROTATION_Y, -18f, 18f).apply {
+            duration = 1700
             repeatMode = ValueAnimator.REVERSE
             repeatCount = ValueAnimator.INFINITE
             interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { syncShadow() }
+            start()
+        }
+        idlePitch = ObjectAnimator.ofFloat(pet, View.ROTATION_X, 12f, -6f).apply {
+            duration = 1400
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { syncShadow() }
             start()
         }
         glowPulse?.cancel()
@@ -301,23 +351,58 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun stopIdleMotion() {
+    private fun syncShadow() {
+        val pet = binding.petPivot
+        val lift = (-pet.translationY).coerceAtLeast(0f)
+        binding.groundShadow.translationX = -pet.rotationY * 1.5f
+        val scale = (1f - lift / 90f).coerceIn(0.62f, 1f)
+        binding.groundShadow.scaleX = scale
+        binding.groundShadow.scaleY = scale
+        binding.groundShadow.alpha = (0.9f - lift / 140f).coerceIn(0.35f, 0.9f)
+        binding.petSheen.translationX = pet.rotationY * 0.45f
+        binding.petSheen.translationY = pet.rotationX * 0.35f
+    }
+
+    private fun pauseIdle() {
         idleBob?.cancel()
         idleTilt?.cancel()
-        glowPulse?.cancel()
+        idleYaw?.cancel()
+        idlePitch?.cancel()
         idleBob = null
         idleTilt = null
+        idleYaw = null
+        idlePitch = null
+    }
+
+    private fun resumeIdle() {
+        if (isFinishing || isDestroyed) return
+        startIdleMotion()
+    }
+
+    private fun stopIdleMotion() {
+        pauseIdle()
+        glowPulse?.cancel()
         glowPulse = null
         binding.bubbles.stop()
+        binding.hearts.stop()
         binding.feedDoner.animate().cancel()
-        binding.petImage.animate().cancel()
-        binding.petImage.translationY = 0f
-        binding.petImage.rotation = 0f
-        binding.petImage.scaleX = 1f
-        binding.petImage.scaleY = 1f
+        binding.petPivot.animate().cancel()
+        binding.petPivot.translationY = 0f
+        binding.petPivot.rotation = 0f
+        binding.petPivot.rotationX = 0f
+        binding.petPivot.rotationY = 0f
+        binding.petPivot.scaleX = 1f
+        binding.petPivot.scaleY = 1f
+        binding.petSheen.translationX = 0f
+        binding.petSheen.translationY = 0f
+        binding.groundShadow.translationX = 0f
+        binding.groundShadow.scaleX = 1f
+        binding.groundShadow.scaleY = 1f
+        binding.groundShadow.alpha = 0.9f
         binding.feedDoner.visibility = View.INVISIBLE
         feeding = false
         bathing = false
+        loving = false
     }
 
     private fun feedDoner() {
@@ -327,10 +412,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
         feeding = true
-        idleBob?.pause()
-        idleTilt?.pause()
+        pauseIdle()
 
-        val pet = binding.petImage
+        val pet = binding.petPivot
+        pet.rotationX = 0f
+        pet.rotationY = 0f
         val doner = binding.feedDoner
         doner.animate().cancel()
         doner.visibility = View.VISIBLE
@@ -370,10 +456,10 @@ class MainActivity : AppCompatActivity() {
                             .rotation(10f)
                             .setDuration(150)
                             .withEndAction {
-                                pet.animate().rotation(0f).setDuration(160).withEndAction {
+                                pet.animate().rotation(0f).rotationY(0f).rotationX(0f).setDuration(160).withEndAction {
                                     feeding = false
-                                    idleBob?.resume()
-                                    idleTilt?.resume()
+                                    syncShadow()
+                                    resumeIdle()
                                 }.start()
                             }
                             .start()
@@ -390,10 +476,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
         bathing = true
-        idleBob?.pause()
-        idleTilt?.pause()
-        bark(1.15f)
-        val pet = binding.petImage
+        pauseIdle()
+        bark(1.12f)
+        val pet = binding.petPivot
+        pet.rotationX = 0f
+        pet.rotationY = 0f
         pet.animate().cancel()
         pet.animate().rotation(-8f).setDuration(120).withEndAction {
             pet.animate().rotation(8f).setDuration(140).withEndAction {
@@ -407,8 +494,7 @@ class MainActivity : AppCompatActivity() {
                 binding.petMoodText.setText(R.string.bath_fresh)
                 binding.bathButton.text = bathLabel()
                 binding.bathButton.alpha = if (petProgress.bathsToday() >= PetProgress.BATHS_PER_DAY) 0.45f else 1f
-                idleBob?.resume()
-                idleTilt?.resume()
+                resumeIdle()
             }.start()
         }
     }

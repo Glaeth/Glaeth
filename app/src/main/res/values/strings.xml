@@ -85,6 +85,7 @@
     <string name="feed_done">Bugün doydu</string>
     <string name="bath_done">Tertemiz</string>
     <string name="bath_fresh">Köpükler gitti. Tüyleri kabardı.</string>
+    <string name="pet_loved">Sevindi. Kuyruğu döndü.</string>
     <string name="care_left">Bugün %1$d besleme, %2$d duş kaldı.</string>
     <string name="care_done">Bugünkü bakım bitti.</string>
     <string name="dog_unlocked">Yeni köpek: %1$s</string>

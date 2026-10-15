@@ -113,26 +113,57 @@
                     android:background="@drawable/bg_slot_on" />
 
                 <View
-                    android:layout_width="150dp"
-                    android:layout_height="28dp"
+                    android:layout_width="168dp"
+                    android:layout_height="36dp"
                     android:layout_gravity="bottom|center_horizontal"
-                    android:layout_marginBottom="6dp"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/bg_pedestal" />
+
+                <View
+                    android:id="@+id/groundShadow"
+                    android:layout_width="120dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="16dp"
                     android:background="@drawable/bg_floor_shadow" />
 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/petImage"
+                <FrameLayout
+                    android:id="@+id/petPivot"
                     android:layout_width="210dp"
                     android:layout_height="210dp"
                     android:layout_gravity="center"
+                    android:clickable="true"
                     android:contentDescription="@string/pet_name_default"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_pug_icon"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.ClipSmile.Circle"
-                    app:strokeColor="#8A6844"
-                    app:strokeWidth="5dp" />
+                    android:focusable="true">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/petImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/pet_name_default"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_pug_icon"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.ClipSmile.Circle"
+                        app:strokeColor="#8A6844"
+                        app:strokeWidth="5dp" />
+
+                    <View
+                        android:id="@+id/petSheen"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_sheen"
+                        android:clickable="false"
+                        android:importantForAccessibility="no" />
+                </FrameLayout>
 
                 <com.clipsmile.app.ui.BubbleLayer
                     android:id="@+id/bubbles"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="invisible" />
+
+                <com.clipsmile.app.ui.HeartBurst
+                    android:id="@+id/hearts"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:visibility="invisible" />
