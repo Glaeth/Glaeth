@@ -20,7 +20,7 @@ class FoodDropActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        audio = GameAudio(this)
+        audio = GameAudio.drop(this)
         val portrait = intent.getIntExtra(EXTRA_PORTRAIT, R.drawable.ic_pug_icon)
         val food = intent.getIntExtra(EXTRA_FOOD, R.drawable.ic_doner)
         setContentView(FoodDropView(this, portrait, food, audio))

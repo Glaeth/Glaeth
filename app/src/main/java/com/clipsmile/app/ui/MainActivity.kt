@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.media.AudioAttributes
 import android.media.SoundPool
@@ -111,6 +110,9 @@ class MainActivity : AppCompatActivity() {
         binding.collectionButton.setOnClickListener {
             startActivity(Intent(this, CollectionActivity::class.java))
         }
+        binding.frameText.setOnClickListener {
+            startActivity(Intent(this, FramesActivity::class.java))
+        }
         binding.nameRow.setOnClickListener { renamePet() }
         binding.petCanvas.setOnClickListener { nuzzle() }
         binding.playDrop.setOnClickListener { openGame(FoodDropActivity::class.java) }
@@ -126,7 +128,7 @@ class MainActivity : AppCompatActivity() {
             .setMaxStreams(2)
             .setAudioAttributes(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_GAME)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build()
             )
@@ -139,8 +141,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun bark(rate: Float) {
         val id = barkIds[companion.barkRes] ?: return
-        val speed = (rate * companion.barkRate).coerceIn(0.5f, 2f)
-        soundPool?.play(id, 0.95f, 0.95f, 1, 0, speed)
+        soundPool?.play(id, 1f, 1f, 1, 0, rate.coerceIn(0.92f, 1.08f))
     }
 
     private fun openGame(activity: Class<*>) {
@@ -188,7 +189,7 @@ class MainActivity : AppCompatActivity() {
         binding.levelText.text = progress.level.toString()
         binding.petNameText.text = petProgress.displayName(companion.minLevel, getString(companion.nameRes))
         binding.dogTitle.setText(companion.titleRes)
-        binding.frameText.setText(look.nameRes)
+        binding.frameText.text = getString(R.string.frames_chip, getString(look.nameRes))
         binding.frameText.setTextColor(look.ring)
         binding.fullnessBar.progress = petProgress.carePercent()
         binding.petMoodText.text = careLine()
@@ -198,11 +199,12 @@ class MainActivity : AppCompatActivity() {
         binding.bathButton.alpha = if (petProgress.bathsToday() >= PetProgress.BATHS_PER_DAY) 0.45f else 1f
         binding.feedDoner.setImageResource(companion.foodRes)
         binding.petCanvas.setModel(companion.model)
+        binding.frameGlow.setFrame(look)
         val density = resources.displayMetrics.density
-        binding.frameGlow.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(Color.TRANSPARENT)
-            setStroke((look.widthDp * density).toInt().coerceAtLeast(3), look.ring)
+        binding.frameText.background = GradientDrawable().apply {
+            cornerRadius = 16f * density
+            setColor(0xFFFFFFFF.toInt())
+            setStroke((look.widthDp * 0.55f * density).toInt().coerceAtLeast(3), look.ring)
         }
         binding.dropBest.text = getString(R.string.game_best, GameScores.best(this, GameScores.BEST_DROP))
         binding.flappyBest.text = getString(R.string.game_best, GameScores.best(this, GameScores.BEST_FLAP))

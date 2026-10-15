@@ -91,7 +91,7 @@ class PetCanvas @JvmOverloads constructor(
         private val viewProj = FloatArray(16)
         private val view = FloatArray(16)
         private val proj = FloatArray(16)
-        private val world = Array(32) { FloatArray(16) }
+        private val world = Array(48) { FloatArray(16) }
         private val local = FloatArray(16)
         private val normal = FloatArray(9)
         private val inverse = FloatArray(16)
@@ -122,8 +122,8 @@ class PetCanvas @JvmOverloads constructor(
         override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
             GLES20.glViewport(0, 0, width, height)
             val aspect = width.toFloat() / height.coerceAtLeast(1)
-            Matrix.perspectiveM(proj, 0, 32f, aspect, 0.1f, 30f)
-            Matrix.setLookAtM(view, 0, 0f, 0.92f, 4.15f, 0f, 0.72f, 0f, 0f, 1f, 0f)
+            Matrix.perspectiveM(proj, 0, 34f, aspect, 0.1f, 40f)
+            Matrix.setLookAtM(view, 0, 2.15f, 0.78f, 4.15f, 0f, 0.42f, 0.05f, 0f, 1f, 0f)
             Matrix.multiplyMM(viewProj, 0, proj, 0, view, 0)
         }
 
@@ -142,7 +142,7 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glUseProgram(program)
             GLES20.glUniformMatrix4fv(uViewProj, 1, false, viewProj, 0)
             GLES20.glUniform3f(uLight, 0.35f, 0.85f, 0.55f)
-            GLES20.glUniform3f(uEye, 0f, 0.92f, 4.15f)
+            GLES20.glUniform3f(uEye, 2.15f, 0.78f, 4.15f)
             drawGround()
 
             for (index in parts.indices) {
@@ -189,9 +189,14 @@ class PetCanvas @JvmOverloads constructor(
                     rz += sin(time * 3.1f + phase) * (8f + happy * 10f)
                 }
                 name == "tail" -> ry += sin(time * 7.5f) * (22f + happy * 28f)
+                name.startsWith("leg") -> {
+                    val front = name.contains("F")
+                    val left = name.endsWith("L")
+                    val phase = if (front == left) 0f else Math.PI.toFloat()
+                    rx += sin(time * 2.6f + phase) * (7f + happy * 4f)
+                }
                 name.startsWith("eye") || name.startsWith("pupil") || name.startsWith("spark") -> sy *= blink
-                name == "mouth" || name == "tongue" -> sy *= 1f + happy * 1.1f
-                name.startsWith("arm") -> rz += sin(time * 2.2f) * 8f * if (name.endsWith("L")) 1f else -1f
+                name == "mouth" || name == "jaw" || name == "tongue" -> sy *= 1f + happy * 0.8f
             }
             Matrix.setIdentityM(local, 0)
             Matrix.translateM(local, 0, tx, ty, tz)

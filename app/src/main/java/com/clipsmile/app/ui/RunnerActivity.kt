@@ -26,7 +26,7 @@ class RunnerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        audio = GameAudio(this)
+        audio = GameAudio.run(this)
         val portrait = intent.getIntExtra(FoodDropActivity.EXTRA_PORTRAIT, R.drawable.ic_pug_icon)
         setContentView(RunnerView(this, portrait, audio))
     }

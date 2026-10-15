@@ -61,6 +61,8 @@ class CollectionActivity : AppCompatActivity() {
             row.breed.setText(dog.titleRes)
             row.levelChip.text = getString(R.string.collection_level_chip, dog.minLevel)
             row.foodChip.setText(dog.foodNameRes)
+            row.frameChip.setText(look.nameRes)
+            row.frameChip.setTextColor(if (open) look.ring else 0xFF8A6844.toInt())
             row.homeBadge.visibility = if (atHome) View.VISIBLE else View.GONE
             row.date.text = if (!open) {
                 getString(R.string.dog_locked, dog.minLevel)

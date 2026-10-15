@@ -10,10 +10,17 @@ import android.os.Build
 import com.clipsmile.app.R
 
 /**
- * Looping original tune plus short effects for the mini-games.
- * Music ducks other apps and stops when the game leaves the screen.
+ * Each mini-game has its own loop and its own effects.
  */
-class GameAudio(context: Context) {
+class GameAudio(
+    context: Context,
+    private val musicRes: Int,
+    jumpRes: Int,
+    pointRes: Int,
+    crashRes: Int,
+    catchRes: Int,
+    missRes: Int
+) {
 
     private val app = context.applicationContext
     private val audioManager = app.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -22,6 +29,7 @@ class GameAudio(context: Context) {
     private val pointId: Int
     private val crashId: Int
     private val catchId: Int
+    private val missId: Int
     private var music: MediaPlayer? = null
     private var focusRequest: AudioFocusRequest? = null
     private var released = false
@@ -32,10 +40,11 @@ class GameAudio(context: Context) {
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
         pool = SoundPool.Builder().setMaxStreams(4).setAudioAttributes(attributes).build()
-        jumpId = pool.load(app, R.raw.sfx_jump, 1)
-        pointId = pool.load(app, R.raw.sfx_point, 1)
-        crashId = pool.load(app, R.raw.sfx_crash, 1)
-        catchId = pool.load(app, R.raw.sfx_catch, 1)
+        jumpId = pool.load(app, jumpRes, 1)
+        pointId = pool.load(app, pointRes, 1)
+        crashId = pool.load(app, crashRes, 1)
+        catchId = pool.load(app, catchRes, 1)
+        missId = pool.load(app, missRes, 1)
     }
 
     fun start() {
@@ -61,15 +70,15 @@ class GameAudio(context: Context) {
         abandonFocus()
     }
 
-    fun jump() = shot(jumpId, 0.55f)
+    fun jump() = shot(jumpId, 0.7f)
 
-    fun point() = shot(pointId, 0.6f)
+    fun point() = shot(pointId, 0.65f)
 
-    fun crash() = shot(crashId, 0.75f)
+    fun crash() = shot(crashId, 0.8f)
 
-    fun miss() = shot(crashId, 0.32f)
+    fun miss() = shot(missId, 0.55f)
 
-    fun catchFood() = shot(catchId, 0.62f)
+    fun catchFood() = shot(catchId, 0.75f)
 
     private fun shot(id: Int, volume: Float) {
         if (released || id == 0) return
@@ -87,11 +96,11 @@ class GameAudio(context: Context) {
         return try {
             val player = MediaPlayer()
             player.setAudioAttributes(musicAttributes())
-            app.resources.openRawResourceFd(R.raw.game_music).use { fd ->
+            app.resources.openRawResourceFd(musicRes).use { fd ->
                 player.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
             }
             player.isLooping = true
-            player.setVolume(0.3f, 0.3f)
+            player.setVolume(0.34f, 0.34f)
             player.prepare()
             player
         } catch (_: Exception) {
@@ -124,5 +133,37 @@ class GameAudio(context: Context) {
             @Suppress("DEPRECATION")
             audioManager.abandonAudioFocus(null)
         }
+    }
+
+    companion object {
+        fun drop(context: Context) = GameAudio(
+            context,
+            R.raw.music_drop,
+            R.raw.sfx_drop_catch,
+            R.raw.sfx_drop_catch,
+            R.raw.sfx_drop_over,
+            R.raw.sfx_drop_catch,
+            R.raw.sfx_drop_miss
+        )
+
+        fun flap(context: Context) = GameAudio(
+            context,
+            R.raw.music_flap,
+            R.raw.sfx_flap_jump,
+            R.raw.sfx_flap_point,
+            R.raw.sfx_flap_crash,
+            R.raw.sfx_flap_point,
+            R.raw.sfx_flap_crash
+        )
+
+        fun run(context: Context) = GameAudio(
+            context,
+            R.raw.music_run,
+            R.raw.sfx_run_jump,
+            R.raw.sfx_run_point,
+            R.raw.sfx_run_crash,
+            R.raw.sfx_run_point,
+            R.raw.sfx_run_crash
+        )
     }
 }

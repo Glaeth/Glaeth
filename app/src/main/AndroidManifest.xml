@@ -62,6 +62,12 @@
             android:theme="@style/Theme.ClipSmile.Room" />
 
         <activity
+            android:name=".ui.FramesActivity"
+            android:exported="false"
+            android:label="@string/frames_title"
+            android:theme="@style/Theme.ClipSmile.Room" />
+
+        <activity
             android:name=".ui.AchievementsActivity"
             android:exported="false"
             android:label="@string/achievements_title"

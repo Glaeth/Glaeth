@@ -34,7 +34,7 @@
     <string name="fed_meat">Köfteyi tek seferde indirdi.</string>
     <string name="fed_cookie">Kurabiyeden kırıntı kaldı.</string>
     <string name="games_label">MİNİ OYUNLAR</string>
-    <string name="games_hint">Müzik açık. Skor köpeği biraz doyurur.</string>
+    <string name="games_hint">Her oyunun kendi müziği ve sesi var.</string>
     <string name="dogs_label">KÖPEKLER</string>
     <string name="game_drop">Dürüm yakala</string>
     <string name="game_flappy">Uçuş</string>
@@ -129,6 +129,14 @@
     <string name="collection_got">Alındı %1$s</string>
     <string name="collection_home">Evde · alındı %1$s</string>
     <string name="collection_selected">%1$s artık evde</string>
+    <string name="frames_title">Çerçeveler</string>
+    <string name="frames_chip">%1$s  ›</string>
+    <string name="frames_hint">Seviye yükseldikçe çerçeve kalınlaşır, iç halka ve taşlar eklenir.</string>
+    <string name="frames_progress">%1$d / %2$d çerçeve açık</string>
+    <string name="frames_current">Şu an bu çerçeve evde</string>
+    <string name="frames_open">Açık</string>
+    <string name="frames_locked">Bu seviyede açılır</string>
+    <string name="frames_now">Şimdi</string>
     <string name="frame_1">Tahta çerçeve</string>
     <string name="frame_15">Bakır çerçeve</string>
     <string name="frame_30">Toprak çerçeve</string>

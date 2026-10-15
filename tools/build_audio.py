@@ -227,54 +227,147 @@ def build_catch():
     return pop + spark
 
 
+# Natural takes from the public-domain recording. No pitch shift.
+BARKS = {
+    "bark_pug": 0.55,
+    "bark_pamuk": 0.95,
+    "bark_boncuk": 1.35,
+    "bark_tombul": 1.78,
+    "bark_bebek": 2.20,
+    "bark_kalp": 3.15,
+    "bark_somun": 3.70,
+    "bark_kahkaha": 7.00,
+    "bark_goz": 10.50,
+    "bark_ceket": 65.35,
+    "bark_kangal": 72.52,
+}
+
+
+def natural_bark(samples, start):
+    begin = int(start * SR)
+    end = min(len(samples), begin + int(0.42 * SR))
+    piece = [s / 32768.0 for s in samples[begin:end]]
+    # Light rumble cut only. Pitch stays where the dog left it.
+    return fade(highpass(piece, 50), 0.004, 0.045)
+
+
+def melody_loop(seconds, notes, bass, hat_gap, hat_vol):
+    length = int(seconds * SR)
+    buffer = [0.0] * length
+    for start, freq, dur, vol in notes:
+        place(buffer, start, tone(freq, dur, vol, "sine"))
+    for start, freq, dur, vol in bass:
+        place(buffer, start, tone(freq, dur, vol, "tri"))
+    state = 41
+    step = 0.0
+    while step < seconds:
+        at = int(step * SR)
+        burst = int(0.025 * SR)
+        for index in range(burst):
+            state = (1103515245 * state + 12345) & 0x7FFFFFFF
+            noise = ((state / 0x7FFFFFFF) * 2 - 1) * hat_vol
+            pos = at + index
+            if pos < length:
+                buffer[pos] += noise * (1 - index / burst)
+        step += hat_gap
+    edge = int(0.02 * SR)
+    for index in range(edge):
+        gain = index / edge
+        buffer[index] *= gain
+        buffer[-1 - index] *= gain
+    return buffer
+
+
+def music_drop():
+    # Bright, bouncy, food-catching.
+    beat = 0.5
+    notes = []
+    tune = [523.25, 659.25, 783.99, 659.25, 587.33, 523.25, 440.0, 523.25]
+    for index, freq in enumerate(tune * 2):
+        notes.append((index * beat, freq, 0.22, 0.16))
+    bass = [(i * 2 * beat, 130.81 if i % 2 == 0 else 98.0, 0.7, 0.1) for i in range(8)]
+    return melody_loop(8.0, notes, bass, 0.25, 0.03)
+
+
+def music_flap():
+    # Slow and airy.
+    notes = []
+    chord = [659.25, 783.99, 987.77, 1318.5]
+    for bar in range(4):
+        for index, freq in enumerate(chord):
+            notes.append((bar * 2.0 + index * 0.45, freq, 0.7, 0.11))
+    bass = [(i * 2.0, 164.81 if i % 2 == 0 else 196.0, 1.6, 0.07) for i in range(4)]
+    return melody_loop(8.0, notes, bass, 1.0, 0.012)
+
+
+def music_run():
+    # Fast and low, for the park run.
+    beat = 0.36
+    tune = [392.0, 440.0, 349.23, 392.0, 329.63, 349.23, 293.66, 329.63]
+    notes = [(index * beat, freq, 0.16, 0.15) for index, freq in enumerate(tune * 2)]
+    bass = [(index * beat, 98.0 if index % 4 == 0 else 82.41, 0.16, 0.14) for index in range(16)]
+    return melody_loop(len(tune) * 2 * beat, notes, bass, beat / 2, 0.045)
+
+
+def noise_burst(seconds, cutoff, seed):
+    count = int(seconds * SR)
+    state = seed
+    raw = []
+    for _ in range(count):
+        state = (1103515245 * state + 12345) & 0x7FFFFFFF
+        raw.append((state / 0x7FFFFFFF) * 2 - 1)
+    shaped = lowpass(raw, cutoff)
+    return [sample * (1 - index / count) ** 1.3 for index, sample in enumerate(shaped)]
+
+
+def sfx_drop():
+    catch = tone(640, 0.05, 0.5) + tone(980, 0.08, 0.45)
+    miss = [math.sin(2 * math.pi * 110 * (i / SR)) * (1 - i / int(0.12 * SR)) for i in range(int(0.12 * SR))]
+    over = noise_burst(0.22, 500, 7)
+    return catch, miss, over
+
+
+def sfx_flap():
+    whoosh = highpass(noise_burst(0.12, 2400, 3), 600)
+    point = tone(1568, 0.09, 0.45) + silence(0.02) + tone(2093, 0.12, 0.4)
+    crash = noise_burst(0.2, 900, 11)
+    return whoosh, point, crash
+
+
+def sfx_run():
+    count = int(0.16 * SR)
+    boing = []
+    for index in range(count):
+        t = index / count
+        freq = 220 + 380 * (1 - t) + 40 * math.sin(t * 18)
+        boing.append(math.sin(2 * math.pi * freq * (index / SR)) * (1 - t))
+    point = tone(880, 0.05, 0.4, "tri") + tone(1320, 0.07, 0.35, "tri")
+    crash = noise_burst(0.26, 420, 19)
+    return boing, point, crash
+
+
 def main():
     if not SOURCE.exists():
         raise SystemExit(f"missing {SOURCE}; convert File:Dog.ogg to 22050 Hz mono wav first")
     OUT.mkdir(parents=True, exist_ok=True)
     source = load_source()
-    write_wav(
-        "bark_tiny.wav",
-        bark_from(
-            source,
-            [(1.245, 1.40, 0.07), (0.895, 1.03, 0.0)],
-            ratio=2.55,
-            hp=280,
-        ),
-    )
-    write_wav(
-        "bark_small.wav",
-        bark_from(
-            source,
-            [(46.05, 46.24, 0.085), (46.90, 47.05, 0.0)],
-            ratio=2.05,
-            hp=180,
-        ),
-    )
-    write_wav(
-        "bark_medium.wav",
-        bark_from(
-            source,
-            [(0.575, 0.78, 0.11), (46.42, 46.66, 0.0)],
-            ratio=1.35,
-            hp=90,
-            lp=4200,
-        ),
-    )
-    write_wav(
-        "bark_big.wav",
-        bark_from(
-            source,
-            [(72.56, 73.12, 0.0)],
-            ratio=0.82,
-            hp=60,
-            lp=2400,
-        ),
-    )
-    write_wav("sfx_jump.wav", build_jump())
-    write_wav("sfx_point.wav", build_point())
-    write_wav("sfx_crash.wav", build_crash())
-    write_wav("sfx_catch.wav", build_catch())
-    write_wav("game_music.wav", build_music())
+    for name, start in BARKS.items():
+        write_wav(name + ".wav", natural_bark(source, start))
+    catch, miss, over = sfx_drop()
+    write_wav("sfx_drop_catch.wav", catch)
+    write_wav("sfx_drop_miss.wav", miss)
+    write_wav("sfx_drop_over.wav", over)
+    whoosh, point, crash = sfx_flap()
+    write_wav("sfx_flap_jump.wav", whoosh)
+    write_wav("sfx_flap_point.wav", point)
+    write_wav("sfx_flap_crash.wav", crash)
+    boing, point, crash = sfx_run()
+    write_wav("sfx_run_jump.wav", boing)
+    write_wav("sfx_run_point.wav", point)
+    write_wav("sfx_run_crash.wav", crash)
+    write_wav("music_drop.wav", music_drop())
+    write_wav("music_flap.wav", music_flap())
+    write_wav("music_run.wav", music_run())
 
 
 if __name__ == "__main__":
