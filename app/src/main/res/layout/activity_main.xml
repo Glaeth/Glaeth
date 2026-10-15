@@ -1,163 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_room"
-    android:fitsSystemWindows="true">
+    android:background="#94BDDB"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:paddingStart="22dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="22dp">
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.clipsmile.app.ui.PetCanvas
+            android:id="@+id/petCanvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/pet_name_default" />
+
+        <com.clipsmile.app.ui.FrameRingView
+            android:id="@+id/frameGlow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="false"
+            android:focusable="false" />
+
+        <com.clipsmile.app.ui.BubbleLayer
+            android:id="@+id/bubbles"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible" />
+
+        <com.clipsmile.app.ui.HeartBurst
+            android:id="@+id/hearts"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible" />
+
+        <ImageView
+            android:id="@+id/feedDoner"
+            android:layout_width="78dp"
+            android:layout_height="78dp"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="18dp"
+            android:layout_marginBottom="92dp"
+            android:contentDescription="@string/food_durum"
+            android:src="@drawable/ic_doner"
+            android:visibility="invisible" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="8dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="104dp"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_badge"
-                    android:elevation="2dp"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp">
-
-                    <ImageView
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_flame" />
-
-                    <TextView
-                        android:id="@+id/streakText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="#3B2918"
-                        android:textSize="26sp"
-                        android:textStyle="bold"
-                        tools:text="1" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:letterSpacing="0.12"
-                        android:text="@string/pet_streak_label"
-                        android:textColor="#C4622D"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="104dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:background="@drawable/bg_badge"
-                    android:elevation="2dp"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp">
-
-                    <ImageView
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_level_star" />
-
-                    <TextView
-                        android:id="@+id/levelText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="#3B2918"
-                        android:textSize="26sp"
-                        android:textStyle="bold"
-                        tools:text="1" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:letterSpacing="0.12"
-                        android:text="@string/pet_level_label"
-                        android:textColor="#3E8C12"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="300dp"
-                android:layout_marginTop="4dp">
-
-                <com.clipsmile.app.ui.PetCanvas
-                    android:id="@+id/petCanvas"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:contentDescription="@string/pet_name_default" />
-
-                <com.clipsmile.app.ui.FrameRingView
-                    android:id="@+id/frameGlow"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clickable="false"
-                    android:focusable="false" />
-
-                <com.clipsmile.app.ui.BubbleLayer
-                    android:id="@+id/bubbles"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="invisible" />
-
-                <com.clipsmile.app.ui.HeartBurst
-                    android:id="@+id/hearts"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="invisible" />
+                android:layout_height="40dp"
+                android:background="@drawable/bg_hud_pill"
+                android:elevation="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="10dp"
+                android:paddingEnd="14dp">
 
                 <ImageView
-                    android:id="@+id/feedDoner"
-                    android:layout_width="78dp"
-                    android:layout_height="78dp"
-                    android:layout_gravity="bottom|end"
-                    android:contentDescription="@string/food_durum"
-                    android:src="@drawable/ic_doner"
-                    android:visibility="invisible" />
-            </FrameLayout>
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@string/pet_streak_label"
+                    android:src="@drawable/ic_flame" />
 
-            <ScrollView
-                android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/streakText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textColor="#3B2918"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    tools:text="3" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_hud_pill"
+                android:elevation="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="10dp"
+                android:paddingEnd="14dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@string/pet_level_label"
+                    android:src="@drawable/ic_level_star" />
+
+                <TextView
+                    android:id="@+id/levelText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textColor="#3B2918"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    tools:text="12" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
                 android:layout_height="0dp"
-                android:layout_weight="1"
-                android:fillViewport="true">
+                android:layout_weight="1" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:paddingBottom="28dp">
+            <ImageButton
+                android:id="@+id/settingsButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_hud_pill"
+                android:contentDescription="@string/action_settings"
+                android:elevation="4dp"
+                android:padding="9dp"
+                android:src="@drawable/ic_settings"
+                app:tint="#5C4632" />
+        </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_collection_card"
-                android:elevation="2dp"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:paddingStart="14dp"
-                android:paddingTop="12dp"
-                android:paddingEnd="14dp"
-                android:paddingBottom="14dp">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/bg_name_plate"
+            android:elevation="6dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingStart="18dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="10dp">
 
             <LinearLayout
                 android:id="@+id/nameRow"
@@ -165,21 +150,21 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="4dp">
+                android:padding="2dp">
 
                 <TextView
                     android:id="@+id/petNameText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="#3B2918"
-                    android:textSize="28sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
                     tools:text="Çirkin" />
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="6dp"
                     android:contentDescription="@string/action_rename_pet"
                     android:src="@drawable/ic_edit"
                     app:tint="#5C4632" />
@@ -195,247 +180,236 @@
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/frameText"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="10dp"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/bg_soft_button"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
                 android:stateListAnimator="@null"
                 android:text="@string/frames_title"
                 android:textAllCaps="false"
                 android:textColor="#8B5A2B"
-                android:textSize="15sp"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_dock"
+        android:elevation="16dp"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="14dp">
+
+        <TextView
+            android:id="@+id/petMoodText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="#5C4632"
+            android:textSize="14sp"
+            tools:text="Karnı tok." />
+
+        <ProgressBar
+            android:id="@+id/fullnessBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_marginTop="8dp"
+            android:max="100"
+            android:progress="70"
+            android:progressDrawable="@drawable/bg_fullness" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/feedButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_candy_orange"
+                android:maxLines="1"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:stateListAnimator="@null"
+                android:text="@string/food_durum"
+                android:textAllCaps="false"
+                android:textColor="#3B2918"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/petMoodText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center"
-                android:textColor="#5C4632"
-                android:textSize="15sp"
-                tools:text="Karnı tok." />
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/bathButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_candy_blue"
+                android:maxLines="1"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:stateListAnimator="@null"
+                android:text="@string/action_bath"
+                android:textAllCaps="false"
+                android:textColor="#F7F4EF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-            <ProgressBar
-                android:id="@+id/fullnessBar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="200dp"
-                android:layout_height="12dp"
-                android:layout_marginTop="10dp"
-                android:max="100"
-                android:progress="70"
-                android:progressDrawable="@drawable/bg_fullness" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/feedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="64dp"
-                    android:maxLines="2"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_candy_orange"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:stateListAnimator="@null"
-                    android:text="@string/food_durum"
-                    android:textAllCaps="false"
-                    android:textColor="#3B2918"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/bathButton"
-                    android:layout_width="0dp"
-                    android:layout_height="64dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_candy_blue"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:stateListAnimator="@null"
-                    android:text="@string/action_bath"
-                    android:textAllCaps="false"
-                    android:textColor="#F7F4EF"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-            </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:background="@drawable/bg_collection_card"
-                android:elevation="2dp"
-                android:orientation="vertical"
-                android:paddingStart="14dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="14dp"
-                android:paddingBottom="14dp">
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:letterSpacing="0.12"
-                    android:text="@string/games_label"
-                    android:textColor="#8A6844"
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/playDrop"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_candy_green"
+                    android:maxLines="1"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:stateListAnimator="@null"
+                    android:text="@string/game_drop_short"
+                    android:textAllCaps="false"
+                    android:textColor="#173307"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/dropBest"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/games_hint"
-                    android:textColor="#5C4632"
-                    android:textSize="13sp" />
+                    android:layout_marginTop="3dp"
+                    android:textColor="#8A6844"
+                    android:textSize="11sp"
+                    tools:text="En iyi 0" />
+            </LinearLayout>
 
-                <LinearLayout
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/playFlappy"
                     android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_candy_green"
+                    android:maxLines="1"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:stateListAnimator="@null"
+                    android:text="@string/game_flappy"
+                    android:textAllCaps="false"
+                    android:textColor="#173307"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/flappyBest"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:orientation="horizontal">
+                    android:layout_marginTop="3dp"
+                    android:textColor="#8A6844"
+                    android:textSize="11sp"
+                    tools:text="En iyi 0" />
+            </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/playDrop"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:background="@drawable/bg_candy_green"
-                            android:stateListAnimator="@null"
-                            android:text="@string/game_drop"
-                            android:textAllCaps="false"
-                            android:textColor="#173307"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/dropBest"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:textColor="#8A6844"
-                            android:textSize="12sp"
-                            tools:text="En iyi 0" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:layout_weight="1"
-                        android:gravity="center_horizontal"
-                        android:orientation="vertical">
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/playFlappy"
-                            android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:background="@drawable/bg_candy_green"
-                            android:stateListAnimator="@null"
-                            android:text="@string/game_flappy"
-                            android:textAllCaps="false"
-                            android:textColor="#173307"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/flappyBest"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:textColor="#8A6844"
-                            android:textSize="12sp"
-                            tools:text="En iyi 0" />
-                    </LinearLayout>
-                </LinearLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/playRun"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="44dp"
                     android:background="@drawable/bg_candy_orange"
+                    android:maxLines="1"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
                     android:stateListAnimator="@null"
-                    android:text="@string/game_run"
+                    android:text="@string/game_run_short"
                     android:textAllCaps="false"
                     android:textColor="#3B2918"
-                    android:textSize="15sp"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/runBest"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="3dp"
                     android:textColor="#8A6844"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     tools:text="En iyi 0" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
-
-                    <androidx.appcompat.widget.AppCompatButton
-                        android:id="@+id/achievementsButton"
-                        android:layout_width="0dp"
-                        android:layout_height="52dp"
-                        android:layout_marginEnd="6dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_soft_button"
-                        android:stateListAnimator="@null"
-                        android:text="@string/achievements_title"
-                        android:textAllCaps="false"
-                        android:textColor="#3B2918"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <androidx.appcompat.widget.AppCompatButton
-                        android:id="@+id/collectionButton"
-                        android:layout_width="0dp"
-                        android:layout_height="52dp"
-                        android:layout_marginStart="6dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/bg_soft_button"
-                        android:stateListAnimator="@null"
-                        android:text="@string/collection_open"
-                        android:textAllCaps="false"
-                        android:textColor="#3B2918"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
             </LinearLayout>
-            </LinearLayout>
-            </ScrollView>
         </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/settingsButton"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="4dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/action_settings"
-        android:padding="10dp"
-        android:src="@drawable/ic_settings"
-        app:tint="#5C4632" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
 
-</FrameLayout>
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/achievementsButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_soft_button"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:stateListAnimator="@null"
+                android:text="@string/achievements_title"
+                android:textAllCaps="false"
+                android:textColor="#3B2918"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/collectionButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_soft_button"
+                android:stateListAnimator="@null"
+                android:text="@string/collection_open"
+                android:textAllCaps="false"
+                android:textColor="#3B2918"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -33,6 +33,12 @@
         <item name="android:windowLightNavigationBar">true</item>
     </style>
 
+    <style name="Theme.ClipSmile.Stage" parent="Theme.ClipSmile.Room">
+        <item name="android:windowBackground">#94BDDB</item>
+        <item name="android:statusBarColor">#94BDDB</item>
+        <item name="android:navigationBarColor">#FFF8EC</item>
+    </style>
+
     <style name="ShapeAppearance.ClipSmile.Circle" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>

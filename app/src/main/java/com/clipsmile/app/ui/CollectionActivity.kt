@@ -5,6 +5,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.clipsmile.app.R
@@ -37,8 +38,24 @@ class CollectionActivity : AppCompatActivity() {
         binding.dogList.removeAllViews()
         val selected = petProgress.selectedLevel()
         val density = resources.displayMetrics.density
-        for (dog in DogRoster.all) {
-            val row = ItemCollectionDogBinding.inflate(layoutInflater, binding.dogList, true)
+        var line: LinearLayout? = null
+        for ((index, dog) in DogRoster.all.withIndex()) {
+            if (index % 2 == 0) {
+                line = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { bottomMargin = (10 * density).toInt() }
+                }
+                binding.dogList.addView(line)
+            }
+            val row = ItemCollectionDogBinding.inflate(layoutInflater, line, false)
+            val params = row.root.layoutParams as LinearLayout.LayoutParams
+            val gap = (5 * density).toInt()
+            if (index % 2 == 0) params.marginEnd = gap else params.marginStart = gap
+            row.root.layoutParams = params
+            line!!.addView(row.root)
             val open = level >= dog.minLevel
             val atHome = open && dog.minLevel == selected
             val look = FrameLooks.forLevel(dog.minLevel)
@@ -86,6 +103,11 @@ class CollectionActivity : AppCompatActivity() {
                 }
                 row.name.setOnClickListener { rename(dog.minLevel, getString(dog.nameRes)) }
             }
+        }
+        if (DogRoster.all.size % 2 == 1) {
+            val spacer = View(this)
+            spacer.layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
+            line?.addView(spacer)
         }
     }
 

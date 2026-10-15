@@ -37,11 +37,13 @@
     <string name="games_hint">Her oyunun kendi müziği ve sesi var.</string>
     <string name="dogs_label">KÖPEKLER</string>
     <string name="game_drop">Dürüm yakala</string>
+    <string name="game_drop_short">Dürüm</string>
     <string name="game_flappy">Uçuş</string>
     <string name="game_run">Köpek koşusu</string>
+    <string name="game_run_short">Koşu</string>
     <string name="game_run_hint">Dokun, zıpla</string>
     <string name="game_best">En iyi %1$d</string>
-    <string name="achievements_open_count">Başarımlar\n%1$d/%2$d</string>
+    <string name="achievements_open_count">Başarım %1$d/%2$d</string>
     <string name="achievements_title">Başarımlar</string>
     <string name="achievements_progress">%1$d / %2$d açık</string>
     <string name="achievements_hint">Mini oyunlarda skor tutunca rozet açılır.</string>

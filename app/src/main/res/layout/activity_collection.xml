@@ -66,10 +66,10 @@
             android:id="@+id/collectionProgress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="8dp"
+            android:layout_height="12dp"
             android:max="11"
-            android:maxHeight="8dp"
-            android:minHeight="8dp"
+            android:maxHeight="12dp"
+            android:minHeight="12dp"
             android:progress="1"
             android:progressBackgroundTint="#E4D0AE"
             android:progressTint="#58CC02" />
