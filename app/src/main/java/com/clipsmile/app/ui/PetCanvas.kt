@@ -100,9 +100,13 @@ class PetCanvas @JvmOverloads constructor(
         private var groundNor = 0
         private var groundIdx = 0
         private var groundCount = 0
+        private var cubePos = 0
+        private var cubeNor = 0
+        private var cubeIdx = 0
+        private var cubeCount = 0
 
         override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-            GLES20.glClearColor(0.965f, 0.886f, 0.722f, 1f)
+            GLES20.glClearColor(0.58f, 0.74f, 0.86f, 1f)
             GLES20.glEnable(GLES20.GL_DEPTH_TEST)
             GLES20.glDisable(GLES20.GL_CULL_FACE)
             program = link(VERT, FRAG)
@@ -117,13 +121,14 @@ class PetCanvas @JvmOverloads constructor(
             uEye = GLES20.glGetUniformLocation(program, "uEye")
             loadedName = null
             uploadGround()
+            uploadCube()
         }
 
         override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
             GLES20.glViewport(0, 0, width, height)
             val aspect = width.toFloat() / height.coerceAtLeast(1)
-            Matrix.perspectiveM(proj, 0, 34f, aspect, 0.1f, 40f)
-            Matrix.setLookAtM(view, 0, 2.15f, 0.78f, 4.15f, 0f, 0.42f, 0.05f, 0f, 1f, 0f)
+            Matrix.perspectiveM(proj, 0, 30f, aspect, 0.08f, 30f)
+            Matrix.setLookAtM(view, 0, 0.22f, 0.82f, 2.45f, 0f, 0.62f, 0.02f, 0f, 1f, 0f)
             Matrix.multiplyMM(viewProj, 0, proj, 0, view, 0)
         }
 
@@ -141,9 +146,9 @@ class PetCanvas @JvmOverloads constructor(
 
             GLES20.glUseProgram(program)
             GLES20.glUniformMatrix4fv(uViewProj, 1, false, viewProj, 0)
-            GLES20.glUniform3f(uLight, 0.35f, 0.85f, 0.55f)
-            GLES20.glUniform3f(uEye, 2.15f, 0.78f, 4.15f)
-            drawGround()
+            GLES20.glUniform3f(uLight, 0.25f, 0.92f, 0.85f)
+            GLES20.glUniform3f(uEye, 0.22f, 0.82f, 2.45f)
+            drawRoom()
 
             for (index in parts.indices) {
                 val part = parts[index]
@@ -172,31 +177,37 @@ class PetCanvas @JvmOverloads constructor(
             val name = part.name
             when {
                 name == "body" -> {
-                    val breath = sin(time * 2.5f)
-                    sy *= 1f + breath * 0.045f - happy * 0.12f
-                    sx *= 1f - breath * 0.025f + happy * 0.08f
-                    sz *= 1f + happy * 0.04f
-                    ty += happy * 0.42f
-                    rz += sin(time * 28f) * shake * 22f
+                    val breath = sin(time * 2.2f)
+                    val idle = sin(time * 1.6f)
+                    sy *= 1f + breath * 0.035f - happy * 0.06f
+                    sx *= 1f - breath * 0.02f + happy * 0.05f
+                    ty += idle * 0.018f + happy * 0.16f
+                    rx += idle * 2.5f
+                    rz += sin(time * 26f) * shake * 16f
                 }
                 name == "head" -> {
-                    ry += sin(time * 0.85f) * 14f + look * 22f
-                    rx += sin(time * 0.55f) * 7f - happy * 16f
-                    rz += sin(time * 1.3f) * 4f
+                    ry += sin(time * 0.7f) * 12f + look * 20f
+                    rx += sin(time * 0.5f) * 6f - happy * 14f
+                    rz += sin(time * 1.1f) * 3f
                 }
                 name.startsWith("ear") -> {
                     val phase = if (name.contains("L")) 0f else 1.4f
-                    rz += sin(time * 3.1f + phase) * (8f + happy * 10f)
+                    rz += sin(time * 2.4f + phase) * (6f + happy * 14f)
                 }
-                name == "tail" -> ry += sin(time * 7.5f) * (22f + happy * 28f)
+                name == "tail" -> {
+                    rz += sin(time * 8f) * (18f + happy * 26f)
+                    ry += sin(time * 8f) * 8f
+                }
                 name.startsWith("leg") -> {
-                    val front = name.contains("F")
                     val left = name.endsWith("L")
-                    val phase = if (front == left) 0f else Math.PI.toFloat()
-                    rx += sin(time * 2.6f + phase) * (7f + happy * 4f)
+                    val phase = if (left) 0f else Math.PI.toFloat()
+                    rx += sin(time * 2.4f + phase) * (4f + happy * 6f)
                 }
                 name.startsWith("eye") || name.startsWith("pupil") || name.startsWith("spark") -> sy *= blink
-                name == "mouth" || name == "jaw" || name == "tongue" -> sy *= 1f + happy * 0.8f
+                name == "mouth" || name == "jaw" || name == "tongue" -> {
+                    sy *= 1f + happy * 2.2f
+                    sz *= 1f + happy * 0.35f
+                }
             }
             Matrix.setIdentityM(local, 0)
             Matrix.translateM(local, 0, tx, ty, tz)
@@ -249,22 +260,44 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, part.indexCount, GLES20.GL_UNSIGNED_SHORT, part.idx)
         }
 
-        private fun drawGround() {
+        private fun drawRoom() {
+            // Wall, window and floor so the dog sits in a room instead of empty space.
+            box(0f, 1.25f, -1.25f, 5.2f, 3.4f, 0.08f, 0.58f, 0.74f, 0.86f, 0.04f)
+            box(-1.15f, 1.45f, -1.18f, 0.85f, 1.05f, 0.04f, 0.78f, 0.90f, 0.98f, 0.15f)
+            box(-1.15f, 1.45f, -1.16f, 0.04f, 1.05f, 0.02f, 0.92f, 0.95f, 0.98f, 0.1f)
+            box(-1.15f, 1.45f, -1.16f, 0.85f, 0.04f, 0.02f, 0.92f, 0.95f, 0.98f, 0.1f)
+            box(0.95f, 1.55f, -1.18f, 0.55f, 0.42f, 0.04f, 0.55f, 0.34f, 0.22f, 0.08f)
+            box(0.95f, 1.55f, -1.15f, 0.42f, 0.30f, 0.02f, 0.98f, 0.86f, 0.55f, 0.12f)
+            box(0f, -0.04f, 0.35f, 5.2f, 0.08f, 3.6f, 0.72f, 0.50f, 0.32f, 0.06f)
+            box(0f, 0.02f, -1.05f, 5.2f, 0.10f, 0.08f, 0.93f, 0.90f, 0.84f, 0.05f)
+            box(0.78f, 0.08f, 0.62f, 0.22f, 0.10f, 0.22f, 0.86f, 0.32f, 0.28f, 0.25f)
             Matrix.setIdentityM(local, 0)
-            Matrix.translateM(local, 0, 0f, 0.02f, 0f)
-            normalOf(local)
-            GLES20.glUniformMatrix4fv(uModel, 1, false, local, 0)
+            Matrix.translateM(local, 0, 0f, 0.015f, 0.15f)
+            Matrix.scaleM(local, 0, 1.15f, 1f, 0.85f)
+            paint(local, 0.93f, 0.55f, 0.38f, 0.05f, groundPos, groundNor, groundIdx, groundCount)
+        }
+
+        private fun box(x: Float, y: Float, z: Float, sx: Float, sy: Float, sz: Float, r: Float, g: Float, b: Float, spec: Float) {
+            Matrix.setIdentityM(local, 0)
+            Matrix.translateM(local, 0, x, y, z)
+            Matrix.scaleM(local, 0, sx, sy, sz)
+            paint(local, r, g, b, spec, cubePos, cubeNor, cubeIdx, cubeCount)
+        }
+
+        private fun paint(model: FloatArray, r: Float, g: Float, b: Float, spec: Float, pos: Int, nor: Int, idx: Int, count: Int) {
+            normalOf(model)
+            GLES20.glUniformMatrix4fv(uModel, 1, false, model, 0)
             GLES20.glUniformMatrix3fv(uNormal, 1, false, normal, 0)
-            GLES20.glUniform3f(uColor, 0.78f, 0.62f, 0.38f)
-            GLES20.glUniform1f(uSpec, 0.05f)
+            GLES20.glUniform3f(uColor, r, g, b)
+            GLES20.glUniform1f(uSpec, spec)
             GLES20.glEnableVertexAttribArray(aPos)
             GLES20.glEnableVertexAttribArray(aNor)
-            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, groundPos)
+            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, pos)
             GLES20.glVertexAttribPointer(aPos, 3, GLES20.GL_FLOAT, false, 0, 0)
-            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, groundNor)
+            GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, nor)
             GLES20.glVertexAttribPointer(aNor, 3, GLES20.GL_FLOAT, false, 0, 0)
-            GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, groundIdx)
-            GLES20.glDrawElements(GLES20.GL_TRIANGLES, groundCount, GLES20.GL_UNSIGNED_SHORT, 0)
+            GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, idx)
+            GLES20.glDrawElements(GLES20.GL_TRIANGLES, count, GLES20.GL_UNSIGNED_SHORT, 0)
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
             GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0)
         }
@@ -279,9 +312,9 @@ class PetCanvas @JvmOverloads constructor(
             for (i in 0..slices) {
                 val angle = i.toFloat() / slices * 6.28318f
                 val o = (i + 1) * 3
-                pos[o] = kotlin.math.cos(angle) * 0.95f
+                pos[o] = kotlin.math.cos(angle) * 0.72f
                 pos[o + 1] = 0f
-                pos[o + 2] = kotlin.math.sin(angle) * 0.72f
+                pos[o + 2] = kotlin.math.sin(angle) * 0.55f
                 nor[o + 1] = 1f
             }
             for (i in 0 until slices) {
@@ -301,6 +334,67 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, groundIdx)
             GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER, idx.size * 2, ib, GLES20.GL_STATIC_DRAW)
             groundCount = idx.size
+        }
+
+        private fun uploadCube() {
+            val faces = arrayOf(
+                floatArrayOf(0f, 0f, 1f),
+                floatArrayOf(0f, 0f, -1f),
+                floatArrayOf(0f, 1f, 0f),
+                floatArrayOf(0f, -1f, 0f),
+                floatArrayOf(1f, 0f, 0f),
+                floatArrayOf(-1f, 0f, 0f)
+            )
+            val pos = FloatArray(6 * 4 * 3)
+            val nor = FloatArray(6 * 4 * 3)
+            val idx = ShortArray(6 * 6)
+            var vertex = 0
+            for (face in faces.indices) {
+                val n = faces[face]
+                val tx = if (n[0] != 0f) floatArrayOf(0f, 0f, 1f) else floatArrayOf(1f, 0f, 0f)
+                val ty = floatArrayOf(
+                    n[1] * tx[2] - n[2] * tx[1],
+                    n[2] * tx[0] - n[0] * tx[2],
+                    n[0] * tx[1] - n[1] * tx[0]
+                )
+                val corners = arrayOf(
+                    floatArrayOf(-1f, -1f),
+                    floatArrayOf(1f, -1f),
+                    floatArrayOf(1f, 1f),
+                    floatArrayOf(-1f, 1f)
+                )
+                val base = vertex / 3
+                for (corner in corners) {
+                    pos[vertex] = n[0] * 0.5f + tx[0] * corner[0] * 0.5f + ty[0] * corner[1] * 0.5f
+                    nor[vertex] = n[0]
+                    vertex++
+                    pos[vertex] = n[1] * 0.5f + tx[1] * corner[0] * 0.5f + ty[1] * corner[1] * 0.5f
+                    nor[vertex] = n[1]
+                    vertex++
+                    pos[vertex] = n[2] * 0.5f + tx[2] * corner[0] * 0.5f + ty[2] * corner[1] * 0.5f
+                    nor[vertex] = n[2]
+                    vertex++
+                }
+                val offset = face * 6
+                idx[offset] = base.toShort()
+                idx[offset + 1] = (base + 1).toShort()
+                idx[offset + 2] = (base + 2).toShort()
+                idx[offset + 3] = base.toShort()
+                idx[offset + 4] = (base + 2).toShort()
+                idx[offset + 5] = (base + 3).toShort()
+            }
+            val ids = IntArray(3)
+            GLES20.glGenBuffers(3, ids, 0)
+            cubePos = ids[0]
+            cubeNor = ids[1]
+            cubeIdx = ids[2]
+            cubeCount = idx.size
+            putBuffer(cubePos, buffer(pos))
+            putBuffer(cubeNor, buffer(nor))
+            val indices = ByteBuffer.allocateDirect(idx.size * 2).order(ByteOrder.nativeOrder()).asShortBuffer()
+            indices.put(idx).position(0)
+            GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, cubeIdx)
+            GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER, idx.size * 2, indices, GLES20.GL_STATIC_DRAW)
         }
 
         private fun putBuffer(id: Int, data: FloatBuffer) {
@@ -395,10 +489,10 @@ class PetCanvas @JvmOverloads constructor(
                 vec3 L = normalize(uLight);
                 vec3 V = normalize(uEye - vW);
                 float diff = max(dot(N, L), 0.0);
-                float wrap = diff * 0.62 + 0.38;
-                float spec = pow(max(dot(N, normalize(L + V)), 0.0), 36.0) * uSpec;
-                float rim = pow(1.0 - max(dot(N, V), 0.0), 2.2) * 0.16;
-                vec3 color = uColor * wrap + vec3(spec + rim);
+                float wrap = diff * 0.48 + 0.58;
+                float spec = pow(max(dot(N, normalize(L + V)), 0.0), 24.0) * uSpec;
+                float rim = pow(1.0 - max(dot(N, V), 0.0), 2.0) * 0.20;
+                vec3 color = uColor * wrap + vec3(1.0, 0.97, 0.92) * (spec + rim);
                 gl_FragColor = vec4(color, 1.0);
             }
         """

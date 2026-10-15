@@ -173,19 +173,28 @@
 
     <string name="notification_channel_name">Pano İzleme</string>
     <string name="notification_channel_description">Kopyaladığınız metinleri kaydetmek için panoyu izler</string>
-    <string name="notification_title">Çirkin Köpek izliyor</string>
-    <string name="notification_text">Kopyalar kendiliğinden sunucuya gider. Bu bildirimi silme.</string>
+    <string name="notification_title">%1$s izliyor</string>
+    <string name="notification_text">%1$s seninle birlikte reels izliyor</string>
     <string-array name="notification_lines">
-        <item>%1$s kopyaları sunucuya taşıyor</item>
-        <item>%1$s şapkasını düzeltti, izlemeye devam</item>
-        <item>Acıktı. Uygulamayı açıp %1$s besle</item>
-        <item>Seri bozulmasın. %1$s seni bekliyor</item>
-        <item>Kopyalar kendiliğinden gidiyor. Bildirimi silme</item>
-        <item>%1$s pencereden bakıyor</item>
-        <item>Seviye yükseldikçe yeni bir köpek açılır</item>
+        <item>%1$s seninle birlikte reels izliyor</item>
+        <item>%1$s kopyalarını bekliyor</item>
+        <item>%1$s pencereden seni izliyor</item>
+        <item>%1$s seninle dizi bakıyor</item>
+        <item>%1$s kuyruğunu sallıyor</item>
+        <item>%1$s ekranın kenarında oturuyor</item>
         <item>%1$s bir lokma hayali kuruyor</item>
+        <item>%1$s seni özledi, uğra</item>
     </string-array>
-    <string name="notification_sent">Son kopya sunucuya gitti</string>
+    <string name="notification_sent">%1$s kopyanı sunucuya götürdü</string>
+    <string name="widget_name">Çirkin Köpek</string>
+    <string name="widget_description">Evdeki köpek ve seri</string>
+    <string name="widget_kicker">SERİ</string>
+    <string name="widget_title">%1$s!</string>
+    <string name="widget_with_you">Seninle birlikte reels izliyor</string>
+    <string name="widget_missed">%1$d günlük seri üşüyor, uğra</string>
+    <string name="widget_start">Evde seni bekliyor</string>
+    <string name="widget_days">%1$d gün</string>
+    <string name="settings_bark_credit">Havlamalar: Amada44, Kriplozoik ve Armartinell, Wikimedia Commons, CC BY-SA.</string>
     <string name="notification_need_overlay">Bir kez \"diğer uygulamaların üzerinde göster\" iznini aç. Sonra kopyalaman yeterli.</string>
     <string name="notification_focus_failed">Pano okunamadı. Sarı izni kontrol et, bildirimi silme.</string>
     <string name="keyboard_name">:) klavye</string>

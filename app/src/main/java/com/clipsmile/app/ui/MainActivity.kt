@@ -139,9 +139,10 @@ class MainActivity : AppCompatActivity() {
         soundPool = pool
     }
 
-    private fun bark(rate: Float) {
+    private fun bark() {
         val id = barkIds[companion.barkRes] ?: return
-        soundPool?.play(id, 1f, 1f, 1, 0, rate.coerceIn(0.92f, 1.08f))
+        // Recorded pitch. Stretching a real bark makes it sound like a scrape.
+        soundPool?.play(id, 1f, 1f, 1, 0, 1f)
     }
 
     private fun openGame(activity: Class<*>) {
@@ -214,6 +215,8 @@ class MainActivity : AppCompatActivity() {
             Achievements.unlockedCount(this),
             Achievements.all.size
         )
+        com.clipsmile.app.widget.PetWidgetProvider.updateAll(this)
+        ClipboardWatcherService.refresh(this)
     }
 
     private fun currentDog(level: Int): DogCompanion {
@@ -256,13 +259,15 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton(R.string.action_save_name) { _, _ ->
                 petProgress.setName(companion.minLevel, input.text?.toString().orEmpty())
                 binding.petNameText.text = petProgress.displayName(companion.minLevel, getString(companion.nameRes))
+                com.clipsmile.app.widget.PetWidgetProvider.updateAll(this)
+                ClipboardWatcherService.refresh(this)
             }
             .show()
     }
 
     private fun nuzzle() {
         if (feeding || bathing) return
-        bark(1f)
+        bark()
         binding.hearts.burst()
         binding.petCanvas.playHappy()
         binding.petMoodText.setText(R.string.pet_loved)
@@ -321,7 +326,7 @@ class MainActivity : AppCompatActivity() {
                 binding.petMoodText.setText(companion.fedRes)
                 binding.feedButton.text = feedLabel()
                 binding.feedButton.alpha = if (petProgress.feedsToday() >= PetProgress.FEEDS_PER_DAY) 0.45f else 1f
-                bark(0.92f)
+                bark()
                 binding.petCanvas.playHappy()
                 doner.animate().alpha(0f).setDuration(160).withEndAction {
                     doner.visibility = View.INVISIBLE
@@ -342,7 +347,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         bathing = true
-        bark(1.12f)
+        bark()
         binding.petCanvas.playShake()
         binding.bubbles.burst {
             bathing = false

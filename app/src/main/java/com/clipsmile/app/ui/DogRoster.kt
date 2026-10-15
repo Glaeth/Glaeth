@@ -36,4 +36,16 @@ object DogRoster {
 
     fun forLevel(level: Int): DogCompanion =
         all.lastOrNull { level >= it.minLevel } ?: all.first()
+
+    /** The dog currently kept at home, not merely the newest unlock. */
+    fun selected(context: android.content.Context): DogCompanion {
+        val level = com.clipsmile.app.data.PetProgress(context).selectedLevel()
+        return all.firstOrNull { it.minLevel == level } ?: all.first()
+    }
+
+    fun homeName(context: android.content.Context): String {
+        val dog = selected(context)
+        return com.clipsmile.app.data.PetProgress(context)
+            .displayName(dog.minLevel, context.getString(dog.nameRes))
+    }
 }

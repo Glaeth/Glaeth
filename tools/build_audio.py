@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Build game music, effects, and per-size dog barks.
+"""Build game music, effects, and one real bark per dog.
 
-Barks are sliced from the public-domain recording
-Wikimedia Commons File:Dog.ogg (PDsounds.org, artist soerena)
-and pitch-shifted so each size sounds like a different dog.
+Each bark is a single voiced burst cut from a short Wikimedia Commons
+recording (CC BY-SA; see settings_bark_credit). Pitch is left alone.
 Music and effects are original synthesis.
 """
 
@@ -14,7 +13,7 @@ from pathlib import Path
 
 SR = 22050
 OUT = Path(__file__).resolve().parents[1] / "app" / "src" / "main" / "res" / "raw"
-SOURCE = Path("/tmp/barks/dog.wav")
+BARK_DIR = Path(__file__).resolve().parent / "audio"
 
 
 def write_wav(name, samples):
@@ -30,15 +29,6 @@ def write_wav(name, samples):
         handle.setframerate(SR)
         handle.writeframes(data)
     print(f"{name:16} {len(samples) / SR:5.2f}s peak-in {peak:.3f}")
-
-
-def load_source():
-    with wave.open(str(SOURCE)) as handle:
-        if handle.getframerate() != SR or handle.getnchannels() != 1:
-            raise SystemExit("expected 22050 Hz mono source wav")
-        count = handle.getnframes()
-        raw = handle.readframes(count)
-    return struct.unpack("<" + "h" * count, raw)
 
 
 def clip(samples, start, end):
@@ -227,28 +217,47 @@ def build_catch():
     return pop + spark
 
 
-# Natural takes from the public-domain recording. No pitch shift.
-BARKS = {
-    "bark_pug": 0.55,
-    "bark_pamuk": 0.95,
-    "bark_boncuk": 1.35,
-    "bark_tombul": 1.78,
-    "bark_bebek": 2.20,
-    "bark_kalp": 3.15,
-    "bark_somun": 3.70,
-    "bark_kahkaha": 7.00,
-    "bark_goz": 10.50,
-    "bark_ceket": 65.35,
-    "bark_kangal": 72.52,
+# One isolated bark each. (file, start seconds, end seconds). No pitch shift.
+CLIPS = {
+    "bark_pug": ("sound.wav", 0.03, 0.30),
+    "bark_pamuk": ("sound.wav", 0.70, 1.00),
+    "bark_boncuk": ("amada.wav", 0.16, 0.34),
+    "bark_tombul": ("amada.wav", 1.14, 1.34),
+    "bark_bebek": ("amada.wav", 1.84, 2.06),
+    "bark_kalp": ("amada2.wav", 0.02, 0.34),
+    "bark_somun": ("amada2.wav", 0.62, 0.90),
+    "bark_kahkaha": ("amada2.wav", 1.46, 1.80),
+    "bark_goz": ("amada2.wav", 2.40, 2.74),
+    "bark_ceket": ("amada2.wav", 3.32, 3.68),
+    "bark_kangal": ("ladrando.wav", 3.88, 4.14),
 }
 
 
-def natural_bark(samples, start):
+def load_clip(filename):
+    path = BARK_DIR / filename
+    with wave.open(str(path)) as handle:
+        if handle.getframerate() != SR or handle.getnchannels() != 1:
+            raise SystemExit(f"{path} must be 22050 Hz mono")
+        count = handle.getnframes()
+        raw = handle.readframes(count)
+    return list(struct.unpack("<" + "h" * count, raw))
+
+
+def isolated_bark(filename, start, end):
+    samples = load_clip(filename)
     begin = int(start * SR)
-    end = min(len(samples), begin + int(0.42 * SR))
-    piece = [s / 32768.0 for s in samples[begin:end]]
-    # Light rumble cut only. Pitch stays where the dog left it.
-    return fade(highpass(piece, 50), 0.004, 0.045)
+    stop = min(len(samples), int(end * SR))
+    piece = [s / 32768.0 for s in samples[begin:stop]]
+    # Drop the room tone that made earlier cuts sound like something being dragged.
+    peak = max(1e-6, max(abs(s) for s in piece))
+    gate = peak * 0.045
+    gated = []
+    for sample in piece:
+        if abs(sample) >= gate:
+            gated.append(sample)
+        else:
+            gated.append(sample * (abs(sample) / gate) ** 2)
+    return fade(highpass(gated, 90), 0.006, 0.03)
 
 
 def melody_loop(seconds, notes, bass, hat_gap, hat_vol):
@@ -347,12 +356,9 @@ def sfx_run():
 
 
 def main():
-    if not SOURCE.exists():
-        raise SystemExit(f"missing {SOURCE}; convert File:Dog.ogg to 22050 Hz mono wav first")
     OUT.mkdir(parents=True, exist_ok=True)
-    source = load_source()
-    for name, start in BARKS.items():
-        write_wav(name + ".wav", natural_bark(source, start))
+    for name, (filename, start, end) in CLIPS.items():
+        write_wav(name + ".wav", isolated_bark(filename, start, end))
     catch, miss, over = sfx_drop()
     write_wav("sfx_drop_catch.wav", catch)
     write_wav("sfx_drop_miss.wav", miss)

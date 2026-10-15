@@ -364,6 +364,14 @@
                         app:iconTint="@color/ink_on_yellow" />
 
                     <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/settings_bark_credit"
+                        android:textColor="@color/ink_light"
+                        android:textSize="11sp" />
+
+                    <TextView
                         android:id="@+id/syncStatusText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

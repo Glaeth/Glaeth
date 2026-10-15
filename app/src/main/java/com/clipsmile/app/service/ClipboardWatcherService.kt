@@ -154,7 +154,7 @@ class ClipboardWatcherService : android.app.Service() {
         if (trimmed.isEmpty() || trimmed == lastDelivered) return
         lastDelivered = trimmed
         ClipCapturePipeline.captureAsync(serviceScope, this, trimmed)
-        postStatus(this, getString(R.string.notification_sent))
+        postStatus(this, getString(R.string.notification_sent, com.clipsmile.app.ui.DogRoster.homeName(this)))
     }
 
     private fun prefsMonitoringEnabled(): Boolean {
@@ -202,23 +202,33 @@ class ClipboardWatcherService : android.app.Service() {
         @Volatile
         private var artCache: Bitmap? = null
 
-        private fun notificationArt(context: Context): Bitmap? {
-            artCache?.let { return it }
-            val decoded = BitmapFactory.decodeResource(context.resources, R.drawable.ic_pug_icon)
-                ?: return null
-            val size = 256
+        @Volatile
+        private var artRes: Int = 0
+
+        private fun notificationArt(context: Context, portrait: Int): Bitmap? {
+            if (artRes == portrait) artCache?.let { return it }
+            val decoded = BitmapFactory.decodeResource(context.resources, portrait) ?: return null
+            val size = 192
             val scaled = if (decoded.width == size && decoded.height == size) {
                 decoded
             } else {
                 Bitmap.createScaledBitmap(decoded, size, size, true)
             }
             artCache = scaled
+            artRes = portrait
             return scaled
+        }
+
+        private fun home(context: Context): Pair<com.clipsmile.app.ui.DogCompanion, String> {
+            val dog = com.clipsmile.app.ui.DogRoster.selected(context)
+            val name = com.clipsmile.app.data.PetProgress(context)
+                .displayName(dog.minLevel, context.getString(dog.nameRes))
+            return dog to name
         }
 
         fun postStatus(context: Context, text: String) {
             statusLine = text
-            statusUntil = System.currentTimeMillis() + 30 * 60 * 1000L
+            statusUntil = System.currentTimeMillis() + 3 * 60 * 1000L
             val manager = context.getSystemService(android.app.NotificationManager::class.java)
             manager?.notify(NOTIFICATION_ID, notification(context, text))
         }
@@ -226,13 +236,15 @@ class ClipboardWatcherService : android.app.Service() {
         private fun rotatingLine(context: Context): String {
             val pet = PetProgress(context)
             val lines = context.resources.getStringArray(R.array.notification_lines)
-            if (lines.isEmpty()) return context.getString(R.string.notification_text)
+            val name = home(context).second
+            if (lines.isEmpty()) return context.getString(R.string.notification_text, name)
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            val line = lines[(hour + pet.level()) % lines.size]
-            return line.format(pet.petName)
+            val line = lines[(hour + pet.level() + pet.selectedLevel()) % lines.size]
+            return line.format(name)
         }
 
         private fun notification(context: Context, text: String): Notification {
+            val (dog, name) = home(context)
             val openAppIntent = Intent(context, MainActivity::class.java)
             val pendingIntent = androidx.core.app.TaskStackBuilder.create(context)
                 .addNextIntentWithParentStack(openAppIntent)
@@ -242,14 +254,27 @@ class ClipboardWatcherService : android.app.Service() {
                 )
             val builder = NotificationCompat.Builder(context, ClipSmileApp.NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(context.getString(R.string.notification_title))
+                .setContentTitle(context.getString(R.string.notification_title, name))
                 .setContentText(text)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
                 .setContentIntent(pendingIntent)
-            notificationArt(context)?.let { builder.setLargeIcon(it) }
+            notificationArt(context, dog.portraitRes)?.let { builder.setLargeIcon(it) }
             return builder.build()
+        }
+
+        /** Title, portrait and line follow whichever dog is at home. */
+        fun refresh(context: Context) {
+            val manager = context.getSystemService(android.app.NotificationManager::class.java) ?: return
+            val alive = manager.activeNotifications.any { it.id == NOTIFICATION_ID }
+            if (!alive) return
+            val text = if (statusLine != null && System.currentTimeMillis() < statusUntil) {
+                statusLine!!
+            } else {
+                rotatingLine(context)
+            }
+            manager.notify(NOTIFICATION_ID, notification(context, text))
         }
 
         fun start(context: Context) {

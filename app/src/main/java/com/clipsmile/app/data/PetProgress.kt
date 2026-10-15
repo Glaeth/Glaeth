@@ -117,6 +117,10 @@ class PetProgress(context: Context) {
 
     fun level(): Int = prefs.getInt(KEY_LEVEL, 1).coerceAtLeast(1)
 
+    fun streak(): Int = prefs.getInt(KEY_STREAK, 0)
+
+    fun visitedToday(): Boolean = prefs.getString(KEY_LAST_DAY, null) == dayKey(0)
+
     fun feed(): Int = snack(FEED_AMOUNT)
 
     fun snack(amount: Int): Int {
