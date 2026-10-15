@@ -65,6 +65,7 @@ class PetCanvas @JvmOverloads constructor(
         val spec: Float,
         val pos: FloatBuffer,
         val nor: FloatBuffer,
+        val col: FloatBuffer?,
         val idx: ShortBuffer,
         val indexCount: Int
     )
@@ -81,6 +82,7 @@ class PetCanvas @JvmOverloads constructor(
         private var program = 0
         private var aPos = 0
         private var aNor = 0
+        private var aCol = 0
         private var uViewProj = 0
         private var uModel = 0
         private var uNormal = 0
@@ -112,6 +114,7 @@ class PetCanvas @JvmOverloads constructor(
             program = link(VERT, FRAG)
             aPos = GLES20.glGetAttribLocation(program, "aPos")
             aNor = GLES20.glGetAttribLocation(program, "aNor")
+            aCol = GLES20.glGetAttribLocation(program, "aCol")
             uViewProj = GLES20.glGetUniformLocation(program, "uViewProj")
             uModel = GLES20.glGetUniformLocation(program, "uModel")
             uNormal = GLES20.glGetUniformLocation(program, "uNormal")
@@ -127,8 +130,8 @@ class PetCanvas @JvmOverloads constructor(
         override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
             GLES20.glViewport(0, 0, width, height)
             val aspect = width.toFloat() / height.coerceAtLeast(1)
-            Matrix.perspectiveM(proj, 0, 30f, aspect, 0.08f, 30f)
-            Matrix.setLookAtM(view, 0, 0.22f, 0.82f, 2.45f, 0f, 0.62f, 0.02f, 0f, 1f, 0f)
+            Matrix.perspectiveM(proj, 0, 32f, aspect, 0.05f, 30f)
+            Matrix.setLookAtM(view, 0, 0.48f, 0.55f, 1.70f, 0f, 0.40f, 0.05f, 0f, 1f, 0f)
             Matrix.multiplyMM(viewProj, 0, proj, 0, view, 0)
         }
 
@@ -146,8 +149,8 @@ class PetCanvas @JvmOverloads constructor(
 
             GLES20.glUseProgram(program)
             GLES20.glUniformMatrix4fv(uViewProj, 1, false, viewProj, 0)
-            GLES20.glUniform3f(uLight, 0.25f, 0.92f, 0.85f)
-            GLES20.glUniform3f(uEye, 0.22f, 0.82f, 2.45f)
+            GLES20.glUniform3f(uLight, 0.35f, 0.92f, 0.75f)
+            GLES20.glUniform3f(uEye, 0.48f, 0.55f, 1.70f)
             drawRoom()
 
             for (index in parts.indices) {
@@ -194,7 +197,7 @@ class PetCanvas @JvmOverloads constructor(
                     val phase = if (name.contains("L")) 0f else 1.4f
                     rz += sin(time * 2.4f + phase) * (6f + happy * 14f)
                 }
-                name == "tail" -> {
+                name.startsWith("tail") -> {
                     rz += sin(time * 8f) * (18f + happy * 26f)
                     ry += sin(time * 8f) * 8f
                 }
@@ -241,6 +244,7 @@ class PetCanvas @JvmOverloads constructor(
                         spec = item.getDouble("spec").toFloat(),
                         pos = buffer(floats(item.getJSONArray("positions"))),
                         nor = buffer(floats(item.getJSONArray("normals"))),
+                        col = if (item.has("colors")) buffer(floats(item.getJSONArray("colors"))) else null,
                         idx = shorts(item.getJSONArray("indices")),
                         indexCount = item.getJSONArray("indices").length()
                     )
@@ -256,6 +260,16 @@ class PetCanvas @JvmOverloads constructor(
             part.nor.position(0)
             GLES20.glVertexAttribPointer(aPos, 3, GLES20.GL_FLOAT, false, 0, part.pos)
             GLES20.glVertexAttribPointer(aNor, 3, GLES20.GL_FLOAT, false, 0, part.nor)
+            if (part.col != null) {
+                GLES20.glEnableVertexAttribArray(aCol)
+                part.col.position(0)
+                GLES20.glVertexAttribPointer(aCol, 3, GLES20.GL_FLOAT, false, 0, part.col)
+                GLES20.glUniform3f(uColor, 1f, 1f, 1f)
+            } else {
+                GLES20.glDisableVertexAttribArray(aCol)
+                GLES20.glVertexAttrib3f(aCol, 1f, 1f, 1f)
+                GLES20.glUniform3fv(uColor, 1, part.color, 0)
+            }
             part.idx.position(0)
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, part.indexCount, GLES20.GL_UNSIGNED_SHORT, part.idx)
         }
@@ -288,6 +302,8 @@ class PetCanvas @JvmOverloads constructor(
             normalOf(model)
             GLES20.glUniformMatrix4fv(uModel, 1, false, model, 0)
             GLES20.glUniformMatrix3fv(uNormal, 1, false, normal, 0)
+            GLES20.glDisableVertexAttribArray(aCol)
+            GLES20.glVertexAttrib3f(aCol, 1f, 1f, 1f)
             GLES20.glUniform3f(uColor, r, g, b)
             GLES20.glUniform1f(uSpec, spec)
             GLES20.glEnableVertexAttribArray(aPos)
@@ -463,15 +479,18 @@ class PetCanvas @JvmOverloads constructor(
         private const val VERT = """
             attribute vec3 aPos;
             attribute vec3 aNor;
+            attribute vec3 aCol;
             uniform mat4 uViewProj;
             uniform mat4 uModel;
             uniform mat3 uNormal;
             varying vec3 vN;
             varying vec3 vW;
+            varying vec3 vCol;
             void main() {
                 vec4 world = uModel * vec4(aPos, 1.0);
                 vW = world.xyz;
                 vN = normalize(uNormal * aNor);
+                vCol = aCol;
                 gl_Position = uViewProj * world;
             }
         """
@@ -480,6 +499,7 @@ class PetCanvas @JvmOverloads constructor(
             precision mediump float;
             varying vec3 vN;
             varying vec3 vW;
+            varying vec3 vCol;
             uniform vec3 uColor;
             uniform vec3 uLight;
             uniform vec3 uEye;
@@ -489,10 +509,11 @@ class PetCanvas @JvmOverloads constructor(
                 vec3 L = normalize(uLight);
                 vec3 V = normalize(uEye - vW);
                 float diff = max(dot(N, L), 0.0);
-                float wrap = diff * 0.48 + 0.58;
-                float spec = pow(max(dot(N, normalize(L + V)), 0.0), 24.0) * uSpec;
-                float rim = pow(1.0 - max(dot(N, V), 0.0), 2.0) * 0.20;
-                vec3 color = uColor * wrap + vec3(1.0, 0.97, 0.92) * (spec + rim);
+                float wrap = diff * 0.42 + 0.50;
+                float hemi = N.y * 0.12 + 0.88;
+                float spec = pow(max(dot(N, normalize(L + V)), 0.0), 28.0) * uSpec;
+                float rim = pow(1.0 - max(dot(N, V), 0.0), 2.4) * 0.16;
+                vec3 color = uColor * vCol * wrap * hemi + vec3(1.0, 0.97, 0.92) * (spec + rim);
                 gl_FragColor = vec4(color, 1.0);
             }
         """
