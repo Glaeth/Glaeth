@@ -17,10 +17,28 @@ import com.clipsmile.app.data.PetProgress
 import kotlin.random.Random
 
 class FlappyDogActivity : AppCompatActivity() {
+    private lateinit var audio: GameAudio
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        audio = GameAudio(this)
         val portrait = intent.getIntExtra(FoodDropActivity.EXTRA_PORTRAIT, R.drawable.ic_pug_icon)
-        setContentView(FlappyDogView(this, portrait))
+        setContentView(FlappyDogView(this, portrait, audio))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        audio.start()
+    }
+
+    override fun onPause() {
+        audio.pause()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        audio.release()
+        super.onDestroy()
     }
 }
 
@@ -31,7 +49,8 @@ private class Gate(var x: Float, val gapTop: Float, var scored: Boolean = false)
  */
 private class FlappyDogView(
     context: Context,
-    portraitRes: Int
+    portraitRes: Int,
+    private val audio: GameAudio
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
@@ -64,6 +83,7 @@ private class FlappyDogView(
     private val frame = Runnable { tick() }
 
     init {
+        keepScreenOn = true
         setBackgroundColor(0xFF8EC8E8.toInt())
     }
 
@@ -94,6 +114,7 @@ private class FlappyDogView(
         }
         started = true
         velocity = -dp(520f)
+        audio.jump()
         return true
     }
 
@@ -155,6 +176,8 @@ private class FlappyDogView(
             if (!gate.scored && gate.x + pipeW < dogX) {
                 gate.scored = true
                 score += 1
+                audio.point()
+                Achievements.celebrate(context, Achievements.FLAP, score)
             }
             if (hits(dogX, dogY, radius, gate.x, pipeW, gate.gapTop, gap, groundTop)) {
                 endRound()
@@ -201,8 +224,10 @@ private class FlappyDogView(
     private fun endRound() {
         if (over) return
         over = true
+        audio.crash()
         best = GameScores.submit(context, GameScores.BEST_FLAP, score)
         if (score > 0) PetProgress(context).snack(score.coerceAtMost(18))
+        Achievements.celebrate(context, Achievements.FLAP, score)
     }
 
     override fun onDraw(canvas: Canvas) {

@@ -56,6 +56,18 @@
             android:theme="@style/Theme.ClipSmile.Room" />
 
         <activity
+            android:name=".ui.RunnerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ClipSmile.Room" />
+
+        <activity
+            android:name=".ui.AchievementsActivity"
+            android:exported="false"
+            android:label="@string/achievements_title"
+            android:theme="@style/Theme.ClipSmile.Room" />
+
+        <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:label="@string/settings_title"

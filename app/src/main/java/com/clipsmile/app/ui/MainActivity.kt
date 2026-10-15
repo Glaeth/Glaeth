@@ -47,8 +47,7 @@ class MainActivity : AppCompatActivity() {
     private var playerLevel = 1
     private var companion = DogRoster.all.first()
     private var soundPool: SoundPool? = null
-    private var barkId = 0
-    private var barkReady = false
+    private val barkIds = HashMap<Int, Int>()
 
     private val foregroundClipListener = ClipboardManager.OnPrimaryClipChangedListener {
         val clip = clipboardManager.primaryClip ?: return@OnPrimaryClipChangedListener
@@ -116,6 +115,10 @@ class MainActivity : AppCompatActivity() {
         binding.petCanvas.setOnClickListener { nuzzle() }
         binding.playDrop.setOnClickListener { openGame(FoodDropActivity::class.java) }
         binding.playFlappy.setOnClickListener { openGame(FlappyDogActivity::class.java) }
+        binding.playRun.setOnClickListener { openGame(RunnerActivity::class.java) }
+        binding.achievementsButton.setOnClickListener {
+            startActivity(Intent(this, AchievementsActivity::class.java))
+        }
     }
 
     private fun prepareBark() {
@@ -128,16 +131,16 @@ class MainActivity : AppCompatActivity() {
                     .build()
             )
             .build()
-        pool.setOnLoadCompleteListener { _, sampleId, status ->
-            if (status == 0 && sampleId == barkId) barkReady = true
+        for (res in DogRoster.all.map { it.barkRes }.distinct()) {
+            barkIds[res] = pool.load(this, res, 1)
         }
-        barkId = pool.load(this, R.raw.dog_bark, 1)
         soundPool = pool
     }
 
     private fun bark(rate: Float) {
-        if (!barkReady) return
-        soundPool?.play(barkId, 0.85f, 0.85f, 1, 0, rate)
+        val id = barkIds[companion.barkRes] ?: return
+        val speed = (rate * companion.barkRate).coerceIn(0.5f, 2f)
+        soundPool?.play(id, 0.95f, 0.95f, 1, 0, speed)
     }
 
     private fun openGame(activity: Class<*>) {
@@ -203,6 +206,12 @@ class MainActivity : AppCompatActivity() {
         }
         binding.dropBest.text = getString(R.string.game_best, GameScores.best(this, GameScores.BEST_DROP))
         binding.flappyBest.text = getString(R.string.game_best, GameScores.best(this, GameScores.BEST_FLAP))
+        binding.runBest.text = getString(R.string.game_best, GameScores.best(this, GameScores.BEST_RUN))
+        binding.achievementsButton.text = getString(
+            R.string.achievements_open_count,
+            Achievements.unlockedCount(this),
+            Achievements.all.size
+        )
     }
 
     private fun currentDog(level: Int): DogCompanion {

@@ -5,6 +5,7 @@ import android.content.Context
 object GameScores {
     const val BEST_DROP = "best_food_drop"
     const val BEST_FLAP = "best_flappy"
+    const val BEST_RUN = "best_runner"
 
     private const val PREFS = "clipsmile_pet"
 

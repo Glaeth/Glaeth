@@ -16,11 +16,29 @@ import com.clipsmile.app.data.PetProgress
 import kotlin.random.Random
 
 class FoodDropActivity : AppCompatActivity() {
+    private lateinit var audio: GameAudio
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        audio = GameAudio(this)
         val portrait = intent.getIntExtra(EXTRA_PORTRAIT, R.drawable.ic_pug_icon)
         val food = intent.getIntExtra(EXTRA_FOOD, R.drawable.ic_doner)
-        setContentView(FoodDropView(this, portrait, food))
+        setContentView(FoodDropView(this, portrait, food, audio))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        audio.start()
+    }
+
+    override fun onPause() {
+        audio.pause()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        audio.release()
+        super.onDestroy()
     }
 
     companion object {
@@ -37,7 +55,8 @@ private class Drop(var x: Float, var y: Float, val speed: Float)
 private class FoodDropView(
     context: Context,
     portraitRes: Int,
-    foodRes: Int
+    foodRes: Int,
+    private val audio: GameAudio
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
@@ -69,6 +88,7 @@ private class FoodDropView(
     private val frame = Runnable { tick() }
 
     init {
+        keepScreenOn = true
         setBackgroundColor(0xFFF6E2B8.toInt())
     }
 
@@ -145,18 +165,23 @@ private class FoodDropView(
             if (drop.y in mouthTop..mouthBottom && drop.x in left..right) {
                 iterator.remove()
                 score += 1
+                audio.catchFood()
+                Achievements.celebrate(context, Achievements.DROP, score)
             } else if (drop.y > height + dp(8f)) {
                 iterator.remove()
                 lives -= 1
-                if (lives <= 0) endRound()
+                if (lives <= 0) endRound() else audio.miss()
             }
         }
     }
 
     private fun endRound() {
+        if (over) return
         over = true
+        audio.crash()
         best = GameScores.submit(context, GameScores.BEST_DROP, score)
         if (score > 0) PetProgress(context).snack(score.coerceAtMost(18))
+        Achievements.celebrate(context, Achievements.DROP, score)
     }
 
     override fun onDraw(canvas: Canvas) {

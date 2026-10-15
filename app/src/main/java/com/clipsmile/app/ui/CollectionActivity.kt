@@ -3,6 +3,7 @@ package com.clipsmile.app.ui
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -22,37 +23,55 @@ class CollectionActivity : AppCompatActivity() {
         binding = ActivityCollectionBinding.inflate(layoutInflater)
         setContentView(binding.root)
         petProgress = PetProgress(this)
+        binding.backButton.setOnClickListener { finish() }
         val level = petProgress.level()
         petProgress.stampUnlocks(level, DogRoster.all.map { it.minLevel })
         showDogs(level)
     }
 
     private fun showDogs(level: Int) {
+        val openCount = DogRoster.all.count { level >= it.minLevel }
+        binding.progressLabel.text = getString(R.string.collection_progress, openCount, DogRoster.all.size)
+        binding.collectionProgress.max = DogRoster.all.size
+        binding.collectionProgress.progress = openCount
         binding.dogList.removeAllViews()
         val selected = petProgress.selectedLevel()
+        val density = resources.displayMetrics.density
         for (dog in DogRoster.all) {
             val row = ItemCollectionDogBinding.inflate(layoutInflater, binding.dogList, true)
             val open = level >= dog.minLevel
+            val atHome = open && dog.minLevel == selected
             val look = FrameLooks.forLevel(dog.minLevel)
             row.portrait.setImageResource(dog.portraitRes)
-            row.portrait.alpha = if (open) 1f else 0.28f
+            row.portrait.alpha = if (open) 1f else 0.35f
+            row.foodIcon.setImageResource(dog.foodRes)
+            row.foodIcon.alpha = if (open) 1f else 0.4f
+            row.foodIcon.contentDescription = getString(dog.foodNameRes)
             row.ring.background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(if (open) look.glow else 0x22A89880)
                 setStroke((if (open) look.widthDp else 3f).dp(), if (open) look.ring else 0xFFC4B6A6.toInt())
             }
-            val name = if (open) petProgress.displayName(dog.minLevel, getString(dog.nameRes)) else getString(dog.nameRes)
+            val name = if (open) {
+                petProgress.displayName(dog.minLevel, getString(dog.nameRes))
+            } else {
+                getString(dog.nameRes)
+            }
             row.name.text = name
             row.breed.setText(dog.titleRes)
-            row.date.text = when {
-                !open -> getString(R.string.dog_locked, dog.minLevel)
-                dog.minLevel == selected -> getString(
-                    R.string.collection_home,
-                    petProgress.formatUnlock(petProgress.unlockDate(dog.minLevel))
-                )
-                else -> getString(R.string.collection_got, petProgress.formatUnlock(petProgress.unlockDate(dog.minLevel)))
+            row.levelChip.text = getString(R.string.collection_level_chip, dog.minLevel)
+            row.foodChip.setText(dog.foodNameRes)
+            row.homeBadge.visibility = if (atHome) View.VISIBLE else View.GONE
+            row.date.text = if (!open) {
+                getString(R.string.dog_locked, dog.minLevel)
+            } else {
+                getString(R.string.collection_got, petProgress.formatUnlock(petProgress.unlockDate(dog.minLevel)))
             }
-            row.card.alpha = if (open) 1f else 0.72f
+            row.card.setBackgroundResource(
+                if (atHome) R.drawable.bg_collection_card_on else R.drawable.bg_collection_card
+            )
+            row.card.elevation = (if (atHome) 6f else 1.5f) * density
+            row.card.alpha = if (open) 1f else 0.78f
             if (!open) {
                 row.card.setOnClickListener {
                     Toast.makeText(this, getString(R.string.dog_locked, dog.minLevel), Toast.LENGTH_SHORT).show()
