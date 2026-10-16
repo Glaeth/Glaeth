@@ -1,8 +1,10 @@
 package com.clipsmile.app.ui
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
+import android.opengl.GLUtils
 import android.opengl.Matrix
 import android.os.SystemClock
 import android.util.AttributeSet
@@ -67,6 +69,8 @@ class PetCanvas @JvmOverloads constructor(
         val pos: FloatBuffer,
         val nor: FloatBuffer,
         val col: FloatBuffer?,
+        val uv: FloatBuffer?,
+        val texture: String?,
         val idx: ShortBuffer,
         val indexCount: Int
     )
@@ -84,6 +88,7 @@ class PetCanvas @JvmOverloads constructor(
         private var aPos = 0
         private var aNor = 0
         private var aCol = 0
+        private var aUV = 0
         private var uViewProj = 0
         private var uModel = 0
         private var uNormal = 0
@@ -91,6 +96,11 @@ class PetCanvas @JvmOverloads constructor(
         private var uSpec = 0
         private var uLight = 0
         private var uEye = 0
+        private var uTex = 0
+        private var uUseTex = 0
+        private var whiteTex = 0
+        private var coatTex = 0
+        private var coatFor: String? = null
         private val viewProj = FloatArray(16)
         private val view = FloatArray(16)
         private val proj = FloatArray(16)
@@ -116,6 +126,7 @@ class PetCanvas @JvmOverloads constructor(
             aPos = GLES20.glGetAttribLocation(program, "aPos")
             aNor = GLES20.glGetAttribLocation(program, "aNor")
             aCol = GLES20.glGetAttribLocation(program, "aCol")
+            aUV = GLES20.glGetAttribLocation(program, "aUV")
             uViewProj = GLES20.glGetUniformLocation(program, "uViewProj")
             uModel = GLES20.glGetUniformLocation(program, "uModel")
             uNormal = GLES20.glGetUniformLocation(program, "uNormal")
@@ -123,7 +134,11 @@ class PetCanvas @JvmOverloads constructor(
             uSpec = GLES20.glGetUniformLocation(program, "uSpec")
             uLight = GLES20.glGetUniformLocation(program, "uLight")
             uEye = GLES20.glGetUniformLocation(program, "uEye")
+            uTex = GLES20.glGetUniformLocation(program, "uTex")
+            uUseTex = GLES20.glGetUniformLocation(program, "uUseTex")
             loadedName = null
+            coatFor = null
+            whiteTex = solidTexture()
             uploadGround()
             uploadCube()
         }
@@ -228,6 +243,15 @@ class PetCanvas @JvmOverloads constructor(
             if (name == loadedName) return
             parts = load(name)
             loadedName = name
+            val coat = parts.firstOrNull { it.texture != null }?.texture
+            if (coat != coatFor) {
+                if (coatTex != 0) {
+                    GLES20.glDeleteTextures(1, intArrayOf(coatTex), 0)
+                    coatTex = 0
+                }
+                coatFor = coat
+                if (coat != null) coatTex = uploadTexture(coat)
+            }
         }
 
         private fun load(asset: String): List<Part> {
@@ -248,6 +272,8 @@ class PetCanvas @JvmOverloads constructor(
                         pos = buffer(floats(item.getJSONArray("positions"))),
                         nor = buffer(floats(item.getJSONArray("normals"))),
                         col = if (item.has("colors")) buffer(floats(item.getJSONArray("colors"))) else null,
+                        uv = if (item.has("uv")) buffer(floats(item.getJSONArray("uv"))) else null,
+                        texture = if (item.has("texture")) item.getString("texture") else null,
                         idx = shorts(item.getJSONArray("indices")),
                         indexCount = item.getJSONArray("indices").length()
                     )
@@ -272,6 +298,19 @@ class PetCanvas @JvmOverloads constructor(
                 GLES20.glDisableVertexAttribArray(aCol)
                 GLES20.glVertexAttrib3f(aCol, 1f, 1f, 1f)
                 GLES20.glUniform3fv(uColor, 1, part.color, 0)
+            }
+            if (part.uv != null && part.texture != null && coatTex != 0) {
+                GLES20.glEnableVertexAttribArray(aUV)
+                part.uv.position(0)
+                GLES20.glVertexAttribPointer(aUV, 2, GLES20.GL_FLOAT, false, 0, part.uv)
+                GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, coatTex)
+                GLES20.glUniform1i(uTex, 0)
+                GLES20.glUniform1f(uUseTex, 1f)
+            } else {
+                GLES20.glDisableVertexAttribArray(aUV)
+                GLES20.glVertexAttrib2f(aUV, 0f, 0f)
+                GLES20.glUniform1f(uUseTex, 0f)
             }
             part.idx.position(0)
             GLES20.glDrawElements(GLES20.GL_TRIANGLES, part.indexCount, GLES20.GL_UNSIGNED_SHORT, part.idx)
@@ -307,6 +346,9 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glUniformMatrix3fv(uNormal, 1, false, normal, 0)
             GLES20.glDisableVertexAttribArray(aCol)
             GLES20.glVertexAttrib3f(aCol, 1f, 1f, 1f)
+            GLES20.glDisableVertexAttribArray(aUV)
+            GLES20.glVertexAttrib2f(aUV, 0f, 0f)
+            GLES20.glUniform1f(uUseTex, 0f)
             GLES20.glUniform3f(uColor, r, g, b)
             GLES20.glUniform1f(uSpec, spec)
             GLES20.glEnableVertexAttribArray(aPos)
@@ -416,6 +458,38 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER, idx.size * 2, indices, GLES20.GL_STATIC_DRAW)
         }
 
+        private fun solidTexture(): Int {
+            val ids = IntArray(1)
+            GLES20.glGenTextures(1, ids, 0)
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, ids[0])
+            val pixel = java.nio.ByteBuffer.allocateDirect(4).apply {
+                put(byteArrayOf(255.toByte(), 255.toByte(), 255.toByte(), 255.toByte()))
+                position(0)
+            }
+            GLES20.glTexImage2D(
+                GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 1, 1, 0,
+                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixel
+            )
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST)
+            return ids[0]
+        }
+
+        private fun uploadTexture(asset: String): Int {
+            val bitmap = context.assets.open(asset).use { BitmapFactory.decodeStream(it) } ?: return 0
+            val ids = IntArray(1)
+            GLES20.glGenTextures(1, ids, 0)
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, ids[0])
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
+            GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D)
+            bitmap.recycle()
+            return ids[0]
+        }
+
         private fun putBuffer(id: Int, data: FloatBuffer) {
             GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, id)
             GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, data.capacity() * 4, data, GLES20.GL_STATIC_DRAW)
@@ -483,17 +557,20 @@ class PetCanvas @JvmOverloads constructor(
             attribute vec3 aPos;
             attribute vec3 aNor;
             attribute vec3 aCol;
+            attribute vec2 aUV;
             uniform mat4 uViewProj;
             uniform mat4 uModel;
             uniform mat3 uNormal;
             varying vec3 vN;
             varying vec3 vW;
             varying vec3 vCol;
+            varying vec2 vUV;
             void main() {
                 vec4 world = uModel * vec4(aPos, 1.0);
                 vW = world.xyz;
                 vN = normalize(uNormal * aNor);
                 vCol = aCol;
+                vUV = aUV;
                 gl_Position = uViewProj * world;
             }
         """
@@ -503,20 +580,33 @@ class PetCanvas @JvmOverloads constructor(
             varying vec3 vN;
             varying vec3 vW;
             varying vec3 vCol;
+            varying vec2 vUV;
             uniform vec3 uColor;
             uniform vec3 uLight;
             uniform vec3 uEye;
             uniform float uSpec;
+            uniform sampler2D uTex;
+            uniform float uUseTex;
             void main() {
                 vec3 N = normalize(vN);
                 vec3 L = normalize(uLight);
                 vec3 V = normalize(uEye - vW);
                 float diff = max(dot(N, L), 0.0);
-                float wrap = diff * 0.34 + 0.58;
-                float hemi = N.y * 0.16 + 0.90;
+                vec3 albedo;
+                float wrap;
+                float rim;
+                if (uUseTex > 0.5) {
+                    albedo = texture2D(uTex, vec2(vUV.x, 1.0 - vUV.y)).rgb;
+                    wrap = diff * 0.55 + 0.5;
+                    rim = pow(1.0 - max(dot(N, V), 0.0), 2.2) * 0.05;
+                } else {
+                    albedo = uColor * vCol;
+                    wrap = diff * 0.34 + 0.58;
+                    rim = pow(1.0 - max(dot(N, V), 0.0), 2.0) * 0.30;
+                }
+                float hemi = N.y * 0.10 + 0.92;
                 float spec = pow(max(dot(N, normalize(L + V)), 0.0), 22.0) * uSpec;
-                float rim = pow(1.0 - max(dot(N, V), 0.0), 2.0) * 0.30;
-                vec3 color = uColor * vCol * wrap * hemi + vec3(1.0, 0.97, 0.92) * (spec + rim);
+                vec3 color = albedo * wrap * hemi + vec3(1.0, 0.97, 0.92) * (spec + rim);
                 gl_FragColor = vec4(color, 1.0);
             }
         """

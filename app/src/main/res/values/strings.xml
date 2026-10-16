@@ -197,7 +197,7 @@
     <string name="widget_start">Evde seni bekliyor</string>
     <string name="widget_days">%1$d gün</string>
     <string name="settings_bark_credit">Havlamalar: Amada44, Kriplozoik ve Armartinell, Wikimedia Commons, CC BY-SA.</string>
-    <string name="settings_model_credit">Köpek modeli: Quaternius, CC0.</string>
+    <string name="settings_model_credit">İlk köpek: LasquetiSpice, “Animated Dog Sits Rolls Over Shake Paw”, Sketchfab, CC BY 4.0. Diğer köpekler: Quaternius, CC0.</string>
     <string name="notification_need_overlay">%1$s kopyaları kaçırmasın diye bir kez \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
     <string name="keyboard_name">:) klavye</string>
     <string name="keyboard_space">boşluk</string>
