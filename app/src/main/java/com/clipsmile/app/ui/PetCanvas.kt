@@ -20,8 +20,8 @@ import kotlin.math.abs
 import kotlin.math.sin
 
 /**
- * A lit toy dog. The body is one smoothed mesh; the eyes blink and the tail wags.
- * A tap turns the dog and makes it hop.
+ * A lit toy dog. The first dog plays its sit, roll and paw clip in a loop.
+ * The others blink, wag and hop. A tap turns the dog toward the finger.
  */
 class PetCanvas @JvmOverloads constructor(
     context: Context,
@@ -84,6 +84,8 @@ class PetCanvas @JvmOverloads constructor(
 
         private var loadedName: String? = null
         private var parts: List<Part> = emptyList()
+        private var clip: DogClip? = null
+        private var clipStart = 0L
         private var program = 0
         private var aPos = 0
         private var aNor = 0
@@ -137,6 +139,7 @@ class PetCanvas @JvmOverloads constructor(
             uTex = GLES20.glGetUniformLocation(program, "uTex")
             uUseTex = GLES20.glGetUniformLocation(program, "uUseTex")
             loadedName = null
+            clip = null
             coatFor = null
             whiteTex = solidTexture()
             uploadGround()
@@ -163,6 +166,11 @@ class PetCanvas @JvmOverloads constructor(
             val lookAge = (now - lookAt) / 1000f
             val look = if (lookAge in 0f..1.3f) lookTarget * (1f - lookAge / 1.3f) else 0f
             val blink = blinkScale(time)
+            val playing = clip
+            if (playing != null) {
+                val body = parts.firstOrNull()
+                if (body != null) playing.write((now - clipStart) / 1000f, body.pos, body.nor)
+            }
 
             GLES20.glUseProgram(program)
             GLES20.glUniformMatrix4fv(uViewProj, 1, false, viewProj, 0)
@@ -196,6 +204,12 @@ class PetCanvas @JvmOverloads constructor(
             var sz = part.restS[2]
             val name = part.name
             when {
+                name == "body" && clip != null -> {
+                    // The clip already sits, rolls and offers a paw. A tap still turns the whole dog.
+                    ty += happy * 0.045f
+                    ry += look * 16f
+                    rz += sin(time * 26f) * shake * 8f
+                }
                 name == "body" -> {
                     val breath = sin(time * 2.2f)
                     val idle = sin(time * 1.6f)
@@ -244,6 +258,8 @@ class PetCanvas @JvmOverloads constructor(
             if (name == loadedName) return
             parts = load(name)
             loadedName = name
+            clip = if (name.endsWith("pug.json")) loadClip() else null
+            clipStart = nowMillis()
             val coat = parts.firstOrNull { it.texture != null }?.texture
             if (coat != coatFor) {
                 if (coatTex != 0) {
@@ -254,6 +270,16 @@ class PetCanvas @JvmOverloads constructor(
                 if (coat != null) coatTex = uploadTexture(coat)
             }
         }
+
+        private fun loadClip(): DogClip? {
+            return try {
+                context.assets.open("dogs/pug.anim").use { DogClip.open(it) }
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        private fun nowMillis(): Long = SystemClock.uptimeMillis()
 
         private fun load(asset: String): List<Part> {
             val text = context.assets.open(asset).bufferedReader().use { it.readText() }
