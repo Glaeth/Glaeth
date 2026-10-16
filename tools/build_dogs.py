@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smooth standing dogs. One blended surface, not a stack of spheres."""
+"""Older metaball sculpt. The shipped dogs are built by import_dog.py."""
 
 import json
 import math

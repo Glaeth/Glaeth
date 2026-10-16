@@ -48,7 +48,6 @@ class ClipboardWatcherService : android.app.Service() {
 
     private var polling = false
     private var lastDelivered: String? = null
-    private var focusMisses = 0
     private var overlayMissingNotified = false
     private var captionHour = -1
 
@@ -125,7 +124,7 @@ class ClipboardWatcherService : android.app.Service() {
         if (AppVisibility.hasVisibleActivity) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             if (!overlayMissingNotified) {
-                postStatus(this, getString(R.string.notification_need_overlay))
+                postStatus(this, getString(R.string.notification_need_overlay, com.clipsmile.app.ui.DogRoster.homeName(this)))
                 overlayMissingNotified = true
             }
             return
@@ -137,14 +136,7 @@ class ClipboardWatcherService : android.app.Service() {
         }
         if (focusReader.inFlight) return
         focusReader.read { text, hadFocus ->
-            if (!hadFocus) {
-                focusMisses += 1
-                if (focusMisses == FOCUS_MISS_NOTICE) {
-                    postStatus(this, getString(R.string.notification_focus_failed))
-                }
-                return@read
-            }
-            focusMisses = 0
+            if (!hadFocus) return@read
             deliver(text)
         }
     }
@@ -189,7 +181,6 @@ class ClipboardWatcherService : android.app.Service() {
     companion object {
         private const val NOTIFICATION_ID = 101
         private const val POLL_INTERVAL_MS = 2_000L
-        private const val FOCUS_MISS_NOTICE = 3
         private const val PREFS_NAME = "clipsmile_prefs"
         private const val KEY_MONITORING_ENABLED = "monitoring_enabled"
 

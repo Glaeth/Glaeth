@@ -187,7 +187,7 @@
         <item>%1$s bir lokma hayali kuruyor</item>
         <item>%1$s seni özledi, uğra</item>
     </string-array>
-    <string name="notification_sent">%1$s kopyanı sunucuya götürdü</string>
+    <string name="notification_sent">%1$s kopyanı kaptı, kuyruk sallıyor</string>
     <string name="widget_name">Çirkin Köpek</string>
     <string name="widget_description">Evdeki köpek ve seri</string>
     <string name="widget_kicker">SERİ</string>
@@ -197,8 +197,8 @@
     <string name="widget_start">Evde seni bekliyor</string>
     <string name="widget_days">%1$d gün</string>
     <string name="settings_bark_credit">Havlamalar: Amada44, Kriplozoik ve Armartinell, Wikimedia Commons, CC BY-SA.</string>
-    <string name="notification_need_overlay">Bir kez \"diğer uygulamaların üzerinde göster\" iznini aç. Sonra kopyalaman yeterli.</string>
-    <string name="notification_focus_failed">Pano okunamadı. Sarı izni kontrol et, bildirimi silme.</string>
+    <string name="settings_model_credit">Köpek modeli: Quaternius, CC0.</string>
+    <string name="notification_need_overlay">%1$s kopyaları kaçırmasın diye bir kez \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
     <string name="keyboard_name">:) klavye</string>
     <string name="keyboard_space">boşluk</string>
     <string name="keyboard_hint">Android kapalı uygulamaya panoyu vermez. Buna dokun, :) klavyesini seç. Yazdıkların kaydedilmez; sadece kopyalar WhatsApp\'a gider.</string>

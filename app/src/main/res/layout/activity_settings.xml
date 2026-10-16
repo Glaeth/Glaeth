@@ -372,6 +372,14 @@
                         android:textSize="11sp" />
 
                     <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/settings_model_credit"
+                        android:textColor="@color/ink_light"
+                        android:textSize="11sp" />
+
+                    <TextView
                         android:id="@+id/syncStatusText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

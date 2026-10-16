@@ -14,11 +14,12 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.abs
 import kotlin.math.sin
 
 /**
- * A lit, rigged toy dog. Each companion is its own mesh. The body breathes,
- * the head looks around, the ears and tail move, and a tap makes it hop.
+ * A lit toy dog. The body is one smoothed mesh; the eyes blink and the tail wags.
+ * A tap turns the dog and makes it hop.
  */
 class PetCanvas @JvmOverloads constructor(
     context: Context,
@@ -131,7 +132,7 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glViewport(0, 0, width, height)
             val aspect = width.toFloat() / height.coerceAtLeast(1)
             Matrix.perspectiveM(proj, 0, 32f, aspect, 0.05f, 30f)
-            Matrix.setLookAtM(view, 0, 0.48f, 0.55f, 1.70f, 0f, 0.40f, 0.05f, 0f, 1f, 0f)
+            Matrix.setLookAtM(view, 0, 0.48f, 0.52f, 1.85f, 0f, 0.34f, 0.02f, 0f, 1f, 0f)
             Matrix.multiplyMM(viewProj, 0, proj, 0, view, 0)
         }
 
@@ -150,7 +151,7 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glUseProgram(program)
             GLES20.glUniformMatrix4fv(uViewProj, 1, false, viewProj, 0)
             GLES20.glUniform3f(uLight, 0.35f, 0.92f, 0.75f)
-            GLES20.glUniform3f(uEye, 0.48f, 0.55f, 1.70f)
+            GLES20.glUniform3f(uEye, 0.48f, 0.52f, 1.85f)
             drawRoom()
 
             for (index in parts.indices) {
@@ -184,9 +185,10 @@ class PetCanvas @JvmOverloads constructor(
                     val idle = sin(time * 1.6f)
                     sy *= 1f + breath * 0.035f - happy * 0.06f
                     sx *= 1f - breath * 0.02f + happy * 0.05f
-                    ty += idle * 0.018f + happy * 0.16f
-                    rx += idle * 2.5f
-                    rz += sin(time * 26f) * shake * 16f
+                    ty += idle * 0.012f + happy * 0.08f
+                    rx += idle * 1.6f
+                    ry += sin(time * 0.7f) * 5f + look * 14f
+                    rz += sin(time * 26f) * shake * 10f
                 }
                 name == "head" -> {
                     ry += sin(time * 0.7f) * 12f + look * 20f
@@ -198,8 +200,9 @@ class PetCanvas @JvmOverloads constructor(
                     rz += sin(time * 2.4f + phase) * (6f + happy * 14f)
                 }
                 name.startsWith("tail") -> {
-                    rz += sin(time * 8f) * (18f + happy * 26f)
-                    ry += sin(time * 8f) * 8f
+                    // Tail runs back along -Z, so a yaw is the wag.
+                    ry += sin(time * 8f) * (24f + happy * 28f)
+                    rx += abs(sin(time * 8f)) * (8f + happy * 10f)
                 }
                 name.startsWith("leg") -> {
                     val left = name.endsWith("L")
@@ -509,10 +512,10 @@ class PetCanvas @JvmOverloads constructor(
                 vec3 L = normalize(uLight);
                 vec3 V = normalize(uEye - vW);
                 float diff = max(dot(N, L), 0.0);
-                float wrap = diff * 0.42 + 0.50;
-                float hemi = N.y * 0.12 + 0.88;
-                float spec = pow(max(dot(N, normalize(L + V)), 0.0), 28.0) * uSpec;
-                float rim = pow(1.0 - max(dot(N, V), 0.0), 2.4) * 0.16;
+                float wrap = diff * 0.34 + 0.58;
+                float hemi = N.y * 0.16 + 0.90;
+                float spec = pow(max(dot(N, normalize(L + V)), 0.0), 22.0) * uSpec;
+                float rim = pow(1.0 - max(dot(N, V), 0.0), 2.0) * 0.30;
                 vec3 color = uColor * vCol * wrap * hemi + vec3(1.0, 0.97, 0.92) * (spec + rim);
                 gl_FragColor = vec4(color, 1.0);
             }
