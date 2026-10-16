@@ -147,7 +147,8 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glViewport(0, 0, width, height)
             val aspect = width.toFloat() / height.coerceAtLeast(1)
             Matrix.perspectiveM(proj, 0, 32f, aspect, 0.05f, 30f)
-            Matrix.setLookAtM(view, 0, 0.48f, 0.52f, 1.85f, 0f, 0.34f, 0.02f, 0f, 1f, 0f)
+            // Slightly above and in front, so the sitting dog's face fills the ring.
+            Matrix.setLookAtM(view, 0, 0.22f, 0.64f, 1.62f, 0f, 0.38f, 0.02f, 0f, 1f, 0f)
             Matrix.multiplyMM(viewProj, 0, proj, 0, view, 0)
         }
 
@@ -165,8 +166,8 @@ class PetCanvas @JvmOverloads constructor(
 
             GLES20.glUseProgram(program)
             GLES20.glUniformMatrix4fv(uViewProj, 1, false, viewProj, 0)
-            GLES20.glUniform3f(uLight, 0.35f, 0.92f, 0.75f)
-            GLES20.glUniform3f(uEye, 0.48f, 0.52f, 1.85f)
+            GLES20.glUniform3f(uLight, 0.22f, 0.88f, 0.55f)
+            GLES20.glUniform3f(uEye, 0.22f, 0.64f, 1.62f)
             drawRoom()
 
             for (index in parts.indices) {
@@ -596,9 +597,10 @@ class PetCanvas @JvmOverloads constructor(
                 float wrap;
                 float rim;
                 if (uUseTex > 0.5) {
-                    albedo = texture2D(uTex, vec2(vUV.x, 1.0 - vUV.y)).rgb;
-                    wrap = diff * 0.55 + 0.5;
-                    rim = pow(1.0 - max(dot(N, V), 0.0), 2.2) * 0.05;
+                    // Bitmap row 0 is GL v = 0, and this coat was authored that way.
+                    albedo = texture2D(uTex, vUV).rgb;
+                    wrap = diff * 0.32 + 0.74;
+                    rim = pow(1.0 - max(dot(N, V), 0.0), 2.2) * 0.04;
                 } else {
                     albedo = uColor * vCol;
                     wrap = diff * 0.34 + 0.58;
