@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pokémon-inspired palette -->
+    <color name="pikachu_yellow">#FFCB05</color>
+    <color name="pikachu_cheek_red">#F23030</color>
+    <color name="pokemon_red">#E3350D</color>
+    <color name="pokemon_red_dark">#B8290A</color>
+    <color name="pokemon_blue">#2A75BB</color>
+    <color name="pokemon_blue_dark">#1C4F80</color>
+    <color name="poke_ball_black">#16120E</color>
+    <color name="pokedex_cream">#241C16</color>
+    <color name="card_border">#FFCB05</color>
+
+    <color name="whatsapp_green">#1E8C45</color>
+    <color name="status_active_green">#3DAE2B</color>
+
+    <color name="room_bg">#F6E2B8</color>
+    <color name="room_floor">#E7C98A</color>
+    <color name="night_bg">#0C0A0E</color>
+    <color name="night_card">#1A1418</color>
+    <color name="night_raised">#261C18</color>
+    <color name="ink_gold">#FFCB05</color>
+    <color name="ink_gold_muted">#C6A15A</color>
+    <color name="ink_on_yellow">#1A1206</color>
+
+    <color name="ink_dark">#1A1206</color>
+    <color name="ink_light">#8C7B68</color>
+    <color name="text_primary">#F4EFE6</color>
+    <color name="text_muted">#C4B6A6</color>
+    <color name="surface_light">@color/night_card</color>
+    <color name="background_light">@color/night_bg</color>
+    <color name="card_stroke">@color/card_border</color>
+    <color name="danger_red">@color/pokemon_red</color>
+
+    <color name="background_dark">@color/night_bg</color>
+
+    <color name="chroma_bg">#0C0A0E</color>
+    <color name="chroma_violet">#8A2BE2</color>
+    <color name="chroma_magenta">#E3350D</color>
+    <color name="chroma_cyan">#FFCB05</color>
+    <color name="glass_fill">#E61A1418</color>
+    <color name="glass_stroke">#3A312C</color>
+    <color name="glass_ink">@color/text_primary</color>
+    <color name="glass_ink_muted">@color/text_muted</color>
+</resources>

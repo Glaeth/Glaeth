@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Çirkin Köpek</string>
+
+    <string name="empty_state_title">Henüz kopya yok</string>
+    <string name="empty_state_subtitle">Bir metin kopyala. Köpek onu sunucuya taşır.</string>
+    <string name="server_status_on">Kopyalar bu adrese gidiyor\n%1$s</string>
+    <string name="server_status_off">Sunucu kapalı. Ayarlardan aç.</string>
+    <string name="overlay_permission_hint">Köpeğin arkadan da kopya görmesi için bir kez \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
+    <string name="pet_streak">%1$d gün seri</string>
+    <string name="pet_streak_label">SERİ</string>
+    <string name="pet_level">Seviye %1$d</string>
+    <string name="pet_level_label">SEVİYE</string>
+    <string name="pet_name_default">Çirkin</string>
+    <string name="action_rename_pet">Köpeğin adı</string>
+    <string name="action_save_name">Kaydet</string>
+    <string name="pet_mood_full">Karnı tok. %1$s hâlâ aklında.</string>
+    <string name="pet_mood_ok">İyi. Bir lokma daha ister.</string>
+    <string name="pet_mood_hungry">Acıktı. %1$s bakıyor.</string>
+    <string name="pet_mood_starving">Çok aç. %1$s ver.</string>
+    <string name="dog_pug_title">Şapkalı pug</string>
+    <string name="dog_brown_title">Tarçın</string>
+    <string name="dog_spot_title">Benek</string>
+    <string name="dog_crown_title">Kral</string>
+    <string name="dog_locked">Seviye %1$d olunca açılır</string>
+    <string name="dog_level_short">Sv %1$d</string>
+    <string name="food_durum">Hatay dürüm</string>
+    <string name="food_bone">Kemik</string>
+    <string name="food_meat">Köfte</string>
+    <string name="food_cookie">Kurabiye</string>
+    <string name="action_feed_named">%1$s ver</string>
+    <string name="fed_durum">Hatay dürüm gitti. Lokmayı yuttu.</string>
+    <string name="fed_bone">Kemiği kaptı, kuyruk döndü.</string>
+    <string name="fed_meat">Köfteyi tek seferde indirdi.</string>
+    <string name="fed_cookie">Kurabiyeden kırıntı kaldı.</string>
+    <string name="games_label">MİNİ OYUNLAR</string>
+    <string name="games_hint">Her oyunun kendi müziği ve sesi var.</string>
+    <string name="dogs_label">KÖPEKLER</string>
+    <string name="game_drop">Dürüm yakala</string>
+    <string name="game_drop_short">Dürüm</string>
+    <string name="game_flappy">Uçuş</string>
+    <string name="game_run">Köpek koşusu</string>
+    <string name="game_run_short">Koşu</string>
+    <string name="game_run_hint">Dokun, zıpla</string>
+    <string name="game_best">En iyi %1$d</string>
+    <string name="achievements_open_count">Başarım %1$d/%2$d</string>
+    <string name="achievements_title">Başarımlar</string>
+    <string name="achievements_progress">%1$d / %2$d açık</string>
+    <string name="achievements_hint">Mini oyunlarda skor tutunca rozet açılır.</string>
+    <string name="achievement_locked">Kilitli</string>
+    <string name="achievement_unlocked">Açıldı</string>
+    <string name="achievement_unlocked_toast">Başarım: %1$s</string>
+    <string name="ach_section_drop">Dürüm yakala</string>
+    <string name="ach_section_flap">Uçuş</string>
+    <string name="ach_section_run">Köpek koşusu</string>
+    <string name="ach_drop_1_title">İlk lokma</string>
+    <string name="ach_drop_1_detail">Bir yiyecek yakala.</string>
+    <string name="ach_drop_10_title">Aç kurt</string>
+    <string name="ach_drop_10_detail">Tek elde 10 yiyecek yakala.</string>
+    <string name="ach_drop_25_title">Doymaz</string>
+    <string name="ach_drop_25_detail">Tek elde 25 yiyecek yakala.</string>
+    <string name="ach_flap_1_title">Havalandı</string>
+    <string name="ach_flap_1_detail">Bir kapıdan geç.</string>
+    <string name="ach_flap_5_title">Rüzgar</string>
+    <string name="ach_flap_5_detail">Tek uçuşta 5 kapı geç.</string>
+    <string name="ach_flap_15_title">Pilot</string>
+    <string name="ach_flap_15_detail">Tek uçuşta 15 kapı geç.</string>
+    <string name="ach_run_1_title">İlk adım</string>
+    <string name="ach_run_1_detail">Koşuya başla.</string>
+    <string name="ach_run_100_title">Park turu</string>
+    <string name="ach_run_100_detail">Koşuda 100 skor.</string>
+    <string name="ach_run_500_title">Maraton</string>
+    <string name="ach_run_500_detail">Koşuda 500 skor.</string>
+    <string name="dog_pug_name">Çirkin</string>
+    <string name="dog_pamuk_name">Pamuk</string>
+    <string name="dog_pamuk_title">Tüylü beyaz</string>
+    <string name="dog_boncuk_name">Boncuk</string>
+    <string name="dog_boncuk_title">Chihuahua</string>
+    <string name="dog_tombul_name">Tombul</string>
+    <string name="dog_tombul_title">Yassı pug</string>
+    <string name="dog_bebek_name">Bebek</string>
+    <string name="dog_bebek_title">Kolları açık yavru</string>
+    <string name="dog_kalp_name">Kalp</string>
+    <string name="dog_kalp_title">Süveterli french</string>
+    <string name="dog_somun_name">Somun</string>
+    <string name="dog_somun_title">Ekmekçi</string>
+    <string name="dog_kahkaha_name">Kahkaha</string>
+    <string name="dog_kahkaha_title">Ağzı açık</string>
+    <string name="dog_goz_name">Göz</string>
+    <string name="dog_goz_title">Husky</string>
+    <string name="dog_ceket_name">Ceket</string>
+    <string name="dog_ceket_title">Ceketli sokak köpeği</string>
+    <string name="dog_kangal_name">Kangal</string>
+    <string name="dog_kangal_title">Kangal</string>
+    <string name="food_rice">Pilav</string>
+    <string name="food_cheese">Peynir</string>
+    <string name="food_simit">Simit</string>
+    <string name="food_milk">Süt</string>
+    <string name="food_berry">Çilek</string>
+    <string name="food_bread">Somun ekmek</string>
+    <string name="food_steak">Biftek</string>
+    <string name="food_fish">Somon</string>
+    <string name="food_toast">Tost</string>
+    <string name="food_pot">Kavurma</string>
+    <string name="fed_rice">Pilav kasesini bitirdi.</string>
+    <string name="fed_cheese">Peyniri ufak ufak yedi.</string>
+    <string name="fed_simit">Simidi halka halka indirdi.</string>
+    <string name="fed_milk">Sütü içti, bıyığı kaldı.</string>
+    <string name="fed_berry">Çileği tek seferde kaptı.</string>
+    <string name="fed_bread">Somunu iki patisiyle tuttu.</string>
+    <string name="fed_steak">Bifteği kocaman ağzına sığdırdı.</string>
+    <string name="fed_fish">Somonu şaşkın şaşkın yuttu.</string>
+    <string name="fed_toast">Tostu ceketin cebine değil, ağzına attı.</string>
+    <string name="fed_pot">Kavurmadan bir lokma kaldı.</string>
+    <string name="action_feed_count">%1$s · %2$d</string>
+    <string name="action_bath">Duş</string>
+    <string name="action_bath_count">Duş · %1$d</string>
+    <string name="feed_done">Bugün doydu</string>
+    <string name="bath_done">Tertemiz</string>
+    <string name="bath_fresh">Köpükler gitti. Tüyleri kabardı.</string>
+    <string name="pet_loved">Sevindi. Kuyruğu döndü.</string>
+    <string name="care_left">Bugün %1$d besleme, %2$d duş kaldı.</string>
+    <string name="care_done">Bugünkü bakım bitti.</string>
+    <string name="dog_unlocked">Yeni köpek: %1$s</string>
+    <string name="collection_title">Koleksiyon</string>
+    <string name="collection_hint">Karta bas, onu eve al. İsme bas, adını değiştir.</string>
+    <string name="collection_progress">%1$d / %2$d köpek açık</string>
+    <string name="collection_level_chip">Sv %1$d</string>
+    <string name="collection_home_badge">Evde</string>
+    <string name="collection_open">Koleksiyon</string>
+    <string name="collection_got">Alındı %1$s</string>
+    <string name="collection_home">Evde · alındı %1$s</string>
+    <string name="collection_selected">%1$s artık evde</string>
+    <string name="frames_title">Çerçeveler</string>
+    <string name="frames_chip">%1$s  ›</string>
+    <string name="frames_hint">Seviye yükseldikçe çerçeve kalınlaşır, iç halka ve taşlar eklenir.</string>
+    <string name="frames_progress">%1$d / %2$d çerçeve açık</string>
+    <string name="frames_current">Şu an bu çerçeve evde</string>
+    <string name="frames_open">Açık</string>
+    <string name="frames_locked">Bu seviyede açılır</string>
+    <string name="frames_now">Şimdi</string>
+    <string name="frame_1">Tahta çerçeve</string>
+    <string name="frame_15">Bakır çerçeve</string>
+    <string name="frame_30">Toprak çerçeve</string>
+    <string name="frame_45">Gümüş çerçeve</string>
+    <string name="frame_60">Yeşil çerçeve</string>
+    <string name="frame_90">Mavi çerçeve</string>
+    <string name="frame_125">Mor çerçeve</string>
+    <string name="frame_150">Altın çerçeve</string>
+    <string name="frame_175">Kehribar çerçeve</string>
+    <string name="frame_200">Yakut çerçeve</string>
+    <string name="frame_250">Efsane çerçeve</string>
+    <string name="pet_mood_1">İlk gün. Şapka yerinde, yeni evcil dost.</string>
+    <string name="pet_mood_low">Alışıyor. Her gün uğrarsan seri uzar.</string>
+    <string name="pet_mood_mid">Evcil dost oldu. Seviye yükseliyor.</string>
+    <string name="pet_mood_high">Efsane seri. Şapka hiç düşmedi.</string>
+    <string name="action_feed_doner">Hatay dürüm ver</string>
+    <string name="pet_fed">Hatay dürüm gitti. Lokmayı yuttu.</string>
+    <string name="settings_clips_title">Kopyalar</string>
+    <string name="settings_open_overlay">Arka plan iznini aç</string>
+
+    <string name="action_send_all_whatsapp">WhatsApp\'a Gönder</string>
+    <string name="action_export_email">Export Data</string>
+    <string name="email_export_subject">Çirkin Köpek arşivi</string>
+    <string name="toast_no_email_app">E-posta uygulaması bulunamadı</string>
+    <string name="action_clear_all">Tümünü Temizle</string>
+    <string name="action_copy">Kopyala</string>
+    <string name="action_share_item">WhatsApp\'a gönder</string>
+    <string name="action_delete_item">Sil</string>
+    <string name="action_undo">Geri Al</string>
+    <string name="action_settings">Ayarlar</string>
+
+    <string name="monitoring_on">Pano izleniyor</string>
+    <string name="monitoring_off">Pano izlenmiyor</string>
+
+    <string name="notification_channel_name">Pano İzleme</string>
+    <string name="notification_channel_description">Kopyaladığınız metinleri kaydetmek için panoyu izler</string>
+    <string name="notification_title">%1$s izliyor</string>
+    <string name="notification_text">%1$s seninle birlikte reels izliyor</string>
+    <string-array name="notification_lines">
+        <item>%1$s seninle birlikte reels izliyor</item>
+        <item>%1$s kopyalarını bekliyor</item>
+        <item>%1$s pencereden seni izliyor</item>
+        <item>%1$s seninle dizi bakıyor</item>
+        <item>%1$s kuyruğunu sallıyor</item>
+        <item>%1$s ekranın kenarında oturuyor</item>
+        <item>%1$s bir lokma hayali kuruyor</item>
+        <item>%1$s seni özledi, uğra</item>
+    </string-array>
+    <string name="notification_sent">%1$s kopyanı kaptı, kuyruk sallıyor</string>
+    <string name="widget_name">Çirkin Köpek</string>
+    <string name="widget_description">Evdeki köpek ve seri</string>
+    <string name="widget_kicker">SERİ</string>
+    <string name="widget_title">%1$s!</string>
+    <string name="widget_with_you">Seninle birlikte reels izliyor</string>
+    <string name="widget_missed">%1$d günlük seri üşüyor, uğra</string>
+    <string name="widget_start">Evde seni bekliyor</string>
+    <string name="widget_days">%1$d gün</string>
+    <string name="settings_bark_credit">Havlamalar: Amada44, Kriplozoik ve Armartinell, Wikimedia Commons, CC BY-SA.</string>
+    <string name="settings_model_credit">İlk köpek: LasquetiSpice, “Animated Dog Sits Rolls Over Shake Paw”, Sketchfab, CC BY 4.0. Diğer köpekler: Quaternius, CC0.</string>
+    <string name="notification_need_overlay">%1$s kopyaları kaçırmasın diye bir kez \"diğer uygulamaların üzerinde göster\" iznini aç.</string>
+    <string name="keyboard_name">:) klavye</string>
+    <string name="keyboard_space">boşluk</string>
+    <string name="keyboard_hint">Android kapalı uygulamaya panoyu vermez. Buna dokun, :) klavyesini seç. Yazdıkların kaydedilmez; sadece kopyalar WhatsApp\'a gider.</string>
+
+    <string name="clear_all_confirm_title">Tümünü silmek istiyor musunuz?</string>
+    <string name="clear_all_confirm_message">Kaydedilen bütün kopyalar kalıcı olarak silinecek.</string>
+    <string name="action_cancel">Vazgeç</string>
+    <string name="action_confirm_delete">Sil</string>
+
+    <string name="delete_item_confirm_title">Bu kaydı silmek istiyor musunuz?</string>
+
+    <string name="toast_copied_to_clipboard">Panoya kopyalandı</string>
+    <string name="toast_nothing_to_send">Gönderilecek kayıt yok</string>
+    <string name="toast_whatsapp_not_found">WhatsApp yüklü değil</string>
+    <string name="toast_item_deleted">Kayıt silindi</string>
+    <string name="toast_all_cleared">Tüm kayıtlar silindi</string>
+
+    <string name="whatsapp_share_chooser_title">Gönder</string>
+
+    <string name="content_desc_more_options">Daha fazla seçenek</string>
+
+    <!-- Internet sync (Settings screen) -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="settings_sync_section_title">İnternete Gönderme</string>
+    <string name="settings_sync_description">Açıldığında, kopyaladığınız her şey internet üzerinden aşağıdaki adrese anında gönderilir. Bu adresi tarayıcınızda açarak ya da ücretsiz \"ntfy\" uygulamasıyla takip ederek başka bir cihazdan, her yerden ulaşabilirsiniz.</string>
+    <string name="settings_sync_channel_label">Kanal adı</string>
+    <string name="settings_sync_regenerate">Yeni Kanal</string>
+    <string name="settings_sync_link_label">Ulaşabileceğiniz adres</string>
+    <string name="settings_sync_link_format" translatable="false">https://ntfy.sh/%1$s</string>
+    <string name="settings_sync_copy_link">Kopyala</string>
+    <string name="settings_sync_share_link">Paylaş</string>
+    <string name="settings_sync_open_link">Tarayıcıda Aç</string>
+    <string name="settings_sync_test">Test Gönder</string>
+    <string name="settings_sync_warning">Bu adresi bilen herkes gönderdiklerinizi görebilir; bağlantıyı yalnızca güvendiğiniz kişilerle paylaşın.</string>
+    <string name="settings_sync_last_status_idle">Henüz bir şey gönderilmedi</string>
+    <string name="settings_sync_last_status_sending">Gönderiliyor…</string>
+    <string name="settings_sync_last_status_success">Son gönderim başarılı · %1$s</string>
+    <string name="settings_sync_last_status_failed">Son gönderim başarısız · %1$s</string>
+
+    <string name="toast_link_copied">Bağlantı kopyalandı</string>
+    <string name="toast_channel_regenerated">Yeni kanal oluşturuldu</string>
+    <string name="toast_test_sent">Test mesajı gönderildi</string>
+    <string name="toast_test_failed">Test mesajı gönderilemedi, internet bağlantınızı kontrol edin</string>
+    <string name="toast_invalid_channel">Kanal adı en az 4 karakter olmalı ve yalnızca harf, rakam ve tire (-) içerebilir</string>
+
+    <!-- WhatsApp auto-forward (Settings screen) -->
+    <string name="settings_autosend_section_title">WhatsApp\'a Otomatik Gönder</string>
+    <string name="settings_autosend_description">Arkadaşının her seferinde linki kopyalayıp WhatsApp\'tan elle atmasına gerek kalmasın diye: bir şey kopyalandığında aşağıdaki kişinin sohbeti, mesaj hazır şekilde açılır. Tek dokunuşla Gönder\'e basmak yeter.</string>
+    <string name="settings_autosend_phone_label">Alıcının telefon numarası</string>
+    <string name="settings_autosend_phone_hint">Örn: 905551112233</string>
+    <string name="settings_autosend_phone_helper">Ülke koduyla birlikte, boşluksuz ve + işaretsiz yazın (Türkiye için 90 ile başlar)</string>
+    <string name="settings_autosend_test">Test Gönder</string>
+    <string name="settings_autosend_test_message">Bu bir test mesajıdır. :) uygulaması kopyaladığın metni WhatsApp sohbetine hazırlıyor.</string>
+    <string name="toast_invalid_phone">Geçerli bir telefon numarası girin (ülke kodu dahil, 10 ile 15 rakam)</string>
+    <string name="toast_autosend_test_sent">WhatsApp sohbeti açıldı</string>
+    <string name="settings_autoclick_title">Gönder\'e kendisi bassın</string>
+    <string name="settings_autoclick_open_settings">Erişilebilirlik iznini aç</string>
+    <string name="settings_autoclick_on">Erişilebilirlik izni açık. Sohbet açılınca Gönder\'e basılır.</string>
+    <string name="settings_autoclick_off">Erişilebilirlik izni kapalı. İzin olmadan Gönder\'e sen basarsın.</string>
+    <string name="accessibility_service_description">Kopyalanan metin için açılan WhatsApp sohbetinde Gönder düğmesine basar ve geri döner. Yalnızca bu uygulama bir sohbet açtıktan sonraki kısa süre içinde çalışır.</string>
+</resources>
