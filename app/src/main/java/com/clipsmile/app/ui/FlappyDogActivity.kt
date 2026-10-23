@@ -43,6 +43,13 @@ class FlappyDogActivity : AppCompatActivity() {
 
 private class Gate(var x: Float, val gapTop: Float, var scored: Boolean = false)
 
+private class FlapTheme(
+    val birds: List<Bitmap>,
+    val pipe: Bitmap,
+    val lip: Bitmap,
+    val background: Bitmap
+)
+
 /**
  * Tap to hop. Fly the dog through the gaps.
  */
@@ -54,14 +61,20 @@ private class FlappyDogView(
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
-    private val birds = listOf(
-        PixelArt.load(context, "games/flap/bird0.png"),
-        PixelArt.load(context, "games/flap/bird1.png"),
-        PixelArt.load(context, "games/flap/bird2.png")
-    )
-    private val pipeBmp = PixelArt.load(context, "games/flap/pipe.png")
-    private val lipBmp = PixelArt.load(context, "games/flap/pipe_lip.png")
-    private val bgBmp = PixelArt.load(context, "games/flap/bg.png")
+    private val themes = (0..4).map { index ->
+        FlapTheme(
+            birds = listOf(
+                PixelArt.load(context, "games/flap/t$index/bird0.png"),
+                PixelArt.load(context, "games/flap/t$index/bird1.png"),
+                PixelArt.load(context, "games/flap/t$index/bird2.png")
+            ),
+            pipe = PixelArt.load(context, "games/flap/t$index/pipe.png"),
+            lip = PixelArt.load(context, "games/flap/t$index/lip.png"),
+            background = PixelArt.load(context, "games/flap/t$index/bg.png")
+        )
+    }
+    private var banner = ""
+    private var bannerUntil = 0L
     private val src = android.graphics.Rect()
     private val tile = RectF()
     private val gates = ArrayList<Gate>()
@@ -133,6 +146,7 @@ private class FlappyDogView(
         started = false
         over = false
         score = 0
+        banner = ""
         lastMs = 0L
         postOnAnimation(frame)
     }
@@ -183,8 +197,15 @@ private class FlappyDogView(
             gate.x -= speed * dt
             if (!gate.scored && gate.x + pipeW < dogX) {
                 gate.scored = true
+                val previous = score
                 score += 1
                 audio.point()
+                val reward = GameRewards.onScore(context, previous, score, 10, 6, 30, 8, "Uçuş")
+                if (!reward.isNullOrBlank()) {
+                    banner = reward
+                    bannerUntil = SystemClock.uptimeMillis() + 1300L
+                    audio.reward()
+                }
                 Achievements.celebrate(context, Achievements.FLAP, score)
             }
             if (hits(dogX, dogY, radius, gate.x - lip, pipeW + lip * 2f, gate.gapTop, gap, groundTop)) {
@@ -243,8 +264,11 @@ private class FlappyDogView(
 
     private fun birdSize() = dp(36f)
 
+    private fun theme(): FlapTheme = themes[(score / 10) % themes.size]
+
     private fun drawLip(canvas: Canvas, left: Float, top: Float, right: Float, bottom: Float, flipY: Boolean) {
         tile.set(left, top, right, bottom)
+        val lipBmp = theme().lip
         if (!flipY) {
             canvas.drawBitmap(lipBmp, null, tile, PixelArt.paint)
             return
@@ -256,6 +280,7 @@ private class FlappyDogView(
     }
 
     private fun tilePipe(canvas: Canvas, left: Float, top: Float, right: Float, bottom: Float) {
+        val pipeBmp = theme().pipe
         val tileH = (right - left).coerceAtLeast(1f)
         var y = top
         while (y < bottom - 0.5f) {
@@ -269,7 +294,7 @@ private class FlappyDogView(
     override fun onDraw(canvas: Canvas) {
         val groundTop = height - dp(72f)
         tile.set(0f, 0f, width.toFloat(), groundTop)
-        canvas.drawBitmap(bgBmp, null, tile, PixelArt.paint)
+        canvas.drawBitmap(theme().background, null, tile, PixelArt.paint)
         val pipeW = dp(64f)
         val gap = dp(168f)
         val lipH = dp(22f)
@@ -287,6 +312,7 @@ private class FlappyDogView(
         val dogX = if (width == 0) 0f else width * 0.28f
         val size = birdSize()
         dogRect.set(dogX - size / 2f, dogY - size / 2f, dogX + size / 2f, dogY + size / 2f)
+        val birds = theme().birds
         val bird = if (velocity < -dp(40f)) birds[2] else birds[((SystemClock.uptimeMillis() / 90L) % 3).toInt()]
         canvas.save()
         canvas.rotate(velocity.coerceIn(-dp(700f), dp(900f)) / dp(40f), dogX, dogY)
@@ -298,6 +324,9 @@ private class FlappyDogView(
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
         PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
+        if (banner.isNotEmpty() && SystemClock.uptimeMillis() < bannerUntil) {
+            PixelArt.drawBanner(canvas, banner, width / 2f, dp(60f), ::dp)
+        }
 
         if (!started && !over) {
             ink.textSize = dp(16f)

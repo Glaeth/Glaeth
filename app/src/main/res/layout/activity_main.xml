@@ -24,6 +24,30 @@
                 android:layout_height="match_parent"
                 android:contentDescription="@string/pet_name_default" />
 
+            <ImageView
+                android:id="@+id/homeBed"
+                android:layout_width="78dp"
+                android:layout_height="58dp"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="10dp"
+                android:layout_marginBottom="8dp"
+                android:clickable="false"
+                android:contentDescription="@string/pet_name_default"
+                android:focusable="false"
+                android:scaleType="fitCenter" />
+
+            <ImageView
+                android:id="@+id/homeBowl"
+                android:layout_width="64dp"
+                android:layout_height="48dp"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="10dp"
+                android:clickable="false"
+                android:contentDescription="@string/food_durum"
+                android:focusable="false"
+                android:scaleType="fitCenter" />
+
             <com.clipsmile.app.ui.FrameRingView
                 android:id="@+id/frameGlow"
                 android:layout_width="match_parent"

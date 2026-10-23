@@ -44,7 +44,7 @@
     <string name="game_run_hint">Dokun, zıpla</string>
     <string name="game_sword">Kılıç kapısı</string>
     <string name="game_sword_short">Kılıç</string>
-    <string name="game_sword_hint">Dokun, kılıç savur</string>
+    <string name="game_sword_hint">Dokun, kılıç savur. Sağ alttaki düğme zıplatır.</string>
     <string name="game_best">En iyi %1$d</string>
     <string name="game_best_named">%1$s en iyi %2$d</string>
     <string name="achievements_open_count">Başarım %1$d/%2$d</string>
@@ -252,7 +252,7 @@
     <string name="widget_start">Evde seni bekliyor</string>
     <string name="widget_days">%1$d gün</string>
     <string name="settings_bark_credit">Havlamalar: Amada44, Kriplozoik ve Armartinell, Wikimedia Commons, CC BY-SA.</string>
-    <string name="settings_model_credit">Köpek: LasquetiSpice, “Animated Dog Sits Rolls Over Shake Paw”, Sketchfab, CC BY 4.0. Kedi: Omabuarts Studio, “Toon Cat FREE”, Sketchfab, CC BY 4.0. Diğer köpekler: Quaternius, CC0. Kapibara: Witsanu Superball, “Capybara Mount”, Sketchfab, CC BY 4.0. Uçuş: MegaCrash, Flappy Bird Assets, CC0. Koşu: Chroma Dave, Pixel Art Adventure Pack. Zıplama sesi: KanekiZLF, Jump Sounds, CC0. Kılıç kapısı: Pixel Frog, Tiny Swords (ücretsiz paket). Kedi miyavı: freemaster2, Freesound, CC0. Kapibara sesi: maquistom_kalulo, “capybara_capibara”, Pixabay.</string>
+    <string name="settings_model_credit">Köpek: LasquetiSpice, “Animated Dog Sits Rolls Over Shake Paw”, Sketchfab, CC BY 4.0. Kedi: Omabuarts Studio, “Toon Cat FREE”, Sketchfab, CC BY 4.0. Diğer köpekler: Quaternius, CC0. Kapibara: Witsanu Superball, “Capybara Mount”, Sketchfab, CC BY 4.0. Uçuş: MegaCrash, Flappy Bird Assets, CC0. Koşu: Chroma Dave, Pixel Art Adventure Pack. Zıplama sesi: KanekiZLF, Jump Sounds, CC0. Kılıç kapısı: Pixel Frog, Tiny Swords (ücretsiz paket). Kedi miyavı: freemaster2, Freesound, CC0. Kapibara sesi: maquistom_kalulo, “capybara_capibara”, Pixabay. Arayüz ve ev eşyaları: ToffeeCraft, ücretsiz paketler. Kılıç müziği: Clement Panchout, “Shooting on Sight”, CC BY 4.0. Vuruş sesi: Dillon Becker, Super Dialogue Audio Pack, CC BY 4.0, seslendiren Alex Brodie.</string>
     <string name="dog_cat_name">Minnoş</string>
     <string name="dog_cat_title">Toon kedi</string>
     <string name="dog_capy_name">Kapibara</string>

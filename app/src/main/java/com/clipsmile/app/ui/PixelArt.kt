@@ -56,4 +56,34 @@ object PixelArt {
         canvas.drawText("SKOR", centerX, top + dp(16f), caption)
         canvas.drawText(number, centerX, top + dp(40f), value)
     }
+
+    /** Segment bar. Filled segments sit on the left. */
+    fun drawHealth(canvas: Canvas, filled: Int, total: Int, right: Float, top: Float, dp: (Float) -> Float) {
+        val gap = dp(4f)
+        val w = dp(22f)
+        val h = dp(10f)
+        var x = right - total * w - (total - 1) * gap
+        for (index in 0 until total) {
+            val rect = RectF(x, top, x + w, top + h)
+            canvas.drawRoundRect(rect, dp(3f), dp(3f), Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = if (index < filled) 0xFFE35D5D.toInt() else 0x663B2918
+            })
+            x += w + gap
+        }
+    }
+
+    fun drawBanner(canvas: Canvas, text: String, centerX: Float, top: Float, dp: (Float) -> Float) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFFF8E8.toInt()
+            textAlign = Paint.Align.CENTER
+            textSize = dp(16f)
+            isFakeBoldText = true
+        }
+        val width = paint.measureText(text) + dp(22f)
+        val rect = RectF(centerX - width / 2f, top, centerX + width / 2f, top + dp(28f))
+        canvas.drawRoundRect(rect, dp(10f), dp(10f), Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xF23B2918.toInt()
+        })
+        canvas.drawText(text, centerX, top + dp(19f), paint)
+    }
 }

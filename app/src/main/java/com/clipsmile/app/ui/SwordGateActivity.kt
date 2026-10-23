@@ -78,6 +78,8 @@ private class SwordGateView(
     private val tree = PixelArt.load(context, "games/swords/tree.png")
     private val cloud = PixelArt.load(context, "games/swords/cloud.png")
     private val dust = PixelArt.load(context, "games/swords/dust.png")
+    private val grounds = (0..4).map { PixelArt.load(context, "games/swords/maps/ground$it.png") }
+    private val jumpBtn = PixelArt.load(context, "games/ui/jump.png")
 
     private val foes = ArrayList<Foe>()
     private val bolts = ArrayList<Bolt>()
@@ -95,6 +97,12 @@ private class SwordGateView(
     private var scroll = 0f
     private var clock = 0f
     private var lastMs = 0L
+    private var hp = 3
+    private var immune = 0f
+    private var lift = 0f
+    private var jumpV = 0f
+    private var banner = ""
+    private var bannerUntil = 0L
 
     private val sky = Paint().apply { color = 0xFF8EC8E8.toInt() }
     private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -129,8 +137,15 @@ private class SwordGateView(
             restart()
             return true
         }
-        swing()
+        if (jumpRect().contains(event.x, event.y)) hop() else swing()
         return true
+    }
+
+    private fun hop() {
+        started = true
+        if (lift > dp(4f)) return
+        jumpV = dp(780f)
+        audio.jump()
     }
 
     private fun swing() {
@@ -149,6 +164,12 @@ private class SwordGateView(
         score = 0
         attackLeft = 0f
         spawnIn = 0.4f
+        hp = 3
+        immune = 0f
+        lift = 0f
+        jumpV = 0f
+        banner = ""
+        scroll = 0f
         lastMs = 0L
         postOnAnimation(frame)
     }
@@ -164,8 +185,12 @@ private class SwordGateView(
     }
 
     private fun step(dt: Float) {
-        scroll += dp(28f) * dt
+        if (started) scroll += dp(42f) * dt
         if (attackLeft > 0f) attackLeft -= dt
+        if (immune > 0f) immune -= dt
+        jumpV -= dp(1900f) * dt
+        lift = (lift + jumpV * dt).coerceAtLeast(0f)
+        if (lift == 0f && jumpV < 0f) jumpV = 0f
         for (puff in puffs) puff.life -= dt
         puffs.removeAll { it.life <= 0f }
         if (!started) return
@@ -178,8 +203,8 @@ private class SwordGateView(
         }
 
         val pace = dp(78f) + score * dp(1.6f)
-        val stop = width * 0.70f
         val hero = heroRect()
+        val stop = hero.right + dp(4f)
         val slash = if (attackLeft in 0.08f..0.24f) slashRect(hero) else null
         val dead = ArrayList<Foe>()
         for (foe in foes) {
@@ -196,15 +221,21 @@ private class SwordGateView(
                 foe.x -= pace * dt
             }
             val body = foeRect(foe)
-            if (slash != null && RectF.intersects(slash, body)) {
+            if (slash != null && beside(hero, body)) {
                 dead.add(foe)
                 puffs.add(Puff(body.centerX(), body.centerY()))
+                val previous = score
                 score += 1
                 audio.point()
+                val reward = GameRewards.onScore(context, previous, score, 150, 8, 300, 12, "Kılıç")
+                if (!reward.isNullOrBlank()) {
+                    banner = reward
+                    bannerUntil = SystemClock.uptimeMillis() + 1300L
+                    audio.reward()
+                }
                 Achievements.celebrate(context, Achievements.SWORD, score)
-            } else if (body.left < hero.centerX()) {
-                endRound()
-                return
+            } else if (body.left < hero.right - dp(6f) && body.right > hero.left) {
+                if (wound()) return
             }
         }
         foes.removeAll(dead)
@@ -218,8 +249,7 @@ private class SwordGateView(
                 puffs.add(Puff(box.centerX(), box.centerY()))
                 audio.point()
             } else if (RectF.intersects(box, heroInset(hero))) {
-                endRound()
-                return
+                if (wound()) return
             } else if (bolt.x < -dp(20f)) {
                 spent.add(bolt)
             }
@@ -245,17 +275,48 @@ private class SwordGateView(
 
     private fun heroRect(): RectF {
         val size = cell()
-        val left = width * 0.16f
-        val bottom = groundTop()
+        val rect = planted(width * 0.16f, size, groundTop())
+        rect.offset(0f, -lift)
+        return rect
+    }
+
+    /** Only the strip immediately in front of the sword counts as a hit. */
+    private fun beside(hero: RectF, body: RectF): Boolean {
+        return body.left < hero.right + dp(14f) &&
+            body.right > hero.right - dp(10f) &&
+            body.top < hero.bottom &&
+            body.bottom > hero.top + hero.height() * 0.15f
+    }
+
+    private fun wound(): Boolean {
+        if (immune > 0f) return false
+        hp -= 1
+        immune = 0.75f
+        if (hp <= 0) {
+            endRound()
+            return true
+        }
+        audio.hurt()
+        return false
+    }
+
+    private fun planted(left: Float, size: Float, stand: Float): RectF {
+        val bottom = stand + size * 0.286f
         return RectF(left, bottom - size, left + size, bottom)
+    }
+
+    private fun jumpRect(): RectF {
+        val w = dp(112f)
+        val h = dp(42f)
+        return RectF(width - w - dp(14f), height - h - dp(16f), width - dp(14f), height - dp(16f))
     }
 
     private fun slashRect(hero: RectF): RectF {
         return RectF(
-            hero.centerX(),
-            hero.top + hero.height() * 0.28f,
-            hero.right + hero.width() * 0.28f,
-            hero.bottom - hero.height() * 0.18f
+            hero.right - dp(8f),
+            hero.top + hero.height() * 0.34f,
+            hero.right + dp(18f),
+            hero.bottom - hero.height() * 0.22f
         )
     }
 
@@ -265,8 +326,7 @@ private class SwordGateView(
     }
 
     private fun foeRect(foe: Foe): RectF {
-        val size = cell() * 0.92f
-        return RectF(foe.x, groundTop() - size, foe.x + size, groundTop())
+        return planted(foe.x, cell() * 0.92f, groundTop())
     }
 
     private fun boltRect(bolt: Bolt): RectF {
@@ -275,15 +335,22 @@ private class SwordGateView(
     }
 
     override fun onDraw(canvas: Canvas) {
+        val phase = (score % 100) / 100f
+        val night = kotlin.math.sin(phase * Math.PI).toFloat()
+        sky.color = blend(0xFF8EC8E8.toInt(), 0xFF1B2438.toInt(), night)
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), sky)
         val ground = if (height == 0) 0f else groundTop()
         drawClouds(canvas)
         drawTrees(canvas, ground)
+        val castleH = cell() * 1.85f
+        val castleW = castleH * castle.width / castle.height.coerceAtLeast(1)
+        val castleBottom = ground + castleH * 0.06f
+        val castleLeft = dp(10f) - scroll
         drawSheet(canvas, castle, 0, castle.width, RectF(
-            width * 0.02f,
-            ground - cell() * 1.55f,
-            width * 0.02f + cell() * 1.7f,
-            ground
+            castleLeft,
+            castleBottom - castleH,
+            castleLeft + castleW,
+            castleBottom
         ))
         drawGrass(canvas, ground)
         val stepFrame = (clock * 10f).toInt()
@@ -327,12 +394,23 @@ private class SwordGateView(
         val frameW = if (sheet === attack) 192 else 192
         val index = if (attackLeft > 0f) ((0.36f - attackLeft) * 12f).toInt() else stepFrame
         drawSheet(canvas, sheet, index, frameW, hero)
+        if (night > 0.04f) {
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply {
+                color = (night * 110f).toInt().shl(24)
+            })
+        }
 
         ink.color = 0xFF173307.toInt()
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
         PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
+        PixelArt.drawHealth(canvas, hp, 3, width - dp(12f), dp(18f), ::dp)
+        if (banner.isNotEmpty() && SystemClock.uptimeMillis() < bannerUntil) {
+            PixelArt.drawBanner(canvas, banner, width / 2f, dp(60f), ::dp)
+        }
+        val button = jumpRect()
+        canvas.drawBitmap(jumpBtn, null, button, PixelArt.paint)
         if (!started && !over) {
             ink.textSize = dp(16f)
             canvas.drawText(context.getString(R.string.game_sword_hint), width / 2f, height * 0.58f, ink)
@@ -375,14 +453,27 @@ private class SwordGateView(
     }
 
     private fun drawGrass(canvas: Canvas, ground: Float) {
+        val map = grounds[(score / 100) % grounds.size]
         val tile = cell() * 0.42f
         val shift = scroll % tile
         var x = -shift
         while (x < width) {
-            dest.set(x, ground - tile * 0.35f, x + tile, height.toFloat())
+            dest.set(x, ground, x + tile, ground + tile)
+            canvas.drawBitmap(map, null, dest, PixelArt.paint)
+            dest.set(x, ground - tile * 0.28f, x + tile, ground + tile * 0.2f)
             canvas.drawBitmap(grass, null, dest, PixelArt.paint)
             x += tile
         }
+    }
+
+    private fun blend(from: Int, to: Int, t: Float): Int {
+        val u = t.coerceIn(0f, 1f)
+        fun ch(shift: Int): Int {
+            val a = (from shr shift) and 0xFF
+            val b = (to shr shift) and 0xFF
+            return (a + (b - a) * u).toInt()
+        }
+        return (ch(16) shl 16) or (ch(8) shl 8) or ch(0) or 0xFF000000.toInt()
     }
 
     private fun drawSheet(canvas: Canvas, sheet: Bitmap, index: Int, frameWidth: Int, at: RectF) {

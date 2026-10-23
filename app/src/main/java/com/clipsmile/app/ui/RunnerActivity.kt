@@ -67,6 +67,7 @@ private class RunnerView(
     private val bat = PixelArt.load(context, "games/run/bat.png")
     private val foe = PixelArt.load(context, "games/run/foe.png")
     private val groundBmp = PixelArt.load(context, "games/run/ground.png")
+    private val props = (0..5).map { PixelArt.load(context, "games/run/props/p$it.png") }
     private val src = android.graphics.Rect()
     private val hurdles = ArrayList<Hurdle>()
     private val random = Random(SystemClock.uptimeMillis())
@@ -82,6 +83,11 @@ private class RunnerView(
     private var spawnIn = 0.7f
     private var clock = 0f
     private var lastMs = 0L
+    private var hp = 2
+    private var hurtAt = -100f
+    private var immune = 0f
+    private var banner = ""
+    private var bannerUntil = 0L
 
     private val skyPaint = Paint()
     private val hillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF8FCB6A.toInt() }
@@ -161,6 +167,10 @@ private class RunnerView(
         score = 0
         travel = 0f
         spawnIn = 0.7f
+        hp = 2
+        hurtAt = -100f
+        immune = 0f
+        banner = ""
         lastMs = 0L
         postOnAnimation(frame)
     }
@@ -192,6 +202,13 @@ private class RunnerView(
         val previous = score
         score = (travel / dp(16f)).toInt()
         if (score / 100 > previous / 100) audio.point()
+        val reward = GameRewards.onScore(context, previous, score, 150, 8, 300, 12, "Koşu")
+        if (!reward.isNullOrBlank()) {
+            banner = reward
+            bannerUntil = SystemClock.uptimeMillis() + 1300L
+            audio.reward()
+        }
+        if (immune > 0f) immune -= dt
         if (crossed(previous, score, 1) || crossed(previous, score, 100) || crossed(previous, score, 500)) {
             Achievements.celebrate(context, Achievements.RUN, score)
         }
@@ -205,8 +222,17 @@ private class RunnerView(
         for (hurdle in hurdles) {
             hurdle.x -= pace * dt
             if (hits(dogHit, hurdle, ground)) {
-                endRound()
-                return
+                if (immune <= 0f) {
+                    if (clock - hurtAt > 10f) hp = 2
+                    hp -= 1
+                    hurtAt = clock
+                    immune = 0.85f
+                    if (hp <= 0) {
+                        endRound()
+                        return
+                    }
+                    audio.hurt()
+                }
             }
         }
         hurdles.removeAll { it.x + it.width < -dp(8f) }
@@ -283,6 +309,7 @@ private class RunnerView(
             canvas.drawCircle(center + dp(20f), ground + dp(16f), dp(100f), hillFar)
             canvas.drawCircle(center + period * 0.48f, ground + dp(24f), dp(78f), hillPaint)
         }
+        drawProps(canvas, ground)
 
         val stripH = dp(22f)
         val stripW = stripH * (groundBmp.width / groundBmp.height.toFloat())
@@ -320,6 +347,10 @@ private class RunnerView(
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
         PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
+        PixelArt.drawHealth(canvas, hp, 2, width - dp(12f), dp(18f), ::dp)
+        if (banner.isNotEmpty() && SystemClock.uptimeMillis() < bannerUntil) {
+            PixelArt.drawBanner(canvas, banner, width / 2f, dp(60f), ::dp)
+        }
 
         if (!started && !over) {
             ink.textSize = dp(16f)
@@ -334,6 +365,22 @@ private class RunnerView(
             ink.textSize = dp(15f)
             canvas.drawText("En iyi  $best", width / 2f, topCard + dp(74f), ink)
             canvas.drawText("Dokun, yeniden oyna", width / 2f, topCard + dp(102f), ink)
+        }
+    }
+
+    private fun drawProps(canvas: Canvas, ground: Float) {
+        val gap = dp(180f)
+        val shift = (travel * 0.35f) % gap
+        var x = -shift
+        var index = 0
+        while (x < width + dp(80f)) {
+            val prop = props[index % props.size]
+            val h = dp(if (index % 3 == 0) 78f else 54f)
+            val w = h * prop.width / prop.height.coerceAtLeast(1)
+            oval.set(x, ground - h, x + w, ground)
+            canvas.drawBitmap(prop, null, oval, PixelArt.paint)
+            x += gap
+            index += 1
         }
     }
 

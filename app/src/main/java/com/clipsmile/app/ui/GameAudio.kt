@@ -19,7 +19,9 @@ class GameAudio(
     pointRes: Int,
     crashRes: Int,
     catchRes: Int,
-    missRes: Int
+    missRes: Int,
+    hurtRes: Int = 0,
+    rewardRes: Int = 0
 ) {
 
     private val app = context.applicationContext
@@ -30,6 +32,8 @@ class GameAudio(
     private val crashId: Int
     private val catchId: Int
     private val missId: Int
+    private val hurtId: Int
+    private val rewardId: Int
     private var music: MediaPlayer? = null
     private var focusRequest: AudioFocusRequest? = null
     private var released = false
@@ -45,6 +49,8 @@ class GameAudio(
         crashId = pool.load(app, crashRes, 1)
         catchId = pool.load(app, catchRes, 1)
         missId = pool.load(app, missRes, 1)
+        hurtId = if (hurtRes != 0) pool.load(app, hurtRes, 1) else 0
+        rewardId = if (rewardRes != 0) pool.load(app, rewardRes, 1) else 0
     }
 
     fun start() {
@@ -79,6 +85,10 @@ class GameAudio(
     fun miss() = shot(missId, 0.55f)
 
     fun catchFood() = shot(catchId, 0.75f)
+
+    fun hurt() = if (hurtId != 0) shot(hurtId, 0.85f) else crash()
+
+    fun reward() = if (rewardId != 0) shot(rewardId, 0.8f) else point()
 
     private fun shot(id: Int, volume: Float) {
         if (released || id == 0) return
@@ -143,7 +153,8 @@ class GameAudio(
             R.raw.sfx_drop_catch,
             R.raw.sfx_drop_over,
             R.raw.sfx_drop_catch,
-            R.raw.sfx_drop_miss
+            R.raw.sfx_drop_miss,
+            rewardRes = R.raw.sfx_reward
         )
 
         fun flap(context: Context) = GameAudio(
@@ -153,17 +164,20 @@ class GameAudio(
             R.raw.sfx_flap_point,
             R.raw.sfx_flap_crash,
             R.raw.sfx_flap_point,
-            R.raw.sfx_flap_crash
+            R.raw.sfx_flap_crash,
+            rewardRes = R.raw.sfx_reward
         )
 
         fun swords(context: Context) = GameAudio(
             context,
-            R.raw.music_run,
+            R.raw.music_sword,
             R.raw.sfx_run_jump,
             R.raw.sfx_flap_point,
             R.raw.sfx_run_crash,
             R.raw.sfx_flap_point,
-            R.raw.sfx_run_crash
+            R.raw.sfx_run_crash,
+            R.raw.sfx_hit,
+            R.raw.sfx_reward
         )
 
         fun run(context: Context) = GameAudio(
@@ -173,7 +187,9 @@ class GameAudio(
             R.raw.sfx_run_point,
             R.raw.sfx_run_crash,
             R.raw.sfx_run_point,
-            R.raw.sfx_run_crash
+            R.raw.sfx_run_crash,
+            R.raw.sfx_hit,
+            R.raw.sfx_reward
         )
     }
 }

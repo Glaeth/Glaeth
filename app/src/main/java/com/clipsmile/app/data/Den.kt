@@ -157,6 +157,23 @@ class Den(context: Context) {
         editor.apply()
     }
 
+    /** Score rewards from a mini-game. XP and gold are separate. */
+    fun grantPlay(xpAmount: Int, goldAmount: Int, title: String) {
+        if (!onboarded() || (xpAmount <= 0 && goldAmount <= 0)) return
+        val id = activeId()
+        val bits = ArrayList<String>(2)
+        if (xpAmount > 0) bits.add("+$xpAmount XP")
+        if (goldAmount > 0) bits.add("+$goldAmount altın")
+        val line = "$title  " + bits.joinToString("  ")
+        val previous = prefs.getString(KEY_NOTE, null)
+        val note = if (previous.isNullOrBlank()) line else "$previous · $line"
+        prefs.edit()
+            .putInt(xpKey(id), xp(id) + xpAmount.coerceAtLeast(0))
+            .putInt(KEY_GOLD, gold() + goldAmount.coerceAtLeast(0))
+            .putString(KEY_NOTE, note)
+            .apply()
+    }
+
     /** Bonus XP from a badge. A little gold comes with it, and the home screen reads the note. */
     fun grantXp(amount: Int, title: String) {
         if (!onboarded() || amount <= 0) return

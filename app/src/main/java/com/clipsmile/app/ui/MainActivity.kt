@@ -88,6 +88,8 @@ class MainActivity : AppCompatActivity() {
         petProgress = PetProgress(this)
         den = Den(this)
 
+        binding.homeBed.setImageBitmap(PixelArt.load(this, "home/bed.png"))
+        binding.homeBowl.setImageBitmap(PixelArt.load(this, "home/bowl.png"))
         prepareBark()
         ensureMonitoring()
         setupActions()
@@ -163,6 +165,7 @@ class MainActivity : AppCompatActivity() {
             Intent(this, activity)
                 .putExtra(FoodDropActivity.EXTRA_PORTRAIT, companion.portraitRes)
                 .putExtra(FoodDropActivity.EXTRA_FOOD, companion.foodRes)
+                .putExtra(FoodDropActivity.EXTRA_MODEL, companion.model)
         )
     }
 
