@@ -86,6 +86,12 @@ class PetCanvas @JvmOverloads constructor(
         private var parts: List<Part> = emptyList()
         private var clip: DogClip? = null
         private var clipStart = 0L
+        private var eyeX = 0.22f
+        private var eyeY = 0.64f
+        private var eyeZ = 1.62f
+        private var lookY = 0.38f
+        private var viewW = 1
+        private var viewH = 1
         private var program = 0
         private var aPos = 0
         private var aNor = 0
@@ -148,10 +154,15 @@ class PetCanvas @JvmOverloads constructor(
 
         override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
             GLES20.glViewport(0, 0, width, height)
-            val aspect = width.toFloat() / height.coerceAtLeast(1)
+            viewW = width
+            viewH = height
+            applyCamera()
+        }
+
+        private fun applyCamera() {
+            val aspect = viewW.toFloat() / viewH.coerceAtLeast(1)
             Matrix.perspectiveM(proj, 0, 32f, aspect, 0.05f, 30f)
-            // Slightly above and in front, so the sitting dog's face fills the ring.
-            Matrix.setLookAtM(view, 0, 0.22f, 0.64f, 1.62f, 0f, 0.38f, 0.02f, 0f, 1f, 0f)
+            Matrix.setLookAtM(view, 0, eyeX, eyeY, eyeZ, 0f, lookY, 0.02f, 0f, 1f, 0f)
             Matrix.multiplyMM(viewProj, 0, proj, 0, view, 0)
         }
 
@@ -175,7 +186,7 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glUseProgram(program)
             GLES20.glUniformMatrix4fv(uViewProj, 1, false, viewProj, 0)
             GLES20.glUniform3f(uLight, 0.22f, 0.88f, 0.55f)
-            GLES20.glUniform3f(uEye, 0.22f, 0.64f, 1.62f)
+            GLES20.glUniform3f(uEye, eyeX, eyeY, eyeZ)
             drawRoom()
 
             for (index in parts.indices) {
@@ -258,7 +269,14 @@ class PetCanvas @JvmOverloads constructor(
             if (name == loadedName) return
             parts = load(name)
             loadedName = name
-            clip = if (name.endsWith("pug.json")) loadClip() else null
+            val cat = name.endsWith("cat.json")
+            val capy = name.endsWith("capy.json")
+            eyeX = if (cat || capy) 0.16f else 0.22f
+            eyeY = if (cat) 0.38f else if (capy) 0.36f else 0.64f
+            eyeZ = if (cat) 1.85f else if (capy) 1.95f else 1.62f
+            lookY = if (cat) 0.30f else if (capy) 0.26f else 0.38f
+            applyCamera()
+            clip = loadClip(name)
             clipStart = nowMillis()
             val coat = parts.firstOrNull { it.texture != null }?.texture
             if (coat != coatFor) {
@@ -271,9 +289,10 @@ class PetCanvas @JvmOverloads constructor(
             }
         }
 
-        private fun loadClip(): DogClip? {
+        private fun loadClip(model: String): DogClip? {
+            val anim = model.removeSuffix(".json") + ".anim"
             return try {
-                context.assets.open("dogs/pug.anim").use { DogClip.open(it) }
+                context.assets.open(anim).use { DogClip.open(it) }
             } catch (_: Exception) {
                 null
             }

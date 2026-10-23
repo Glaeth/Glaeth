@@ -255,7 +255,10 @@ private class RunnerView(
         over = true
         audio.crash()
         best = GameScores.submit(context, GameScores.BEST_RUN, score)
-        if (score > 0) PetProgress(context).snack((score / 25).coerceIn(1, 18))
+        if (score > 0) {
+            PetProgress(context).snack((score / 25).coerceIn(1, 18))
+            com.clipsmile.app.data.Den(context).bump(com.clipsmile.app.data.Den.Kind.RUN, score)
+        }
         Achievements.celebrate(context, Achievements.RUN, score)
     }
 

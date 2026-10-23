@@ -63,9 +63,10 @@ internal class DogClip private constructor(
             }
             startReady = true
         }
-        val fadeAt = duration - LOOP_BLEND
-        if (time > fadeAt) {
-            val towardStart = (time - fadeAt) / LOOP_BLEND
+        val blend = loopWindow()
+        val fadeAt = duration - blend
+        if (blend < duration && time > fadeAt) {
+            val towardStart = (time - fadeAt) / blend
             val keep = 1f - towardStart
             blend(outPos, startPos, keep, towardStart)
             blend(outNor, startNor, keep, towardStart)
@@ -242,6 +243,8 @@ internal class DogClip private constructor(
         var rotation: Channel? = null
         var scale: Channel? = null
     }
+
+    private fun loopWindow(): Float = (duration * 0.12f).coerceIn(0.04f, 0.55f)
 
     companion object {
         private const val LOOP_BLEND = 0.55f

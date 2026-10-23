@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.clipsmile.app.R
-import com.clipsmile.app.data.PetProgress
+import com.clipsmile.app.data.Den
 import com.clipsmile.app.databinding.ActivityFramesBinding
 import com.clipsmile.app.databinding.ItemFrameBinding
 
@@ -15,7 +15,8 @@ class FramesActivity : AppCompatActivity() {
         val binding = ActivityFramesBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.backButton.setOnClickListener { finish() }
-        val level = PetProgress(this).level()
+        val den = Den(this)
+        val level = if (den.onboarded()) den.level(den.activeId()) else 1
         val current = FrameLooks.forLevel(level)
         val openCount = FrameLooks.all.count { level >= it.minLevel }
         binding.progressLabel.text = getString(R.string.frames_progress, openCount, FrameLooks.all.size)

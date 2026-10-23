@@ -21,7 +21,7 @@ import androidx.core.content.getSystemService
 import com.clipsmile.app.AppVisibility
 import com.clipsmile.app.ClipSmileApp
 import com.clipsmile.app.R
-import com.clipsmile.app.data.PetProgress
+import com.clipsmile.app.data.Den
 import com.clipsmile.app.ui.MainActivity
 import com.clipsmile.app.util.ClipCapturePipeline
 import kotlinx.coroutines.CoroutineScope
@@ -212,8 +212,7 @@ class ClipboardWatcherService : android.app.Service() {
 
         private fun home(context: Context): Pair<com.clipsmile.app.ui.DogCompanion, String> {
             val dog = com.clipsmile.app.ui.DogRoster.selected(context)
-            val name = com.clipsmile.app.data.PetProgress(context)
-                .displayName(dog.minLevel, context.getString(dog.nameRes))
+            val name = com.clipsmile.app.ui.DogRoster.homeName(context)
             return dog to name
         }
 
@@ -225,12 +224,13 @@ class ClipboardWatcherService : android.app.Service() {
         }
 
         private fun rotatingLine(context: Context): String {
-            val pet = PetProgress(context)
+            val den = Den(context)
             val lines = context.resources.getStringArray(R.array.notification_lines)
             val name = home(context).second
             if (lines.isEmpty()) return context.getString(R.string.notification_text, name)
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            val line = lines[(hour + pet.level() + pet.selectedLevel()) % lines.size]
+            val salt = if (den.onboarded()) den.level(den.activeId()) else 1
+            val line = lines[(hour + salt) % lines.size]
             return line.format(name)
         }
 

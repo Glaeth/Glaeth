@@ -8,7 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import com.clipsmile.app.R
-import com.clipsmile.app.data.PetProgress
+import com.clipsmile.app.data.Den
 import com.clipsmile.app.ui.DogRoster
 import com.clipsmile.app.ui.MainActivity
 
@@ -30,12 +30,12 @@ class PetWidgetProvider : AppWidgetProvider() {
         }
 
         private fun update(context: Context, manager: AppWidgetManager, id: Int) {
-            val pet = PetProgress(context)
+            val den = Den(context)
             val dog = DogRoster.selected(context)
             val name = DogRoster.homeName(context)
-            val streak = pet.streak()
+            val streak = if (den.onboarded()) den.streak() else 0
             val line = when {
-                streak > 0 && pet.visitedToday() -> context.getString(R.string.widget_with_you)
+                streak > 0 && den.visitedToday() -> context.getString(R.string.widget_with_you)
                 streak > 0 -> context.getString(R.string.widget_missed, streak)
                 else -> context.getString(R.string.widget_start)
             }

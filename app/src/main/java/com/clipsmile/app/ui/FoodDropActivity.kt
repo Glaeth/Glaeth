@@ -180,7 +180,10 @@ private class FoodDropView(
         over = true
         audio.crash()
         best = GameScores.submit(context, GameScores.BEST_DROP, score)
-        if (score > 0) PetProgress(context).snack(score.coerceAtMost(18))
+        if (score > 0) {
+            PetProgress(context).snack(score.coerceAtMost(18))
+            com.clipsmile.app.data.Den(context).bump(com.clipsmile.app.data.Den.Kind.DROP, score)
+        }
         Achievements.celebrate(context, Achievements.DROP, score)
     }
 
