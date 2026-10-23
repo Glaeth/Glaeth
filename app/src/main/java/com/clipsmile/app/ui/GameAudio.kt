@@ -156,6 +156,16 @@ class GameAudio(
             R.raw.sfx_flap_crash
         )
 
+        fun swords(context: Context) = GameAudio(
+            context,
+            R.raw.music_run,
+            R.raw.sfx_run_jump,
+            R.raw.sfx_flap_point,
+            R.raw.sfx_run_crash,
+            R.raw.sfx_flap_point,
+            R.raw.sfx_run_crash
+        )
+
         fun run(context: Context) = GameAudio(
             context,
             R.raw.music_run,

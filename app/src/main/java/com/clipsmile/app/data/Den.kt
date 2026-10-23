@@ -14,7 +14,7 @@ class Den(context: Context) {
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    enum class Kind { FEED, BATH, NUZZLE, DROP, FLAP, RUN }
+    enum class Kind { FEED, BATH, NUZZLE, DROP, FLAP, RUN, SWORD }
 
     data class Task(
         val id: String,
@@ -157,6 +157,20 @@ class Den(context: Context) {
         editor.apply()
     }
 
+    /** Bonus XP from a badge. A little gold comes with it, and the home screen reads the note. */
+    fun grantXp(amount: Int, title: String) {
+        if (!onboarded() || amount <= 0) return
+        val id = activeId()
+        val line = "$title  +$amount XP"
+        val previous = prefs.getString(KEY_NOTE, null)
+        val note = if (previous.isNullOrBlank()) line else "$previous · $line"
+        prefs.edit()
+            .putInt(xpKey(id), xp(id) + amount)
+            .putInt(KEY_GOLD, gold() + amount / 5)
+            .putString(KEY_NOTE, note)
+            .apply()
+    }
+
     fun takeNote(): String? {
         val value = prefs.getString(KEY_NOTE, null)?.takeIf { it.isNotBlank() }
         if (value != null) prefs.edit().remove(KEY_NOTE).apply()
@@ -242,7 +256,7 @@ class Den(context: Context) {
             t("pug", "d3", false, Kind.BATH, 1, 22, 10, "Yere yuvarlan"),
             t("pug", "w1", true, Kind.DROP, 15, 100, 40, "Takla skoru"),
             t("pug", "w2", true, Kind.NUZZLE, 12, 80, 32, "Pati antrenmanı"),
-            t("cat", "d1", false, Kind.NUZZLE, 4, 26, 12, "Kulak arkası"),
+            t("cat", "d1", false, Kind.NUZZLE, 3, 26, 12, "Kulak arkası"),
             t("cat", "d2", false, Kind.FEED, 2, 28, 14, "Balık kasesi"),
             t("cat", "d3", false, Kind.FLAP, 4, 24, 12, "Raf atlayışı"),
             t("cat", "w1", true, Kind.BATH, 6, 90, 36, "Tüy bakımı"),
@@ -257,7 +271,7 @@ class Den(context: Context) {
             t("pamuk", "d3", false, Kind.BATH, 1, 26, 12, "Köpük banyosu"),
             t("pamuk", "w1", true, Kind.DROP, 12, 90, 36, "Yumuşak yakalama"),
             t("pamuk", "w2", true, Kind.NUZZLE, 14, 80, 32, "Kucak haftası"),
-            t("boncuk", "d1", false, Kind.NUZZLE, 4, 24, 12, "Boncuk göz"),
+            t("boncuk", "d1", false, Kind.NUZZLE, 3, 24, 12, "Boncuk göz"),
             t("boncuk", "d2", false, Kind.FEED, 2, 28, 14, "Peynir kırıntısı"),
             t("boncuk", "d3", false, Kind.FLAP, 5, 26, 12, "Zıpla say"),
             t("boncuk", "w1", true, Kind.FLAP, 16, 100, 40, "Boncuk parkuru"),
@@ -272,7 +286,7 @@ class Den(context: Context) {
             t("bebek", "d3", false, Kind.BATH, 1, 26, 12, "Ilık su"),
             t("bebek", "w1", true, Kind.NUZZLE, 10, 80, 32, "Kucakta büyü"),
             t("bebek", "w2", true, Kind.BATH, 6, 90, 36, "Temiz bebek"),
-            t("kalp", "d1", false, Kind.NUZZLE, 5, 26, 12, "Kalp patisi"),
+            t("kalp", "d1", false, Kind.NUZZLE, 3, 26, 12, "Kalp patisi"),
             t("kalp", "d2", false, Kind.FEED, 2, 24, 12, "Meyve dilimi"),
             t("kalp", "d3", false, Kind.RUN, 60, 28, 14, "Sevgi koşusu"),
             t("kalp", "w1", true, Kind.NUZZLE, 18, 100, 40, "Haftalık sevgi"),
@@ -282,7 +296,7 @@ class Den(context: Context) {
             t("somun", "d3", false, Kind.BATH, 1, 22, 10, "Un tozu"),
             t("somun", "w1", true, Kind.FEED, 10, 90, 36, "Fırın haftası"),
             t("somun", "w2", true, Kind.DROP, 24, 100, 40, "Usta fırıncı"),
-            t("kahkaha", "d1", false, Kind.NUZZLE, 4, 24, 12, "Kahkaha"),
+            t("kahkaha", "d1", false, Kind.NUZZLE, 3, 24, 12, "Kahkaha"),
             t("kahkaha", "d2", false, Kind.FLAP, 4, 26, 12, "Zıp zıp"),
             t("kahkaha", "d3", false, Kind.FEED, 2, 28, 14, "Biftek şakası"),
             t("kahkaha", "w1", true, Kind.FLAP, 14, 100, 40, "Komik parkur"),
@@ -301,7 +315,37 @@ class Den(context: Context) {
             t("kangal", "d2", false, Kind.FEED, 3, 28, 14, "Çanak yemeği"),
             t("kangal", "d3", false, Kind.NUZZLE, 3, 24, 12, "Sadık pati"),
             t("kangal", "w1", true, Kind.RUN, 500, 120, 48, "Haftalık nöbet"),
-            t("kangal", "w2", true, Kind.FEED, 12, 100, 40, "Sürü ziyafeti")
+            t("kangal", "w2", true, Kind.FEED, 12, 100, 40, "Sürü ziyafeti"),
+            t("pug", "d4", false, Kind.SWORD, 4, 28, 14, "Kapı nöbeti"),
+            t("pug", "w3", true, Kind.RUN, 200, 90, 36, "Mahalle turu"),
+            t("cat", "d4", false, Kind.DROP, 5, 26, 12, "Düşen balık"),
+            t("cat", "w3", true, Kind.SWORD, 10, 100, 40, "Çatı nöbeti"),
+            t("capy", "d4", false, Kind.NUZZLE, 3, 24, 12, "Yanaktan okşa"),
+            t("capy", "d5", false, Kind.SWORD, 4, 26, 12, "Su nöbeti"),
+            t("capy", "w3", true, Kind.DROP, 18, 90, 36, "Düşen ot"),
+            t("pamuk", "d4", false, Kind.RUN, 60, 24, 12, "Yumuşak tur"),
+            t("pamuk", "w3", true, Kind.FLAP, 10, 90, 36, "Pamuk zıplaması"),
+            t("boncuk", "d4", false, Kind.BATH, 1, 22, 10, "Parlak burun"),
+            t("boncuk", "w3", true, Kind.DROP, 16, 90, 36, "Boncuk yağmuru"),
+            t("tombul", "d4", false, Kind.NUZZLE, 3, 24, 12, "Göbek okşa"),
+            t("tombul", "d5", false, Kind.RUN, 70, 26, 12, "Ağır adım"),
+            t("tombul", "w3", true, Kind.FLAP, 12, 90, 36, "Zıplayan simit"),
+            t("bebek", "d4", false, Kind.DROP, 5, 24, 12, "Yumuşak top"),
+            t("bebek", "w3", true, Kind.RUN, 150, 90, 36, "Park turu"),
+            t("kalp", "d4", false, Kind.BATH, 1, 22, 10, "Ilık pati"),
+            t("kalp", "w3", true, Kind.DROP, 18, 90, 36, "Meyve yağmuru"),
+            t("somun", "d4", false, Kind.NUZZLE, 3, 24, 12, "Unlu pati"),
+            t("somun", "d5", false, Kind.FLAP, 3, 26, 12, "Fırın zıplayışı"),
+            t("somun", "w3", true, Kind.RUN, 220, 90, 36, "Fırın yolu"),
+            t("kahkaha", "d4", false, Kind.RUN, 70, 26, 12, "Kahkaha koşusu"),
+            t("kahkaha", "w3", true, Kind.SWORD, 12, 100, 40, "Şaka kalkanı"),
+            t("goz", "d4", false, Kind.DROP, 6, 26, 12, "Sessiz yakalama"),
+            t("goz", "w3", true, Kind.SWORD, 12, 100, 40, "Gece nöbeti"),
+            t("ceket", "d4", false, Kind.NUZZLE, 3, 24, 12, "Yaka düzelt"),
+            t("ceket", "d5", false, Kind.RUN, 80, 26, 12, "Kaldırım"),
+            t("ceket", "w3", true, Kind.FLAP, 12, 90, 36, "Şık zıplama"),
+            t("kangal", "d4", false, Kind.BATH, 1, 22, 10, "Çamur silk"),
+            t("kangal", "w3", true, Kind.SWORD, 15, 110, 44, "Sürü kalkanı")
         )
     }
 }

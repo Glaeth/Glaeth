@@ -80,37 +80,69 @@ class PetProgress(context: Context) {
         return true
     }
 
-    fun feedsToday(): Int {
-        rollCareDay()
-        return prefs.getInt(KEY_FEEDS, 0)
-    }
+    /** Charges refill one at a time, every three hours, and never bank past the cap. */
+    fun charges(kind: String): Int = refill(kind)
 
-    fun bathsToday(): Int {
-        rollCareDay()
-        return prefs.getInt(KEY_BATHS, 0)
+    fun lifetime(kind: String): Int = prefs.getInt(lifeKey(kind), 0)
+
+    fun tryNuzzle(): Int {
+        if (!spend("nuzzle")) return -1
+        return bumpLife("nuzzle")
     }
 
     fun tryFeed(): Boolean {
-        rollCareDay()
-        val count = prefs.getInt(KEY_FEEDS, 0)
-        if (count >= FEEDS_PER_DAY) return false
-        prefs.edit().putInt(KEY_FEEDS, count + 1).apply()
+        if (!spend("feed")) return false
+        bumpLife("feed")
         snack(18)
         return true
     }
 
     fun tryBath(): Boolean {
-        rollCareDay()
-        val count = prefs.getInt(KEY_BATHS, 0)
-        if (count >= BATHS_PER_DAY) return false
-        prefs.edit().putInt(KEY_BATHS, count + 1).apply()
+        if (!spend("bath")) return false
+        bumpLife("bath")
         snack(8)
         return true
     }
 
     fun carePercent(): Int {
-        val done = feedsToday() + bathsToday()
-        return done * 100 / (FEEDS_PER_DAY + BATHS_PER_DAY)
+        val ready = charges("nuzzle") + charges("feed") + charges("bath")
+        return ready * 100 / (CHARGE_MAX * 3)
+    }
+
+    private fun spend(kind: String): Boolean {
+        val count = refill(kind)
+        if (count <= 0) return false
+        val editor = prefs.edit().putInt(chargeKey(kind), count - 1)
+        if (count >= CHARGE_MAX) editor.putLong(chargeAtKey(kind), System.currentTimeMillis())
+        editor.apply()
+        return true
+    }
+
+    private fun bumpLife(kind: String): Int {
+        val next = lifetime(kind) + 1
+        prefs.edit().putInt(lifeKey(kind), next).apply()
+        return next
+    }
+
+    private fun refill(kind: String): Int {
+        val now = System.currentTimeMillis()
+        var count = prefs.getInt(chargeKey(kind), -1)
+        var at = prefs.getLong(chargeAtKey(kind), now)
+        if (count < 0) {
+            count = CHARGE_START
+            prefs.edit().putInt(chargeKey(kind), count).putLong(chargeAtKey(kind), now).apply()
+            return count
+        }
+        if (count >= CHARGE_MAX) {
+            prefs.edit().putLong(chargeAtKey(kind), now).apply()
+            return CHARGE_MAX
+        }
+        val gained = ((now - at) / CHARGE_INTERVAL).toInt()
+        if (gained <= 0) return count
+        val next = (count + gained).coerceAtMost(CHARGE_MAX)
+        val nextAt = if (next >= CHARGE_MAX) now else at + gained * CHARGE_INTERVAL
+        prefs.edit().putInt(chargeKey(kind), next).putLong(chargeAtKey(kind), nextAt).apply()
+        return next
     }
 
     fun fullness(): Int = decayedFullness()
@@ -157,17 +189,13 @@ class PetProgress(context: Context) {
         return (saved - elapsedHours * HUNGER_PER_HOUR).toInt().coerceIn(0, 100)
     }
 
-    private fun rollCareDay() {
-        val today = dayKey(0)
-        if (prefs.getString(KEY_CARE_DAY, null) == today) return
-        prefs.edit()
-            .putString(KEY_CARE_DAY, today)
-            .putInt(KEY_FEEDS, 0)
-            .putInt(KEY_BATHS, 0)
-            .apply()
-    }
-
     private fun nameKey(minLevel: Int) = "dog_name_$minLevel"
+
+    private fun chargeKey(kind: String) = "chg_$kind"
+
+    private fun chargeAtKey(kind: String) = "chg_at_$kind"
+
+    private fun lifeKey(kind: String) = "life_$kind"
 
     private fun unlockKey(minLevel: Int) = "unlock_$minLevel"
 
@@ -189,14 +217,12 @@ class PetProgress(context: Context) {
         private const val KEY_NAME = "pet_name"
         private const val KEY_SELECTED = "selected_dog_level"
         private const val KEY_SEEN = "seen_dog_level"
-        private const val KEY_CARE_DAY = "care_day"
-        private const val KEY_FEEDS = "feeds_today"
-        private const val KEY_BATHS = "baths_today"
         private const val KEY_FULL = "fullness"
         private const val KEY_FULL_AT = "fullness_at"
         private const val DEFAULT_NAME = "Çirkin"
-        const val FEEDS_PER_DAY = 4
-        const val BATHS_PER_DAY = 3
+        const val CHARGE_MAX = 3
+        const val CHARGE_START = 2
+        const val CHARGE_INTERVAL = 3L * 60L * 60L * 1000L
         private const val DEFAULT_FULL = 55
         private const val FEED_AMOUNT = 30
         private const val HUNGER_PER_HOUR = 5f

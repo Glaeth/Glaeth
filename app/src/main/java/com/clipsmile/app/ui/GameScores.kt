@@ -6,6 +6,7 @@ object GameScores {
     const val BEST_DROP = "best_food_drop"
     const val BEST_FLAP = "best_flappy"
     const val BEST_RUN = "best_runner"
+    const val BEST_SWORD = "best_sword"
 
     private const val PREFS = "clipsmile_pet"
 

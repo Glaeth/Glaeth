@@ -27,8 +27,7 @@ class RunnerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         audio = GameAudio.run(this)
-        val portrait = intent.getIntExtra(FoodDropActivity.EXTRA_PORTRAIT, R.drawable.ic_pug_icon)
-        setContentView(RunnerView(this, portrait, audio))
+        setContentView(RunnerView(this, audio))
     }
 
     override fun onResume() {
@@ -57,14 +56,18 @@ private class Hurdle(
 
 private class RunnerView(
     context: Context,
-    portraitRes: Int,
     private val audio: GameAudio
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
-    private val dogBmp = raster(portraitRes, dp(78f).toInt())
+    private val hero = PixelArt.load(context, "games/run/hero.png")
+    private val jumpSheet = PixelArt.load(context, "games/run/jump.png")
+    private val bat = PixelArt.load(context, "games/run/bat.png")
+    private val foe = PixelArt.load(context, "games/run/foe.png")
+    private val groundBmp = PixelArt.load(context, "games/run/ground.png")
+    private val src = android.graphics.Rect()
     private val hurdles = ArrayList<Hurdle>()
     private val random = Random(SystemClock.uptimeMillis())
 
@@ -226,12 +229,13 @@ private class RunnerView(
         hurdles.add(hurdle)
     }
 
+    private fun heroSize() = dp(48f)
+
     private fun dogBox(): RectF {
-        val width = dogBmp.width * 0.42f
-        val height = dogBmp.height * 0.58f
-        val left = dogX() - width / 2f
+        val size = heroSize()
+        val left = dogX() - size * 0.28f
         val bottom = feet - dp(4f)
-        return RectF(left, bottom - height, left + width, bottom)
+        return RectF(left, bottom - size * 0.62f, left + size * 0.5f, bottom)
     }
 
     private fun hits(dog: RectF, hurdle: Hurdle, ground: Float): Boolean {
@@ -280,16 +284,15 @@ private class RunnerView(
             canvas.drawCircle(center + period * 0.48f, ground + dp(24f), dp(78f), hillPaint)
         }
 
-        groundPaint.color = blend(0xFFE7C98A, 0xFF8C7048, night)
-        groundEdge.color = blend(0xFFC9843A, 0xFF5C4632, night)
-        canvas.drawRect(0f, ground, width.toFloat(), height.toFloat(), groundPaint)
-        canvas.drawRect(0f, ground, width.toFloat(), ground + dp(7f), groundEdge)
-        val gap = dp(24f)
-        var tick = -(travel % gap)
-        while (tick < width) {
-            canvas.drawRect(tick, ground + dp(16f), tick + dp(10f), ground + dp(20f), tickPaint)
-            tick += gap
+        val stripH = dp(22f)
+        val stripW = stripH * (groundBmp.width / groundBmp.height.toFloat())
+        var gx = -(travel % stripW)
+        while (gx < width) {
+            oval.set(gx, ground, gx + stripW, ground + stripH)
+            canvas.drawBitmap(groundBmp, null, oval, PixelArt.paint)
+            gx += stripW
         }
+        canvas.drawRect(0f, ground + stripH, width.toFloat(), height.toFloat(), groundPaint)
 
         for (hurdle in hurdles) {
             if (hurdle.kind == 0) drawBush(canvas, hurdle, ground) else drawBird(canvas, hurdle, ground)
@@ -301,10 +304,15 @@ private class RunnerView(
             else -> sin(clock * 3f) * dp(2f)
         }
         val dx = dogX()
-        val top = feet - dogBmp.height + bob
+        val size = heroSize()
+        val top = feet - size + bob
+        val sheet = if (onGround) hero else jumpSheet
+        val frameW = 32
+        val index = if (onGround) (clock * 12f).toInt() else if (velocity < 0f) 0 else 1
+        oval.set(dx - size / 2f, top, dx + size / 2f, top + size)
         canvas.save()
-        canvas.rotate((velocity / dp(48f)).coerceIn(-26f, 22f), dx, top + dogBmp.height / 2f)
-        canvas.drawBitmap(dogBmp, dx - dogBmp.width / 2f, top, null)
+        canvas.rotate((velocity / dp(48f)).coerceIn(-26f, 22f), dx, top + size / 2f)
+        PixelArt.blit(canvas, sheet, index, frameW, oval, src)
         canvas.restore()
 
         ink.color = if (night > 0.55f) 0xFFF6E2B8.toInt() else 0xFF3B2918.toInt()
@@ -332,27 +340,14 @@ private class RunnerView(
     }
 
     private fun drawBush(canvas: Canvas, hurdle: Hurdle, ground: Float) {
-        val left = hurdle.x
-        val right = hurdle.x + hurdle.width
-        val top = ground - hurdle.height
-        canvas.drawCircle(left + hurdle.width * 0.38f, top + hurdle.height * 0.48f, hurdle.height * 0.42f, bushPaint)
-        canvas.drawCircle(left + hurdle.width * 0.68f, top + hurdle.height * 0.58f, hurdle.height * 0.32f, bushDark)
-        canvas.drawRoundRect(left, ground - hurdle.height * 0.34f, right, ground, dp(6f), dp(6f), bushDark)
+        oval.set(hurdle.x, ground - hurdle.height, hurdle.x + hurdle.width, ground)
+        canvas.drawBitmap(foe, null, oval, PixelArt.paint)
     }
 
     private fun drawBird(canvas: Canvas, hurdle: Hurdle, ground: Float) {
         val bodyTop = ground - hurdle.lift - hurdle.height
         oval.set(hurdle.x, bodyTop, hurdle.x + hurdle.width, bodyTop + hurdle.height)
-        canvas.drawOval(oval, birdPaint)
-        canvas.drawCircle(hurdle.x + hurdle.width * 0.78f, bodyTop + hurdle.height * 0.35f, hurdle.height * 0.28f, birdPaint)
-        val flap = sin(clock * 18f) * hurdle.height * 0.55f
-        canvas.drawLine(
-            hurdle.x + hurdle.width * 0.4f,
-            bodyTop + hurdle.height * 0.4f,
-            hurdle.x + hurdle.width * 0.05f,
-            bodyTop + hurdle.height * 0.2f + flap,
-            wingPaint
-        )
+        PixelArt.blit(canvas, bat, (clock * 10f).toInt(), 32, oval, src)
     }
 
     private fun blend(from: Long, to: Long, amount: Float): Int {

@@ -256,8 +256,8 @@ class MainActivity : AppCompatActivity() {
         binding.petMoodText.text = careLine()
         binding.feedButton.text = feedLabel()
         binding.bathButton.text = bathLabel()
-        binding.feedButton.alpha = if (petProgress.feedsToday() >= PetProgress.FEEDS_PER_DAY) 0.45f else 1f
-        binding.bathButton.alpha = if (petProgress.bathsToday() >= PetProgress.BATHS_PER_DAY) 0.45f else 1f
+        binding.feedButton.alpha = if (petProgress.charges("feed") == 0) 0.45f else 1f
+        binding.bathButton.alpha = if (petProgress.charges("bath") == 0) 0.45f else 1f
         binding.feedDoner.setImageResource(companion.foodRes)
         binding.petCanvas.setModel(companion.model)
         binding.frameGlow.setFrame(look)
@@ -522,23 +522,22 @@ class MainActivity : AppCompatActivity() {
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun careLine(): String {
-        val feedsLeft = (PetProgress.FEEDS_PER_DAY - petProgress.feedsToday()).coerceAtLeast(0)
-        val bathsLeft = (PetProgress.BATHS_PER_DAY - petProgress.bathsToday()).coerceAtLeast(0)
-        return if (feedsLeft == 0 && bathsLeft == 0) {
-            getString(R.string.care_done)
-        } else {
-            getString(R.string.care_left, feedsLeft, bathsLeft)
-        }
+        return getString(
+            R.string.care_left,
+            petProgress.charges("nuzzle"),
+            petProgress.charges("feed"),
+            petProgress.charges("bath")
+        )
     }
 
     private fun feedLabel(): String {
-        val left = PetProgress.FEEDS_PER_DAY - petProgress.feedsToday()
+        val left = petProgress.charges("feed")
         val food = getString(companion.foodNameRes)
         return if (left <= 0) getString(R.string.feed_done) else getString(R.string.action_feed_count, food, left)
     }
 
     private fun bathLabel(): String {
-        val left = PetProgress.BATHS_PER_DAY - petProgress.bathsToday()
+        val left = petProgress.charges("bath")
         return if (left <= 0) getString(R.string.bath_done) else getString(R.string.action_bath_count, left)
     }
 
@@ -565,11 +564,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun nuzzle() {
         if (feeding || bathing || !den.onboarded()) return
+        val life = petProgress.tryNuzzle()
+        if (life < 0) {
+            Toast.makeText(this, R.string.nuzzle_wait, Toast.LENGTH_SHORT).show()
+            return
+        }
         bark()
         binding.hearts.burst()
         binding.petCanvas.playHappy()
         grant(Den.Kind.NUZZLE, 1)
         binding.petMoodText.setText(R.string.pet_loved)
+        Achievements.celebrate(this, Achievements.PET, life)
     }
 
     private fun startIdleMotion() {
@@ -625,7 +630,8 @@ class MainActivity : AppCompatActivity() {
                 binding.fullnessBar.progress = petProgress.carePercent()
                 binding.petMoodText.setText(companion.fedRes)
                 binding.feedButton.text = feedLabel()
-                binding.feedButton.alpha = if (petProgress.feedsToday() >= PetProgress.FEEDS_PER_DAY) 0.45f else 1f
+                binding.feedButton.alpha = if (petProgress.charges("feed") == 0) 0.45f else 1f
+                Achievements.celebrate(this@MainActivity, Achievements.MEAL, petProgress.lifetime("feed"))
                 bark()
                 binding.petCanvas.playHappy()
                 doner.animate().alpha(0f).setDuration(160).withEndAction {
@@ -655,7 +661,8 @@ class MainActivity : AppCompatActivity() {
             binding.fullnessBar.progress = petProgress.carePercent()
             binding.petMoodText.setText(R.string.bath_fresh)
             binding.bathButton.text = bathLabel()
-            binding.bathButton.alpha = if (petProgress.bathsToday() >= PetProgress.BATHS_PER_DAY) 0.45f else 1f
+            binding.bathButton.alpha = if (petProgress.charges("bath") == 0) 0.45f else 1f
+            Achievements.celebrate(this@MainActivity, Achievements.WASH, petProgress.lifetime("bath"))
         }
     }
 

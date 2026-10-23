@@ -29,11 +29,12 @@ class AchievementsActivity : AppCompatActivity() {
 
     private fun showBadges() {
         binding.badgeList.removeAllViews()
-        var lastKind = ""
+        var lastSection = 0
         for (badge in Achievements.all) {
-            if (badge.kind != lastKind) {
-                lastKind = badge.kind
-                binding.badgeList.addView(section(getString(Achievements.sectionTitle(badge.kind))))
+            val section = Achievements.sectionTitle(badge.kind)
+            if (section != lastSection) {
+                lastSection = section
+                binding.badgeList.addView(section(getString(section)))
             }
             val row = ItemAchievementBinding.inflate(layoutInflater, binding.badgeList, true)
             val open = Achievements.isUnlocked(this, badge.id)

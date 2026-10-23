@@ -22,8 +22,7 @@ class FlappyDogActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         audio = GameAudio.flap(this)
-        val portrait = intent.getIntExtra(FoodDropActivity.EXTRA_PORTRAIT, R.drawable.ic_pug_icon)
-        setContentView(FlappyDogView(this, portrait, audio))
+        setContentView(FlappyDogView(this, audio))
     }
 
     override fun onResume() {
@@ -49,14 +48,21 @@ private class Gate(var x: Float, val gapTop: Float, var scored: Boolean = false)
  */
 private class FlappyDogView(
     context: Context,
-    portraitRes: Int,
     private val audio: GameAudio
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
-    private val dogBmp = raster(portraitRes, dp(64f).toInt())
+    private val birds = listOf(
+        PixelArt.load(context, "games/flap/bird0.png"),
+        PixelArt.load(context, "games/flap/bird1.png"),
+        PixelArt.load(context, "games/flap/bird2.png")
+    )
+    private val pipeBmp = PixelArt.load(context, "games/flap/pipe.png")
+    private val bgBmp = PixelArt.load(context, "games/flap/bg.png")
+    private val src = android.graphics.Rect()
+    private val tile = RectF()
     private val gates = ArrayList<Gate>()
     private val random = Random(SystemClock.uptimeMillis())
 
@@ -163,7 +169,7 @@ private class FlappyDogView(
         val gap = dp(168f)
         val pipeW = dp(68f)
         val dogX = width * 0.28f
-        val radius = dogBmp.width * 0.36f
+        val radius = birdSize() * 0.36f
         val groundTop = height - dp(72f)
 
         if (dogY - radius < dp(8f) || dogY + radius > groundTop) {
@@ -233,37 +239,42 @@ private class FlappyDogView(
         Achievements.celebrate(context, Achievements.FLAP, score)
     }
 
+    private fun birdSize() = dp(36f)
+
+    private fun tilePipe(canvas: Canvas, left: Float, top: Float, right: Float, bottom: Float) {
+        val tileH = (right - left).coerceAtLeast(1f)
+        var y = top
+        while (y < bottom - 0.5f) {
+            val next = (y + tileH).coerceAtMost(bottom)
+            tile.set(left, y, right, next)
+            canvas.drawBitmap(pipeBmp, null, tile, PixelArt.paint)
+            y = next
+        }
+    }
+
     override fun onDraw(canvas: Canvas) {
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), sky)
         val groundTop = height - dp(72f)
+        tile.set(0f, 0f, width.toFloat(), groundTop)
+        canvas.drawBitmap(bgBmp, null, tile, PixelArt.paint)
         val pipeW = dp(68f)
         val gap = dp(168f)
-        val lip = dp(16f)
+        val lip = dp(10f)
         for (gate in gates) {
-            canvas.drawRect(gate.x, 0f, gate.x + pipeW, gate.gapTop, pipe)
-            canvas.drawRect(gate.x - dp(4f), gate.gapTop - lip, gate.x + pipeW + dp(4f), gate.gapTop, pipeLip)
-            canvas.drawRect(gate.x, gate.gapTop + gap, gate.x + pipeW, groundTop, pipe)
-            canvas.drawRect(
-                gate.x - dp(4f),
-                gate.gapTop + gap,
-                gate.x + pipeW + dp(4f),
-                gate.gapTop + gap + lip,
-                pipeLip
-            )
+            tilePipe(canvas, gate.x, 0f, gate.x + pipeW, gate.gapTop - lip)
+            tilePipe(canvas, gate.x - dp(6f), gate.gapTop - lip, gate.x + pipeW + dp(6f), gate.gapTop)
+            tilePipe(canvas, gate.x, gate.gapTop + gap + lip, gate.x + pipeW, groundTop)
+            tilePipe(canvas, gate.x - dp(6f), gate.gapTop + gap, gate.x + pipeW + dp(6f), gate.gapTop + gap + lip)
         }
         canvas.drawRect(0f, groundTop, width.toFloat(), height.toFloat(), ground)
         canvas.drawRect(0f, groundTop, width.toFloat(), groundTop + dp(8f), groundEdge)
 
         val dogX = if (width == 0) 0f else width * 0.28f
-        dogRect.set(
-            dogX - dogBmp.width / 2f,
-            dogY - dogBmp.height / 2f,
-            dogX + dogBmp.width / 2f,
-            dogY + dogBmp.height / 2f
-        )
+        val size = birdSize()
+        dogRect.set(dogX - size / 2f, dogY - size / 2f, dogX + size / 2f, dogY + size / 2f)
+        val bird = if (velocity < -dp(40f)) birds[2] else birds[((SystemClock.uptimeMillis() / 90L) % 3).toInt()]
         canvas.save()
         canvas.rotate(velocity.coerceIn(-dp(700f), dp(900f)) / dp(40f), dogX, dogY)
-        canvas.drawBitmap(dogBmp, dogRect.left, dogRect.top, null)
+        canvas.drawBitmap(bird, null, dogRect, PixelArt.paint)
         canvas.restore()
 
         ink.color = 0xFF173307.toInt()

@@ -95,12 +95,16 @@ object HomeSections {
         column.addView(button(context, context.getString(R.string.game_run_short)) {
             callbacks.play(RunnerActivity::class.java)
         })
+        column.addView(button(context, context.getString(R.string.game_sword_short)) {
+            callbacks.play(SwordGateActivity::class.java)
+        })
         column.addView(button(context, context.getString(R.string.achievements_title)) {
             callbacks.achievements()
         })
         column.addView(body(context, context.getString(R.string.game_best, GameScores.best(context, GameScores.BEST_DROP))))
         column.addView(body(context, context.getString(R.string.game_best, GameScores.best(context, GameScores.BEST_FLAP))))
         column.addView(body(context, context.getString(R.string.game_best, GameScores.best(context, GameScores.BEST_RUN))))
+        column.addView(body(context, context.getString(R.string.game_best_named, context.getString(R.string.game_sword_short), GameScores.best(context, GameScores.BEST_SWORD))))
     }
 
     private fun animalRow(

@@ -48,12 +48,40 @@ class PetCanvas @JvmOverloads constructor(
         engine.shakeAt = SystemClock.uptimeMillis()
     }
 
+    private var lastX = 0f
+    private var lastY = 0f
+    private var downX = 0f
+    private var downY = 0f
+    private var dragged = false
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-            val width = width.coerceAtLeast(1)
-            engine.lookTarget = (event.x / width) * 2f - 1f
-            engine.lookAt = SystemClock.uptimeMillis()
-            performClick()
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                downX = event.x
+                downY = event.y
+                lastX = event.x
+                lastY = event.y
+                dragged = false
+                engine.spinHeld = true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dx = event.x - lastX
+                val dy = event.y - lastY
+                lastX = event.x
+                lastY = event.y
+                if (abs(event.x - downX) > 18f || abs(event.y - downY) > 18f) dragged = true
+                engine.userYaw = (engine.userYaw + dx * 0.55f).coerceIn(-170f, 170f)
+                engine.userPitch = (engine.userPitch + dy * 0.25f).coerceIn(-40f, 40f)
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                engine.spinHeld = false
+                if (!dragged && event.actionMasked == MotionEvent.ACTION_UP) {
+                    val width = width.coerceAtLeast(1)
+                    engine.lookTarget = (event.x / width) * 2f - 1f
+                    engine.lookAt = SystemClock.uptimeMillis()
+                    performClick()
+                }
+            }
         }
         return true
     }
@@ -81,6 +109,10 @@ class PetCanvas @JvmOverloads constructor(
         @Volatile var shakeAt: Long = 0L
         @Volatile var lookTarget: Float = 0f
         @Volatile var lookAt: Long = 0L
+        @Volatile var userYaw: Float = 0f
+        @Volatile var userPitch: Float = 0f
+        @Volatile var spinHeld: Boolean = false
+        private var lastSpinMs = 0L
 
         private var loadedName: String? = null
         private var parts: List<Part> = emptyList()
@@ -171,6 +203,15 @@ class PetCanvas @JvmOverloads constructor(
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
             if (program == 0) return
             val now = SystemClock.uptimeMillis()
+            val spinDt = if (lastSpinMs == 0L) 0.016f else ((now - lastSpinMs).coerceAtMost(48L)) / 1000f
+            lastSpinMs = now
+            if (!spinHeld) {
+                val k = (spinDt * 7f).coerceIn(0f, 1f)
+                userYaw += (0f - userYaw) * k
+                userPitch += (0f - userPitch) * k
+                if (abs(userYaw) < 0.2f) userYaw = 0f
+                if (abs(userPitch) < 0.15f) userPitch = 0f
+            }
             val time = now / 1000f
             val happy = pulse(now, happyAt, 0.9f)
             val shake = pulse(now, shakeAt, 0.7f)
@@ -255,6 +296,10 @@ class PetCanvas @JvmOverloads constructor(
                     sy *= 1f + happy * 2.2f
                     sz *= 1f + happy * 0.35f
                 }
+            }
+            if (part.parent < 0) {
+                ry += userYaw
+                rx += userPitch
             }
             Matrix.setIdentityM(local, 0)
             Matrix.translateM(local, 0, tx, ty, tz)
