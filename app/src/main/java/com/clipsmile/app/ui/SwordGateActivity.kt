@@ -300,9 +300,19 @@ private class SwordGateView(
                 sheet = foeRun
                 frames = 192
             }
-            drawSheet(canvas, sheet, stepFrame, frames, foeRect(foe))
+            val at = foeRect(foe)
+            canvas.save()
+            canvas.scale(-1f, 1f, at.centerX(), at.centerY())
+            drawSheet(canvas, sheet, stepFrame, frames, at)
+            canvas.restore()
         }
-        for (bolt in bolts) drawSheet(canvas, arrow, 0, arrow.width, boltRect(bolt))
+        for (bolt in bolts) {
+            val box = boltRect(bolt)
+            canvas.save()
+            canvas.scale(-1f, 1f, box.centerX(), box.centerY())
+            drawSheet(canvas, arrow, 0, arrow.width, box)
+            canvas.restore()
+        }
         for (puff in puffs) {
             val size = cell() * 0.4f
             dest.set(puff.x - size / 2f, puff.y - size / 2f, puff.x + size / 2f, puff.y + size / 2f)
@@ -322,9 +332,7 @@ private class SwordGateView(
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
-        ink.textAlign = Paint.Align.CENTER
-        ink.textSize = dp(32f)
-        canvas.drawText(score.toString(), width / 2f, dp(52f), ink)
+        PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
         if (!started && !over) {
             ink.textSize = dp(16f)
             canvas.drawText(context.getString(R.string.game_sword_hint), width / 2f, height * 0.58f, ink)

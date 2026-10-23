@@ -319,9 +319,7 @@ private class RunnerView(
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
-        ink.textAlign = Paint.Align.CENTER
-        ink.textSize = dp(28f)
-        canvas.drawText(score.toString(), width / 2f, dp(48f), ink)
+        PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
 
         if (!started && !over) {
             ink.textSize = dp(16f)
@@ -347,7 +345,10 @@ private class RunnerView(
     private fun drawBird(canvas: Canvas, hurdle: Hurdle, ground: Float) {
         val bodyTop = ground - hurdle.lift - hurdle.height
         oval.set(hurdle.x, bodyTop, hurdle.x + hurdle.width, bodyTop + hurdle.height)
+        canvas.save()
+        canvas.scale(-1f, 1f, oval.centerX(), oval.centerY())
         PixelArt.blit(canvas, bat, (clock * 10f).toInt(), 32, oval, src)
+        canvas.restore()
     }
 
     private fun blend(from: Long, to: Long, amount: Float): Int {

@@ -31,7 +31,7 @@ object DogRoster {
     val all = listOf(
         DogCompanion(1, R.string.dog_pug_name, R.string.dog_pug_title, R.string.food_durum, R.string.fed_durum, R.drawable.face_pug, R.drawable.ic_doner, true, "pug", R.raw.bark_pug, "pug", 480, 0, true),
         DogCompanion(1, R.string.dog_cat_name, R.string.dog_cat_title, R.string.food_fish, R.string.fed_fish, R.drawable.face_cat, R.drawable.ic_food_fish, true, "cat", R.raw.bark_cat, "cat", 480, 0, true),
-        DogCompanion(1, R.string.dog_capy_name, R.string.dog_capy_title, R.string.food_grass, R.string.fed_grass, R.drawable.face_capy, R.drawable.ic_food_bread, false, "capy", R.raw.bark_bebek, "capy", 480, 0, true),
+        DogCompanion(1, R.string.dog_capy_name, R.string.dog_capy_title, R.string.food_grass, R.string.fed_grass, R.drawable.face_capy, R.drawable.ic_food_bread, false, "capy", R.raw.bark_capy, "capy", 480, 0, true),
         DogCompanion(15, R.string.dog_pamuk_name, R.string.dog_pamuk_title, R.string.food_rice, R.string.fed_rice, R.drawable.ic_dog_pamuk, R.drawable.ic_food_rice, false, "pamuk", R.raw.bark_pamuk, "pamuk", 260, 0, false),
         DogCompanion(30, R.string.dog_boncuk_name, R.string.dog_boncuk_title, R.string.food_cheese, R.string.fed_cheese, R.drawable.ic_dog_boncuk, R.drawable.ic_food_cheese, false, "boncuk", R.raw.bark_boncuk, "boncuk", 380, 0, false),
         DogCompanion(45, R.string.dog_tombul_name, R.string.dog_tombul_title, R.string.food_simit, R.string.fed_simit, R.drawable.ic_dog_tombul, R.drawable.ic_food_simit, false, "tombul", R.raw.bark_tombul, "tombul", 520, 0, false),

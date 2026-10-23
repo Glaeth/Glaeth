@@ -565,13 +565,11 @@ class MainActivity : AppCompatActivity() {
     private fun nuzzle() {
         if (feeding || bathing || !den.onboarded()) return
         val life = petProgress.tryNuzzle()
-        if (life < 0) {
-            Toast.makeText(this, R.string.nuzzle_wait, Toast.LENGTH_SHORT).show()
-            return
-        }
         bark()
         binding.hearts.burst()
         binding.petCanvas.playHappy()
+        binding.petMoodText.setText(R.string.pet_loved)
+        if (life < 0) return
         grant(Den.Kind.NUZZLE, 1)
         binding.petMoodText.setText(R.string.pet_loved)
         Achievements.celebrate(this, Achievements.PET, life)

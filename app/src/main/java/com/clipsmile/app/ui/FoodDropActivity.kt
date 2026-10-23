@@ -198,7 +198,7 @@ private class FoodDropView(
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(38f), ink)
-        canvas.drawText(score.toString(), dp(58f), dp(38f), ink)
+        PixelArt.drawScore(canvas, score, width / 2f, dp(6f), ::dp)
 
         val radius = dp(7f)
         var lifeX = width - dp(18f) - radius

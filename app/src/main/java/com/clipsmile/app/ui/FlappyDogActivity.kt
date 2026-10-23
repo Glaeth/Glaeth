@@ -60,6 +60,7 @@ private class FlappyDogView(
         PixelArt.load(context, "games/flap/bird2.png")
     )
     private val pipeBmp = PixelArt.load(context, "games/flap/pipe.png")
+    private val lipBmp = PixelArt.load(context, "games/flap/pipe_lip.png")
     private val bgBmp = PixelArt.load(context, "games/flap/bg.png")
     private val src = android.graphics.Rect()
     private val tile = RectF()
@@ -167,7 +168,8 @@ private class FlappyDogView(
         dogY += velocity * dt
         val speed = dp(168f)
         val gap = dp(168f)
-        val pipeW = dp(68f)
+        val pipeW = dp(64f)
+        val lip = dp(6f)
         val dogX = width * 0.28f
         val radius = birdSize() * 0.36f
         val groundTop = height - dp(72f)
@@ -185,7 +187,7 @@ private class FlappyDogView(
                 audio.point()
                 Achievements.celebrate(context, Achievements.FLAP, score)
             }
-            if (hits(dogX, dogY, radius, gate.x, pipeW, gate.gapTop, gap, groundTop)) {
+            if (hits(dogX, dogY, radius, gate.x - lip, pipeW + lip * 2f, gate.gapTop, gap, groundTop)) {
                 endRound()
                 return
             }
@@ -241,6 +243,18 @@ private class FlappyDogView(
 
     private fun birdSize() = dp(36f)
 
+    private fun drawLip(canvas: Canvas, left: Float, top: Float, right: Float, bottom: Float, flipY: Boolean) {
+        tile.set(left, top, right, bottom)
+        if (!flipY) {
+            canvas.drawBitmap(lipBmp, null, tile, PixelArt.paint)
+            return
+        }
+        canvas.save()
+        canvas.scale(1f, -1f, tile.centerX(), tile.centerY())
+        canvas.drawBitmap(lipBmp, null, tile, PixelArt.paint)
+        canvas.restore()
+    }
+
     private fun tilePipe(canvas: Canvas, left: Float, top: Float, right: Float, bottom: Float) {
         val tileH = (right - left).coerceAtLeast(1f)
         var y = top
@@ -256,14 +270,16 @@ private class FlappyDogView(
         val groundTop = height - dp(72f)
         tile.set(0f, 0f, width.toFloat(), groundTop)
         canvas.drawBitmap(bgBmp, null, tile, PixelArt.paint)
-        val pipeW = dp(68f)
+        val pipeW = dp(64f)
         val gap = dp(168f)
-        val lip = dp(10f)
+        val lipH = dp(22f)
         for (gate in gates) {
-            tilePipe(canvas, gate.x, 0f, gate.x + pipeW, gate.gapTop - lip)
-            tilePipe(canvas, gate.x - dp(6f), gate.gapTop - lip, gate.x + pipeW + dp(6f), gate.gapTop)
-            tilePipe(canvas, gate.x, gate.gapTop + gap + lip, gate.x + pipeW, groundTop)
-            tilePipe(canvas, gate.x - dp(6f), gate.gapTop + gap, gate.x + pipeW + dp(6f), gate.gapTop + gap + lip)
+            val left = gate.x
+            val right = gate.x + pipeW
+            tilePipe(canvas, left, 0f, right, gate.gapTop - lipH)
+            drawLip(canvas, left - dp(6f), gate.gapTop - lipH, right + dp(6f), gate.gapTop, true)
+            drawLip(canvas, left - dp(6f), gate.gapTop + gap, right + dp(6f), gate.gapTop + gap + lipH, false)
+            tilePipe(canvas, left, gate.gapTop + gap + lipH, right, groundTop)
         }
         canvas.drawRect(0f, groundTop, width.toFloat(), height.toFloat(), ground)
         canvas.drawRect(0f, groundTop, width.toFloat(), groundTop + dp(8f), groundEdge)
@@ -281,9 +297,7 @@ private class FlappyDogView(
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
-        ink.textAlign = Paint.Align.CENTER
-        ink.textSize = dp(32f)
-        canvas.drawText(score.toString(), width / 2f, dp(52f), ink)
+        PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
 
         if (!started && !over) {
             ink.textSize = dp(16f)
