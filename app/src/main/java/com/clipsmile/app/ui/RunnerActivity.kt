@@ -1,0 +1,439 @@
+package com.clipsmile.app.ui
+
+import android.app.Activity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.os.Bundle
+import android.os.SystemClock
+import android.view.MotionEvent
+import android.view.View
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.clipsmile.app.R
+import com.clipsmile.app.data.PetProgress
+import kotlin.math.sin
+import kotlin.random.Random
+
+/**
+ * Endless run: the dog keeps moving and a tap jumps over park obstacles.
+ * Same idea as the offline runner, drawn as this app's own dog.
+ */
+class RunnerActivity : AppCompatActivity() {
+    private lateinit var audio: GameAudio
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        audio = GameAudio.run(this)
+        val model = intent.getStringExtra(FoodDropActivity.EXTRA_MODEL) ?: "pug"
+        setContentView(RunnerView(this, model, audio))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        audio.start()
+    }
+
+    override fun onPause() {
+        audio.pause()
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        audio.release()
+        super.onDestroy()
+    }
+}
+
+private class Hurdle(
+    var x: Float,
+    val kind: Int,
+    val width: Float,
+    val height: Float,
+    val lift: Float
+)
+
+private class RunnerView(
+    context: Context,
+    model: String,
+    private val audio: GameAudio
+) : View(context) {
+
+    private val density = resources.displayMetrics.density
+    private fun dp(v: Float) = v * density
+
+    private val hero = PixelArt.petStrip(context, model, "side", "games/run/hero.png")
+    private val bat = PixelArt.load(context, "games/run/bat.png")
+    private val foe = PixelArt.load(context, "games/run/foe.png")
+    private val src = android.graphics.Rect()
+    private val hurdles = ArrayList<Hurdle>()
+    private val random = Random(SystemClock.uptimeMillis())
+
+    private var feet = 0f
+    private var velocity = 0f
+    private var onGround = true
+    private var started = false
+    private var over = false
+    private var score = 0
+    private var best = GameScores.best(context, GameScores.BEST_RUN)
+    private var travel = 0f
+    private var spawnIn = 0.7f
+    private var clock = 0f
+    private var lastMs = 0L
+    private var hp = 2
+    private var hurtAt = -100f
+    private var immune = 0f
+    private var banner = ""
+    private var bannerUntil = 0L
+
+    private val skyPaint = Paint()
+    private val hillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF8FCB6A.toInt() }
+    private val hillFar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFB7D98A.toInt() }
+    private val groundPaint = Paint().apply { color = 0xFF6A4E32.toInt() }
+    private val groundEdge = Paint().apply { color = 0xFF3E6A28.toInt() }
+    private val tickPaint = Paint().apply { color = 0xFFD7B56A.toInt() }
+    private val bushPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF3E8C12.toInt() }
+    private val bushDark = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF2F6C0E.toInt() }
+    private val birdPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF3B2918.toInt() }
+    private val wingPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFF6E2B8.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = dp(3f)
+        strokeCap = Paint.Cap.ROUND
+    }
+    private val sunPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFD56A.toInt() }
+    private val mountain = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cloudPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF2FFFFFF.toInt() }
+    private val ridge = android.graphics.Path()
+    private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF3B2918.toInt()
+        isFakeBoldText = true
+    }
+    private val card = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF23B2918.toInt() }
+    private val oval = RectF()
+
+    private val frame = Runnable { tick() }
+
+    init {
+        keepScreenOn = true
+        setBackgroundColor(0xFFB9E3F6.toInt())
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        postOnAnimation(frame)
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(frame)
+        super.onDetachedFromWindow()
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        if (!started && h > 0) feet = groundTop()
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.action != MotionEvent.ACTION_DOWN) return true
+        if (event.x < dp(56f) && event.y < dp(56f)) {
+            (context as? Activity)?.finish()
+            return true
+        }
+        if (over) {
+            restart()
+            return true
+        }
+        jump()
+        return true
+    }
+
+    private fun groundTop() = height - dp(28f)
+
+    private fun jump() {
+        if (!onGround && started) return
+        started = true
+        onGround = false
+        velocity = -dp(860f)
+        audio.jump()
+    }
+
+    private fun restart() {
+        hurdles.clear()
+        feet = groundTop()
+        velocity = 0f
+        onGround = true
+        started = false
+        over = false
+        score = 0
+        travel = 0f
+        spawnIn = 0.7f
+        hp = 2
+        hurtAt = -100f
+        immune = 0f
+        banner = ""
+        lastMs = 0L
+        postOnAnimation(frame)
+    }
+
+    private fun tick() {
+        val now = SystemClock.uptimeMillis()
+        val dt = if (lastMs == 0L) 0.016f else ((now - lastMs).coerceAtMost(34L)) / 1000f
+        lastMs = now
+        clock += dt
+        if (!over && width > 0 && height > 0) step(dt)
+        invalidate()
+        if (!over) postOnAnimation(frame)
+    }
+
+    private fun speed(): Float = (dp(340f) + score * dp(0.42f)).coerceAtMost(dp(640f))
+
+    private fun step(dt: Float) {
+        if (!started) return
+        val ground = groundTop()
+        velocity += dp(3100f) * dt
+        feet += velocity * dt
+        if (feet >= ground) {
+            feet = ground
+            velocity = 0f
+            onGround = true
+        }
+        val pace = speed()
+        travel += pace * dt
+        val previous = score
+        score = (travel / dp(16f)).toInt()
+        if (score / 100 > previous / 100) audio.point()
+        val reward = GameRewards.onScore(context, previous, score, 150, 8, 300, 12, "Koşu")
+        if (!reward.isNullOrBlank()) {
+            banner = reward
+            bannerUntil = SystemClock.uptimeMillis() + 1300L
+            audio.reward()
+        }
+        if (immune > 0f) immune -= dt
+        if (crossed(previous, score, 1) || crossed(previous, score, 100) || crossed(previous, score, 500)) {
+            Achievements.celebrate(context, Achievements.RUN, score)
+        }
+
+        spawnIn -= dt
+        if (spawnIn <= 0f) {
+            spawnIn = (1.15f - score * 0.0014f).coerceAtLeast(0.72f)
+            spawn(pace)
+        }
+        val dogHit = dogBox()
+        for (hurdle in hurdles) {
+            hurdle.x -= pace * dt
+            if (hits(dogHit, hurdle, ground)) {
+                if (immune <= 0f) {
+                    if (clock - hurtAt > 10f) hp = 2
+                    hp -= 1
+                    hurtAt = clock
+                    immune = 0.85f
+                    if (hp <= 0) {
+                        endRound()
+                        return
+                    }
+                    audio.hurt()
+                }
+            }
+        }
+        hurdles.removeAll { it.x + it.width < -dp(8f) }
+    }
+
+    private fun crossed(previous: Int, now: Int, mark: Int) = previous < mark && now >= mark
+
+    private fun spawn(pace: Float) {
+        val roll = random.nextFloat()
+        val hurdle = when {
+            score > 180 && roll < 0.16f -> Hurdle(width + dp(8f), 1, dp(46f), dp(22f), dp(102f))
+            score > 70 && roll < 0.32f -> Hurdle(width + dp(8f), 1, dp(44f), dp(26f), dp(6f))
+            roll < 0.45f -> Hurdle(width + dp(8f), 0, dp(34f), dp(46f), 0f)
+            else -> Hurdle(width + dp(8f), 0, dp(58f), dp(62f), 0f)
+        }
+        val last = hurdles.lastOrNull()
+        if (last != null && last.x > width - pace * 0.45f) {
+            hurdle.x = last.x + pace * 0.85f
+        }
+        hurdles.add(hurdle)
+    }
+
+    private fun heroSize() = dp(78f)
+
+    private fun dogBox(): RectF {
+        val size = heroSize()
+        val left = dogX() - size * 0.28f
+        val bottom = feet - dp(4f)
+        return RectF(left, bottom - size * 0.62f, left + size * 0.5f, bottom)
+    }
+
+    private fun hits(dog: RectF, hurdle: Hurdle, ground: Float): Boolean {
+        val box = RectF(
+            hurdle.x + hurdle.width * 0.16f,
+            ground - hurdle.lift - hurdle.height,
+            hurdle.x + hurdle.width * 0.84f,
+            ground - hurdle.lift - hurdle.height * 0.08f
+        )
+        return dog.intersects(box)
+    }
+
+    private fun RectF.intersects(other: RectF): Boolean {
+        return left < other.right && right > other.left && top < other.bottom && bottom > other.top
+    }
+
+    private fun dogX() = if (width == 0) 0f else width * 0.24f
+
+    private fun endRound() {
+        if (over) return
+        over = true
+        audio.crash()
+        best = GameScores.submit(context, GameScores.BEST_RUN, score)
+        if (score > 0) {
+            PetProgress(context).snack((score / 25).coerceIn(1, 18))
+            com.clipsmile.app.data.Den(context).bump(com.clipsmile.app.data.Den.Kind.RUN, score)
+        }
+        Achievements.celebrate(context, Achievements.RUN, score)
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val night = ((score - 220) / 300f).coerceIn(0f, 1f)
+        skyPaint.color = blend(0xFFB9E3F6, 0xFF1C2433, night)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), skyPaint)
+        sunPaint.color = blend(0xFFFFD56A, 0xFFF4F1E8, night)
+        canvas.drawCircle(width * 0.82f, dp(64f), dp(22f), sunPaint)
+
+        val ground = if (height == 0) 0f else groundTop()
+        drawBackdrop(canvas, ground, night)
+        canvas.drawRect(0f, ground, width.toFloat(), height.toFloat(), groundPaint)
+        canvas.drawRect(0f, ground, width.toFloat(), ground + dp(10f), groundEdge)
+
+        for (hurdle in hurdles) {
+            if (hurdle.kind == 0) drawBush(canvas, hurdle, ground) else drawBird(canvas, hurdle, ground)
+        }
+
+        val bob = when {
+            !onGround -> 0f
+            started -> sin(clock * 16f) * dp(2.5f)
+            else -> sin(clock * 3f) * dp(2f)
+        }
+        val dx = dogX()
+        val frameW = hero.width / 6
+        val aspect = frameW / hero.height.coerceAtLeast(1).toFloat()
+        val maxH = dp(58f)
+        val maxW = dp(72f)
+        var drawH = maxH
+        var drawW = drawH * aspect
+        if (drawW > maxW) {
+            drawW = maxW
+            drawH = drawW / aspect.coerceAtLeast(0.25f)
+        }
+        if (drawH > drawW * 1.35f) drawH = drawW * 1.35f
+        val top = feet - drawH + bob
+        val index = if (onGround) (clock * 10f).toInt() else if (velocity < 0f) 1 else 4
+        oval.set(dx - drawW / 2f, top, dx + drawW / 2f, top + drawH)
+        canvas.save()
+        canvas.rotate((velocity / dp(48f)).coerceIn(-26f, 22f), dx, top + drawH / 2f)
+        PixelArt.blitSmooth(canvas, hero, index, frameW, oval, src)
+        canvas.restore()
+
+        ink.color = if (night > 0.55f) 0xFFF6E2B8.toInt() else 0xFF3B2918.toInt()
+        ink.textAlign = Paint.Align.LEFT
+        ink.textSize = dp(22f)
+        canvas.drawText("←", dp(16f), dp(40f), ink)
+        PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
+        PixelArt.drawHealth(canvas, hp, 2, width - dp(12f), dp(18f), ::dp)
+        if (banner.isNotEmpty() && SystemClock.uptimeMillis() < bannerUntil) {
+            PixelArt.drawBanner(canvas, banner, width / 2f, dp(60f), ::dp)
+        }
+
+        if (!started && !over) {
+            ink.textSize = dp(16f)
+            canvas.drawText(context.getString(R.string.game_run_hint), width / 2f, height * 0.62f, ink)
+        }
+        if (over) {
+            val topCard = height * 0.32f
+            canvas.drawRoundRect(dp(32f), topCard, width - dp(32f), topCard + dp(130f), dp(18f), dp(18f), card)
+            ink.color = 0xFFF6E2B8.toInt()
+            ink.textSize = dp(22f)
+            canvas.drawText("Skor  $score", width / 2f, topCard + dp(46f), ink)
+            ink.textSize = dp(15f)
+            canvas.drawText("En iyi  $best", width / 2f, topCard + dp(74f), ink)
+            canvas.drawText("Dokun, yeniden oyna", width / 2f, topCard + dp(102f), ink)
+        }
+    }
+
+    /**
+     * Distant skyline only. Rocks and trees used to scroll through the lane
+     * and sat on top of the jumps, so the run is open sky and far hills.
+     */
+    private fun drawBackdrop(canvas: Canvas, ground: Float, night: Float) {
+        mountain.color = blend(0xFF9BB8CC, 0xFF2A3344, night)
+        val span = dp(260f).coerceAtLeast(1f)
+        val shift = (travel * 0.04f) % span
+        ridge.reset()
+        ridge.moveTo(-span, ground - dp(8f))
+        var x = -span - shift
+        while (x < width + span) {
+            ridge.lineTo(x + span * 0.28f, ground - dp(86f))
+            ridge.lineTo(x + span * 0.55f, ground - dp(48f))
+            ridge.lineTo(x + span * 0.82f, ground - dp(74f))
+            ridge.lineTo(x + span, ground - dp(12f))
+            x += span
+        }
+        ridge.lineTo(width + dp(8f), ground)
+        ridge.lineTo(-span, ground)
+        ridge.close()
+        canvas.drawPath(ridge, mountain)
+
+        hillFar.color = blend(0xFFC6E3A4, 0xFF2C3A32, night)
+        hillPaint.color = blend(0xFF8FCB6A, 0xFF243028, night)
+        val period = (width * 1.1f).coerceAtLeast(dp(220f))
+        val hillShift = if (period == 0f) 0f else (travel * 0.07f) % period
+        for (index in -1..2) {
+            val center = index * period - hillShift
+            canvas.drawCircle(center + dp(30f), ground + dp(36f), dp(130f), hillFar)
+            canvas.drawCircle(center + period * 0.55f, ground + dp(48f), dp(96f), hillPaint)
+        }
+
+        cloudPaint.color = if (night > 0.45f) 0x66D5DDEA else 0xF2FFFFFF.toInt()
+        val drift = (travel * 0.015f) % (width + dp(120f))
+        oval.set(width * 0.72f - drift, dp(26f), width * 0.72f - drift + dp(78f), dp(52f))
+        canvas.drawOval(oval, cloudPaint)
+        oval.set(width * 0.28f - drift * 0.6f, dp(48f), width * 0.28f - drift * 0.6f + dp(56f), dp(70f))
+        canvas.drawOval(oval, cloudPaint)
+    }
+
+    private fun drawBush(canvas: Canvas, hurdle: Hurdle, ground: Float) {
+        oval.set(hurdle.x, ground - hurdle.height, hurdle.x + hurdle.width, ground)
+        canvas.drawBitmap(foe, null, oval, PixelArt.paint)
+    }
+
+    private fun drawBird(canvas: Canvas, hurdle: Hurdle, ground: Float) {
+        val bodyTop = ground - hurdle.lift - hurdle.height
+        oval.set(hurdle.x, bodyTop, hurdle.x + hurdle.width, bodyTop + hurdle.height)
+        canvas.save()
+        canvas.scale(-1f, 1f, oval.centerX(), oval.centerY())
+        PixelArt.blit(canvas, bat, (clock * 10f).toInt(), 32, oval, src)
+        canvas.restore()
+    }
+
+    private fun blend(from: Long, to: Long, amount: Float): Int {
+        val start = from.toInt()
+        val end = to.toInt()
+        val inverse = 1f - amount
+        val a = ((start ushr 24) * inverse + (end ushr 24) * amount).toInt()
+        val r = (((start shr 16) and 0xFF) * inverse + ((end shr 16) and 0xFF) * amount).toInt()
+        val g = (((start shr 8) and 0xFF) * inverse + ((end shr 8) and 0xFF) * amount).toInt()
+        val b = ((start and 0xFF) * inverse + (end and 0xFF) * amount).toInt()
+        return (a shl 24) or (r shl 16) or (g shl 8) or b
+    }
+
+    private fun raster(res: Int, size: Int): Bitmap {
+        val drawable = ContextCompat.getDrawable(context, res)
+            ?: return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, size, size)
+        drawable.draw(canvas)
+        return bitmap
+    }
+}
