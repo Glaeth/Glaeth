@@ -54,7 +54,7 @@ class GameAudio(
     }
 
     fun start() {
-        if (released) return
+        if (released || !PlayPrefs.music(app)) return
         requestFocus()
         if (music == null) music = buildPlayer()
         val player = music ?: return
@@ -91,7 +91,7 @@ class GameAudio(
     fun reward() = if (rewardId != 0) shot(rewardId, 0.8f) else point()
 
     private fun shot(id: Int, volume: Float) {
-        if (released || id == 0) return
+        if (released || id == 0 || !PlayPrefs.effects(app)) return
         pool.play(id, volume, volume, 1, 0, 1f)
     }
 

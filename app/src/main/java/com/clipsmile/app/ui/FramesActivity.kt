@@ -17,6 +17,7 @@ class FramesActivity : AppCompatActivity() {
         binding.backButton.setOnClickListener { finish() }
         val den = Den(this)
         val level = if (den.onboarded()) den.level(den.activeId()) else 1
+        val chosen = den.frameIndex()
         val current = FrameLooks.forLevel(level)
         val openCount = FrameLooks.all.count { level >= it.minLevel }
         binding.progressLabel.text = getString(R.string.frames_progress, openCount, FrameLooks.all.size)
@@ -24,7 +25,8 @@ class FramesActivity : AppCompatActivity() {
         for (look in FrameLooks.all) {
             val row = ItemFrameBinding.inflate(layoutInflater, binding.frameList, true)
             val open = level >= look.minLevel
-            val active = look.minLevel == current.minLevel
+            val index = FrameLooks.all.indexOf(look)
+            val active = if (chosen >= 0) index == chosen else look.minLevel == current.minLevel
             row.ring.setFrame(look)
             row.name.setText(look.nameRes)
             row.level.text = getString(R.string.collection_level_chip, look.minLevel)
@@ -42,6 +44,11 @@ class FramesActivity : AppCompatActivity() {
             )
             row.card.elevation = (if (active) 6f else 1.5f) * density
             row.homeBadge.visibility = if (active) View.VISIBLE else View.GONE
+            row.card.setOnClickListener {
+                if (!open) return@setOnClickListener
+                den.setFrame(index)
+                recreate()
+            }
         }
     }
 }

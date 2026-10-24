@@ -313,6 +313,15 @@
 
     <!-- Internet sync (Settings screen) -->
     <string name="settings_title">Ayarlar</string>
+    <string name="settings_audio_title">Ses</string>
+    <string name="settings_music">Arka plan müziği</string>
+    <string name="settings_effects">Ses efektleri</string>
+    <string name="settings_data_title">Kayıt</string>
+    <string name="settings_export">Verileri kaydet</string>
+    <string name="settings_import">Verileri içeri aktar</string>
+    <string name="settings_export_ok">Kayıt dosyası yazıldı</string>
+    <string name="settings_import_ok">Veriler geri yüklendi</string>
+    <string name="settings_import_bad">Bu dosya okunamadı</string>
     <string name="settings_sync_section_title">İnternete Gönderme</string>
     <string name="settings_sync_description">Açıldığında, kopyaladığınız her şey internet üzerinden aşağıdaki adrese anında gönderilir. Bu adresi tarayıcınızda açarak ya da ücretsiz \"ntfy\" uygulamasıyla takip ederek başka bir cihazdan, her yerden ulaşabilirsiniz.</string>
     <string name="settings_sync_channel_label">Kanal adı</string>

@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Bundle
@@ -28,7 +29,8 @@ class SwordGateActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         audio = GameAudio.swords(this)
-        setContentView(SwordGateView(this, audio))
+        val model = intent.getStringExtra(FoodDropActivity.EXTRA_MODEL) ?: "pug"
+        setContentView(SwordGateView(this, model, audio))
     }
 
     override fun onResume() {
@@ -60,15 +62,14 @@ private class Puff(var x: Float, var y: Float, var life: Float = 0.35f)
 
 private class SwordGateView(
     context: Context,
+    model: String,
     private val audio: GameAudio
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
-    private val idle = PixelArt.load(context, "games/swords/warrior_idle.png")
-    private val run = PixelArt.load(context, "games/swords/warrior_run.png")
-    private val attack = PixelArt.load(context, "games/swords/warrior_attack.png")
+    private val pet = PixelArt.petStrip(context, model, "side", "games/swords/warrior_run.png")
     private val foeRun = PixelArt.load(context, "games/swords/foe_run.png")
     private val archerRun = PixelArt.load(context, "games/swords/archer_run.png")
     private val archerShoot = PixelArt.load(context, "games/swords/archer_shoot.png")
@@ -105,6 +106,9 @@ private class SwordGateView(
     private var bannerUntil = 0L
 
     private val sky = Paint().apply { color = 0xFF8EC8E8.toInt() }
+    private val hillFar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF9FCB86.toInt() }
+    private val hillNear = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF6E9A48.toInt() }
+    private val hill = Path()
     private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF173307.toInt()
         isFakeBoldText = true
@@ -144,7 +148,7 @@ private class SwordGateView(
     private fun hop() {
         started = true
         if (lift > dp(4f)) return
-        jumpV = dp(780f)
+        jumpV = dp(980f)
         audio.jump()
     }
 
@@ -199,14 +203,17 @@ private class SwordGateView(
         if (spawnIn <= 0f) {
             spawnIn = (1.25f - score * 0.02f).coerceAtLeast(0.62f)
             val archer = score >= 2 && random.nextFloat() < 0.38f
-            foes.add(Foe(width + cell(), archer))
+            foes.add(Foe(width + cell() * 1.4f, archer))
         }
 
         val pace = dp(78f) + score * dp(1.6f)
         val hero = heroRect()
-        val stop = hero.right + dp(4f)
-        val slash = if (attackLeft in 0.08f..0.24f) slashRect(hero) else null
+        val heroBody = heroBody(hero)
+        val foeSize = cell() * 0.92f
+        val stop = heroBody.right + dp(46f) - foeSize * 0.32f
+        val slash = if (attackLeft in 0.08f..0.24f) slashRect(heroBody) else null
         val dead = ArrayList<Foe>()
+        val armed = clock > 0.55f
         for (foe in foes) {
             if (foe.archer && foe.x <= stop) {
                 foe.shooting = true
@@ -214,14 +221,22 @@ private class SwordGateView(
                 foe.shootIn -= dt
                 if (foe.shootIn <= 0f) {
                     foe.shootIn = 1.35f
-                    val body = foeRect(foe)
-                    bolts.add(Bolt(body.left, body.centerY()))
+                    val chest = foeBody(foe)
+                    bolts.add(Bolt(chest.left, chest.centerY()))
                 }
             } else {
                 foe.x -= pace * dt
             }
-            val body = foeRect(foe)
-            if (slash != null && beside(hero, body)) {
+            val body = foeBody(foe)
+            val beside = body.left < heroBody.right + dp(22f) &&
+                body.left > heroBody.right - dp(10f) &&
+                body.bottom > heroBody.top &&
+                body.top < heroBody.bottom
+            val touching = body.left < heroBody.right - dp(4f) &&
+                body.right > heroBody.left + dp(8f) &&
+                body.bottom > heroBody.top + dp(6f) &&
+                body.top < heroBody.bottom - dp(4f)
+            if (slash != null && beside) {
                 dead.add(foe)
                 puffs.add(Puff(body.centerX(), body.centerY()))
                 val previous = score
@@ -234,7 +249,7 @@ private class SwordGateView(
                     audio.reward()
                 }
                 Achievements.celebrate(context, Achievements.SWORD, score)
-            } else if (body.left < hero.right - dp(6f) && body.right > hero.left) {
+            } else if (armed && !foe.archer && touching) {
                 if (wound()) return
             }
         }
@@ -242,13 +257,13 @@ private class SwordGateView(
 
         val spent = ArrayList<Bolt>()
         for (bolt in bolts) {
-            bolt.x -= dp(220f) * dt
+            bolt.x -= dp(240f) * dt
             val box = boltRect(bolt)
             if (slash != null && RectF.intersects(slash, box)) {
                 spent.add(bolt)
                 puffs.add(Puff(box.centerX(), box.centerY()))
                 audio.point()
-            } else if (RectF.intersects(box, heroInset(hero))) {
+            } else if (armed && RectF.intersects(box, heroBody)) {
                 if (wound()) return
             } else if (bolt.x < -dp(20f)) {
                 spent.add(bolt)
@@ -274,18 +289,29 @@ private class SwordGateView(
     private fun groundTop() = height - cell() * 0.55f
 
     private fun heroRect(): RectF {
-        val size = cell()
-        val rect = planted(width * 0.16f, size, groundTop())
-        rect.offset(0f, -lift)
-        return rect
+        val h = cell() * 1.2f
+        val frameW = pet.width / 6f
+        val w = h * frameW / pet.height.coerceAtLeast(1)
+        val bottom = groundTop() - lift
+        val left = width * 0.16f
+        return RectF(left, bottom - h, left + w, bottom)
     }
 
-    /** Only the strip immediately in front of the sword counts as a hit. */
-    private fun beside(hero: RectF, body: RectF): Boolean {
-        return body.left < hero.right + dp(14f) &&
-            body.right > hero.right - dp(10f) &&
-            body.top < hero.bottom &&
-            body.bottom > hero.top + hero.height() * 0.15f
+    private fun heroBody(hero: RectF): RectF {
+        return RectF(
+            hero.left + hero.width() * 0.22f,
+            hero.top + hero.height() * 0.22f,
+            hero.right - hero.width() * 0.12f,
+            hero.bottom - hero.height() * 0.04f
+        )
+    }
+
+    /** The drawn warrior has wide empty padding. Hits use the opaque middle. */
+    private fun foeBody(foe: Foe): RectF {
+        val full = foeRect(foe)
+        val feet = full.bottom - full.height() * 0.286f
+        val inset = full.width() * 0.32f
+        return RectF(full.left + inset, feet - full.height() * 0.40f, full.right - inset * 0.75f, feet)
     }
 
     private fun wound(): Boolean {
@@ -311,12 +337,12 @@ private class SwordGateView(
         return RectF(width - w - dp(14f), height - h - dp(16f), width - dp(14f), height - dp(16f))
     }
 
-    private fun slashRect(hero: RectF): RectF {
+    private fun slashRect(heroBody: RectF): RectF {
         return RectF(
-            hero.right - dp(8f),
-            hero.top + hero.height() * 0.34f,
-            hero.right + dp(18f),
-            hero.bottom - hero.height() * 0.22f
+            heroBody.right - dp(8f),
+            heroBody.top + heroBody.height() * 0.34f,
+            heroBody.right + dp(18f),
+            heroBody.bottom - heroBody.height() * 0.22f
         )
     }
 
@@ -341,6 +367,7 @@ private class SwordGateView(
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), sky)
         val ground = if (height == 0) 0f else groundTop()
         drawClouds(canvas)
+        drawHills(canvas, ground)
         drawTrees(canvas, ground)
         val castleH = cell() * 1.85f
         val castleW = castleH * castle.width / castle.height.coerceAtLeast(1)
@@ -386,14 +413,8 @@ private class SwordGateView(
             drawSheet(canvas, dust, ((0.35f - puff.life) * 20f).toInt(), 64, dest)
         }
         val hero = heroRect()
-        val sheet = when {
-            attackLeft > 0f -> attack
-            started -> run
-            else -> idle
-        }
-        val frameW = if (sheet === attack) 192 else 192
-        val index = if (attackLeft > 0f) ((0.36f - attackLeft) * 12f).toInt() else stepFrame
-        drawSheet(canvas, sheet, index, frameW, hero)
+        val index = if (attackLeft > 0f) 4 else stepFrame
+        drawSheet(canvas, pet, index, pet.width / 6, hero)
         if (night > 0.04f) {
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply {
                 color = (night * 110f).toInt().shl(24)
@@ -435,6 +456,34 @@ private class SwordGateView(
         canvas.drawBitmap(cloud, null, dest, PixelArt.paint)
         dest.offset(width * 0.7f, dp(36f))
         canvas.drawBitmap(cloud, null, dest, PixelArt.paint)
+    }
+
+    private fun drawHills(canvas: Canvas, ground: Float) {
+        val far = ground - cell() * 0.42f
+        hill.reset()
+        hill.moveTo(-dp(20f), ground)
+        var x = -dp(40f) - (scroll * 0.08f % dp(180f))
+        while (x < width + dp(200f)) {
+            hill.quadTo(x + dp(50f), far - dp(18f), x + dp(100f), far)
+            hill.quadTo(x + dp(150f), far + dp(26f), x + dp(200f), far - dp(6f))
+            x += dp(200f)
+        }
+        hill.lineTo(width + dp(40f), ground + dp(8f))
+        hill.close()
+        canvas.drawPath(hill, hillFar)
+        hill.reset()
+        hill.moveTo(-dp(20f), ground)
+        x = -dp(20f) - (scroll * 0.18f % dp(160f))
+        val near = ground - cell() * 0.16f
+        while (x < width + dp(180f)) {
+            hill.quadTo(x + dp(40f), near - dp(10f), x + dp(80f), near)
+            hill.quadTo(x + dp(120f), near + dp(16f), x + dp(160f), near)
+            x += dp(160f)
+        }
+        hill.lineTo(width + dp(40f), height.toFloat())
+        hill.lineTo(-dp(20f), height.toFloat())
+        hill.close()
+        canvas.drawPath(hill, hillNear)
     }
 
     private fun drawTrees(canvas: Canvas, ground: Float) {

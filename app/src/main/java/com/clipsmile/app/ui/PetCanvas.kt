@@ -117,6 +117,7 @@ class PetCanvas @JvmOverloads constructor(
         private var loadedName: String? = null
         private var parts: List<Part> = emptyList()
         private var clip: DogClip? = null
+        private var morph: PetMorph? = null
         private var clipStart = 0L
         private var eyeX = 0.22f
         private var eyeY = 0.64f
@@ -218,10 +219,14 @@ class PetCanvas @JvmOverloads constructor(
             val lookAge = (now - lookAt) / 1000f
             val look = if (lookAge in 0f..1.3f) lookTarget * (1f - lookAge / 1.3f) else 0f
             val blink = blinkScale(time)
+            val body = parts.firstOrNull()
+            val seconds = (now - clipStart) / 1000f
+            val morphing = morph
             val playing = clip
-            if (playing != null) {
-                val body = parts.firstOrNull()
-                if (body != null) playing.write((now - clipStart) / 1000f, body.pos, body.nor)
+            if (body != null && morphing != null) {
+                morphing.write(seconds, body.pos)
+            } else if (body != null && playing != null) {
+                playing.write(seconds, body.pos, body.nor)
             }
 
             GLES20.glUseProgram(program)
@@ -314,14 +319,13 @@ class PetCanvas @JvmOverloads constructor(
             if (name == loadedName) return
             parts = load(name)
             loadedName = name
-            val cat = name.endsWith("cat.json")
-            val capy = name.endsWith("capy.json")
-            eyeX = if (cat || capy) 0.16f else 0.22f
-            eyeY = if (cat) 0.38f else if (capy) 0.36f else 0.64f
-            eyeZ = if (cat) 1.85f else if (capy) 1.95f else 1.62f
-            lookY = if (cat) 0.30f else if (capy) 0.26f else 0.38f
+            eyeX = 0.18f
+            eyeY = 0.50f
+            eyeZ = 2.05f
+            lookY = 0.30f
             applyCamera()
-            clip = loadClip(name)
+            morph = loadMorph(name)
+            clip = if (morph == null) loadClip(name) else null
             clipStart = nowMillis()
             val coat = parts.firstOrNull { it.texture != null }?.texture
             if (coat != coatFor) {
@@ -331,6 +335,15 @@ class PetCanvas @JvmOverloads constructor(
                 }
                 coatFor = coat
                 if (coat != null) coatTex = uploadTexture(coat)
+            }
+        }
+
+        private fun loadMorph(model: String): PetMorph? {
+            val frames = model.removeSuffix(".json") + ".frames"
+            return try {
+                context.assets.open(frames).use { PetMorph.open(it) }
+            } catch (_: Exception) {
+                null
             }
         }
 

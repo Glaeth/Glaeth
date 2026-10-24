@@ -22,26 +22,84 @@ data class DogCompanion(
     val id: String = "",
     val goldPrice: Int = 0,
     val gemPrice: Int = 0,
-    val starter: Boolean = false
+    val starter: Boolean = false,
+    val label: String = "",
+    val blurb: String = "",
+    val rarity: String = "Yaygın",
+    val portraitAsset: String = ""
 ) {
     fun stableId(): String = id.ifBlank { model }
+
+    fun displayName(context: Context): String =
+        label.ifBlank { context.getString(nameRes) }
+
+    fun displayTitle(context: Context): String =
+        blurb.ifBlank { context.getString(titleRes) }
 }
 
 object DogRoster {
+    private fun pet(
+        minLevel: Int,
+        id: String,
+        label: String,
+        blurb: String,
+        foodName: Int,
+        fed: Int,
+        foodRes: Int,
+        bark: Int,
+        gold: Int,
+        gems: Int,
+        rarity: String
+    ) = DogCompanion(
+        minLevel,
+        R.string.dog_pug_name,
+        R.string.dog_pug_title,
+        foodName,
+        fed,
+        R.drawable.face_pug,
+        foodRes,
+        false,
+        id,
+        bark,
+        id,
+        gold,
+        gems,
+        false,
+        label,
+        blurb,
+        rarity,
+        "faces/$id.png"
+    )
+
     val all = listOf(
-        DogCompanion(1, R.string.dog_pug_name, R.string.dog_pug_title, R.string.food_durum, R.string.fed_durum, R.drawable.face_pug, R.drawable.ic_doner, true, "pug", R.raw.bark_pug, "pug", 480, 0, true),
-        DogCompanion(1, R.string.dog_cat_name, R.string.dog_cat_title, R.string.food_fish, R.string.fed_fish, R.drawable.face_cat, R.drawable.ic_food_fish, true, "cat", R.raw.bark_cat, "cat", 480, 0, true),
-        DogCompanion(1, R.string.dog_capy_name, R.string.dog_capy_title, R.string.food_grass, R.string.fed_grass, R.drawable.face_capy, R.drawable.ic_food_bread, false, "capy", R.raw.bark_capy, "capy", 480, 0, true),
-        DogCompanion(15, R.string.dog_pamuk_name, R.string.dog_pamuk_title, R.string.food_rice, R.string.fed_rice, R.drawable.ic_dog_pamuk, R.drawable.ic_food_rice, false, "pamuk", R.raw.bark_pamuk, "pamuk", 260, 0, false),
-        DogCompanion(30, R.string.dog_boncuk_name, R.string.dog_boncuk_title, R.string.food_cheese, R.string.fed_cheese, R.drawable.ic_dog_boncuk, R.drawable.ic_food_cheese, false, "boncuk", R.raw.bark_boncuk, "boncuk", 380, 0, false),
-        DogCompanion(45, R.string.dog_tombul_name, R.string.dog_tombul_title, R.string.food_simit, R.string.fed_simit, R.drawable.ic_dog_tombul, R.drawable.ic_food_simit, false, "tombul", R.raw.bark_tombul, "tombul", 520, 0, false),
-        DogCompanion(60, R.string.dog_bebek_name, R.string.dog_bebek_title, R.string.food_milk, R.string.fed_milk, R.drawable.ic_dog_bebek, R.drawable.ic_food_milk, false, "bebek", R.raw.bark_bebek, "bebek", 700, 0, false),
-        DogCompanion(90, R.string.dog_kalp_name, R.string.dog_kalp_title, R.string.food_berry, R.string.fed_berry, R.drawable.ic_dog_kalp, R.drawable.ic_food_berry, false, "kalp", R.raw.bark_kalp, "kalp", 920, 0, false),
-        DogCompanion(125, R.string.dog_somun_name, R.string.dog_somun_title, R.string.food_bread, R.string.fed_bread, R.drawable.ic_dog_somun, R.drawable.ic_food_bread, false, "somun", R.raw.bark_somun, "somun", 1200, 0, false),
-        DogCompanion(150, R.string.dog_kahkaha_name, R.string.dog_kahkaha_title, R.string.food_steak, R.string.fed_steak, R.drawable.ic_dog_kahkaha, R.drawable.ic_food_steak, false, "kahkaha", R.raw.bark_kahkaha, "kahkaha", 1500, 0, false),
-        DogCompanion(175, R.string.dog_goz_name, R.string.dog_goz_title, R.string.food_fish, R.string.fed_fish, R.drawable.ic_dog_goz, R.drawable.ic_food_fish, false, "goz", R.raw.bark_goz, "goz", 0, 40, false),
-        DogCompanion(200, R.string.dog_ceket_name, R.string.dog_ceket_title, R.string.food_toast, R.string.fed_toast, R.drawable.ic_dog_ceket, R.drawable.ic_food_toast, false, "ceket", R.raw.bark_ceket, "ceket", 0, 75, false),
-        DogCompanion(250, R.string.dog_kangal_name, R.string.dog_kangal_title, R.string.food_pot, R.string.fed_pot, R.drawable.ic_dog_kangal, R.drawable.ic_food_pot, false, "kangal", R.raw.bark_kangal, "kangal", 0, 130, false)
+        DogCompanion(1, R.string.dog_pug_name, R.string.dog_pug_title, R.string.food_durum, R.string.fed_durum, R.drawable.face_pug, R.drawable.ic_doner, true, "pug", R.raw.bark_pug, "pug", 480, 0, true, rarity = "Nadir", portraitAsset = "faces/pug.png"),
+        DogCompanion(1, R.string.dog_cat_name, R.string.dog_cat_title, R.string.food_fish, R.string.fed_fish, R.drawable.face_cat, R.drawable.ic_food_fish, true, "cat", R.raw.bark_cat, "cat", 480, 0, true, rarity = "Nadir", portraitAsset = "faces/cat.png"),
+        DogCompanion(1, R.string.dog_capy_name, R.string.dog_capy_title, R.string.food_grass, R.string.fed_grass, R.drawable.face_capy, R.drawable.ic_food_bread, false, "capy", R.raw.bark_capy, "capy", 480, 0, true, rarity = "Nadir", portraitAsset = "faces/capy.png"),
+        pet(5, "kipir", "Kıpır", "Oynak kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_cat, 1100, 0, "Sıradışı"),
+        pet(8, "tekir", "Tekir", "Çizgili kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_cat, 1200, 0, "Sıradışı"),
+        pet(12, "baba", "Baba", "Bağıran kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_kahkaha, 2100, 0, "Nadir"),
+        pet(6, "gece", "Gece", "Siyah kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_cat, 860, 0, "Yaygın"),
+        pet(7, "cizgi", "Çizgi", "Karton kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_cat, 980, 0, "Yaygın"),
+        pet(4, "pati", "Pati", "Küçük iskelet kedi", R.string.food_milk, R.string.fed_milk, R.drawable.ic_food_milk, R.raw.bark_bebek, 640, 0, "Yaygın"),
+        pet(9, "adim", "Adım", "Yürüyen kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_cat, 720, 0, "Yaygın"),
+        pet(18, "cadi", "Cadı", "Şapkalı kedi", R.string.food_berry, R.string.fed_berry, R.drawable.ic_food_berry, R.raw.bark_cat, 2500, 0, "Nadir"),
+        pet(14, "sosis", "Sosis", "Uzun köpek", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_somun, 1680, 0, "Sıradışı"),
+        pet(11, "tuylu", "Tüylü", "Tüylü köpek", R.string.food_bread, R.string.fed_bread, R.drawable.ic_food_bread, R.raw.bark_pamuk, 1800, 0, "Sıradışı"),
+        pet(13, "dost", "Dost", "Sokak köpeği", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_kangal, 1900, 0, "Sıradışı"),
+        pet(10, "yavru", "Yavru", "Tombul yavru", R.string.food_milk, R.string.fed_milk, R.drawable.ic_food_milk, R.raw.bark_bebek, 1500, 0, "Sıradışı"),
+        pet(28, "sirtlan", "Sırtlan", "İri sırtlan", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_kangal, 0, 80, "Destansı"),
+        pet(30, "jake", "Jake", "Sarı macera köpeği", R.string.food_simit, R.string.fed_simit, R.drawable.ic_food_simit, R.raw.bark_kahkaha, 0, 95, "Efsane"),
+        pet(22, "guccuk", "Güççük", "Boyun uzatan köpek", R.string.food_bone, R.string.fed_bone, R.drawable.ic_food_steak, R.raw.bark_pug, 0, 60, "Destansı"),
+        pet(16, "maxwell", "Maxwell", "Dikenli kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_cat, 1400, 0, "Sıradışı"),
+        pet(26, "munch", "Munch", "Kısa bacaklı kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_tombul, 0, 70, "Destansı"),
+        pet(20, "oiia", "Oiia", "Dönen kedi", R.string.food_cheese, R.string.fed_cheese, R.drawable.ic_food_cheese, R.raw.bark_cat, 2800, 0, "Nadir"),
+        pet(24, "shiba", "Shiba", "Boyalı shiba", R.string.food_rice, R.string.fed_rice, R.drawable.ic_food_rice, R.raw.bark_pamuk, 3200, 0, "Nadir"),
+        pet(21, "meowth", "Meowth", "Altın kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_cat, 0, 45, "Destansı"),
+        pet(3, "pop", "Pop", "Ağız açan kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_bebek, 420, 0, "Yaygın"),
+        pet(17, "smurf", "Şirin", "Mavi kedi", R.string.food_berry, R.string.fed_berry, R.drawable.ic_food_berry, R.raw.bark_boncuk, 2300, 0, "Nadir"),
+        pet(32, "dissiz", "Dişsiz", "Dişsiz ejder", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_kangal, 0, 110, "Efsane"),
+        pet(5, "ucat", "Ucat", "Tıknaz kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_tombul, 560, 0, "Yaygın"),
+        pet(23, "kurt", "Kurt", "Küp kurt", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_kangal, 0, 55, "Destansı")
     )
 
     fun forLevel(level: Int): DogCompanion =

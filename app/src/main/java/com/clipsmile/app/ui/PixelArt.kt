@@ -15,6 +15,14 @@ object PixelArt {
         isAntiAlias = false
     }
 
+    fun petStrip(context: Context, model: String, kind: String, fallback: String): Bitmap {
+        return try {
+            load(context, "games/pets/${model}_$kind.png")
+        } catch (_: Exception) {
+            load(context, fallback)
+        }
+    }
+
     fun load(context: Context, path: String): Bitmap {
         val options = BitmapFactory.Options().apply { inScaled = false }
         return context.assets.open(path).use { BitmapFactory.decodeStream(it, null, options) }

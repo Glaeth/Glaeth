@@ -155,6 +155,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bark() {
+        if (!PlayPrefs.effects(this)) return
         val id = barkIds[companion.barkRes] ?: return
         // Recorded pitch. Stretching a real bark makes it sound like a scrape.
         soundPool?.play(id, 1f, 1f, 1, 0, 1f)
@@ -243,7 +244,8 @@ class MainActivity : AppCompatActivity() {
         companion = DogRoster.byId(den.activeId())
         val id = companion.stableId()
         playerLevel = den.level(id)
-        val look = FrameLooks.forLevel(playerLevel)
+        val chosen = FrameLooks.all.getOrNull(den.frameIndex())
+        val look = if (chosen != null && playerLevel >= chosen.minLevel) chosen else FrameLooks.forLevel(playerLevel)
         binding.streakText.text = den.streak().toString()
         binding.goldText.text = den.gold().toString()
         binding.gemText.text = den.gems().toString()
@@ -251,8 +253,8 @@ class MainActivity : AppCompatActivity() {
         binding.xpBar.max = den.need(id)
         binding.xpBar.progress = den.into(id)
         binding.xpText.text = getString(R.string.xp_line, den.into(id), den.need(id))
-        binding.petNameText.text = den.displayName(id, getString(companion.nameRes))
-        binding.dogTitle.setText(companion.titleRes)
+        binding.petNameText.text = den.displayName(id, companion.displayName(this))
+        binding.dogTitle.text = companion.displayTitle(this)
         binding.frameText.text = getString(R.string.frames_chip, getString(look.nameRes))
         binding.frameText.setTextColor(look.ring)
         binding.fullnessBar.progress = petProgress.carePercent()
@@ -548,7 +550,7 @@ class MainActivity : AppCompatActivity() {
         if (!den.onboarded()) return
         val id = companion.stableId()
         val input = EditText(this).apply {
-            setText(den.displayName(id, getString(companion.nameRes)))
+            setText(den.displayName(id, companion.displayName(this@MainActivity)))
             setSelection(text.length)
             setSingleLine()
         }
@@ -558,7 +560,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton(R.string.action_cancel, null)
             .setPositiveButton(R.string.action_save_name) { _, _ ->
                 den.setName(id, input.text?.toString().orEmpty())
-                binding.petNameText.text = den.displayName(id, getString(companion.nameRes))
+                binding.petNameText.text = den.displayName(id, companion.displayName(this@MainActivity))
                 com.clipsmile.app.widget.PetWidgetProvider.updateAll(this)
                 ClipboardWatcherService.refresh(this)
             }

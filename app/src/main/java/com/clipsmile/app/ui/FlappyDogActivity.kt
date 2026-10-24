@@ -22,7 +22,8 @@ class FlappyDogActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         audio = GameAudio.flap(this)
-        setContentView(FlappyDogView(this, audio))
+        val model = intent.getStringExtra(FoodDropActivity.EXTRA_MODEL) ?: "pug"
+        setContentView(FlappyDogView(this, model, audio))
     }
 
     override fun onResume() {
@@ -55,6 +56,7 @@ private class FlapTheme(
  */
 private class FlappyDogView(
     context: Context,
+    model: String,
     private val audio: GameAudio
 ) : View(context) {
 
@@ -89,10 +91,11 @@ private class FlappyDogView(
     private var lastMs = 0L
 
     private val sky = Paint().apply { color = 0xFF8EC8E8.toInt() }
+    private val pet = PixelArt.petStrip(context, model, "side", "games/flap/t0/bird0.png")
     private val pipe = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF58CC02.toInt() }
     private val pipeLip = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF3E8C12.toInt() }
-    private val ground = Paint().apply { color = 0xFFE7C98A.toInt() }
-    private val groundEdge = Paint().apply { color = 0xFFC9843A.toInt() }
+    private val ground = Paint().apply { color = 0xFF5C8A3C.toInt() }
+    private val groundEdge = Paint().apply { color = 0xFF3E6A28.toInt() }
     private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF173307.toInt()
         isFakeBoldText = true
@@ -312,11 +315,15 @@ private class FlappyDogView(
         val dogX = if (width == 0) 0f else width * 0.28f
         val size = birdSize()
         dogRect.set(dogX - size / 2f, dogY - size / 2f, dogX + size / 2f, dogY + size / 2f)
-        val birds = theme().birds
-        val bird = if (velocity < -dp(40f)) birds[2] else birds[((SystemClock.uptimeMillis() / 90L) % 3).toInt()]
+        val frameW = pet.width / 6
+        val aspect = frameW / pet.height.coerceAtLeast(1).toFloat()
+        val petH = dp(58f)
+        val petW = petH * aspect
+        val frame = if (velocity < -dp(40f)) 2 else ((SystemClock.uptimeMillis() / 90L) % 6L).toInt()
+        tile.set(dogX - petW / 2f, dogY - petH / 2f, dogX + petW / 2f, dogY + petH / 2f)
         canvas.save()
         canvas.rotate(velocity.coerceIn(-dp(700f), dp(900f)) / dp(40f), dogX, dogY)
-        canvas.drawBitmap(bird, null, dogRect, PixelArt.paint)
+        PixelArt.blit(canvas, pet, frame, frameW, tile, src)
         canvas.restore()
 
         ink.color = 0xFF173307.toInt()

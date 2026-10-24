@@ -1,7 +1,10 @@
 package com.clipsmile.app.ui
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.ImageView
@@ -9,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import com.clipsmile.app.R
 import com.clipsmile.app.data.Den
 
@@ -77,8 +81,8 @@ object HomeSections {
                 owned -> "Sv ${den.level(dog.stableId())}"
                 else -> context.getString(R.string.catalog_locked)
             }
-            column.addView(animalRow(context, dog, label, if (owned && !active) context.getString(R.string.catalog_home) else "") {
-                if (owned) callbacks.select(dog)
+            column.addView(animalRow(context, dog, label, "Aç") {
+                showDetail(context, den, dog, owned, active, callbacks)
             })
         }
     }
@@ -125,27 +129,38 @@ object HomeSections {
             ).apply { bottomMargin = dp(context, 8) }
         }
         row.addView(ImageView(context).apply {
-            setImageResource(dog.portraitRes)
-            layoutParams = LinearLayout.LayoutParams(dp(context, 52), dp(context, 52))
+            setImageBitmap(face(context, dog))
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(0xFFFFF6E4.toInt())
+                setStroke(dp(context, 2), if (dog.gemPrice > 0) 0xFF6A2BD0.toInt() else 0xFFC8960A.toInt())
+            }
+            layoutParams = LinearLayout.LayoutParams(dp(context, 72), dp(context, 72))
         })
-        val text = LinearLayout(context).apply {
+        val copy = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginStart = dp(context, 10)
             }
         }
-        text.addView(TextView(context).apply {
-            setText(dog.nameRes)
+        copy.addView(TextView(context).apply {
+            this.text = dog.displayName(context)
             setTextColor(0xFF3B2918.toInt())
             textSize = 16f
             setTypeface(typeface, Typeface.BOLD)
         })
-        text.addView(TextView(context).apply {
+        copy.addView(TextView(context).apply {
+            this.text = dog.rarity
+            setTextColor(0xFF7A5A32.toInt())
+            textSize = 11f
+        })
+        copy.addView(TextView(context).apply {
             this.text = meta
             setTextColor(if (dog.gemPrice > 0) 0xFF6A2BD0.toInt() else 0xFFA67C00.toInt())
             textSize = 13f
         })
-        row.addView(text)
+        row.addView(copy)
         if (action.isNotEmpty()) {
             row.addView(TextView(context).apply {
                 this.text = action
@@ -225,6 +240,47 @@ object HomeSections {
             LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { bottomMargin = dp(context, 8) }
         setOnClickListener { onClick() }
+    }
+
+    private fun face(context: Context, dog: DogCompanion): Bitmap {
+        val asset = dog.portraitAsset.ifBlank { "faces/${dog.stableId()}.png" }
+        return try {
+            PixelArt.load(context, asset)
+        } catch (_: Exception) {
+            BitmapFactory.decodeResource(context.resources, dog.portraitRes)
+        }
+    }
+
+    private fun showDetail(
+        context: Context,
+        den: Den,
+        dog: DogCompanion,
+        owned: Boolean,
+        active: Boolean,
+        callbacks: Callbacks
+    ) {
+        val name = if (owned) den.displayName(dog.stableId(), dog.displayName(context)) else dog.displayName(context)
+        val level = if (owned) den.level(dog.stableId()) else 0
+        val date = den.adoptedOn(dog.stableId()).ifBlank { "Henüz evlat edinilmedi" }
+        val message = buildString {
+            append(dog.displayTitle(context))
+            append("\nNadirlik: ")
+            append(dog.rarity)
+            append("\nSeviye: ")
+            append(level)
+            append("\nEvlat edinme: ")
+            append(date)
+            append("\n")
+            append(DogRoster.priceLabel(dog))
+        }
+        val dialog = AlertDialog.Builder(context)
+            .setTitle(name)
+            .setMessage(message)
+            .setNegativeButton("Kapat", null)
+        if (owned && !active) {
+            dialog.setPositiveButton("Eve al") { _, _ -> callbacks.select(dog) }
+        }
+        dialog.show()
     }
 
     private fun dp(context: Context, value: Int): Int =

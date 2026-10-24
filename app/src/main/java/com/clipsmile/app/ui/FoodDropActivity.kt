@@ -88,7 +88,9 @@ private class FoodDropView(
         color = 0xFF3B2918.toInt()
         isFakeBoldText = true
     }
-    private val floor = Paint().apply { color = 0xFFE7C98A.toInt() }
+    private val floor = Paint().apply { color = 0xFF5C8A3C.toInt() }
+    private val soil = Paint().apply { color = 0xFF6A4E32.toInt() }
+    private val petSrc = android.graphics.Rect()
     private val life = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFE35D5D.toInt() }
     private val lifeGone = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66A8783C }
     private val card = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF23B2918.toInt() }
@@ -97,7 +99,7 @@ private class FoodDropView(
 
     init {
         keepScreenOn = true
-        setBackgroundColor(0xFFF6E2B8.toInt())
+        setBackgroundColor(0xFF8EC8E8.toInt())
     }
 
     override fun onAttachedToWindow() {
@@ -206,7 +208,8 @@ private class FoodDropView(
         val floorTop = height - dp(36f)
         tile.set(0f, 0f, width.toFloat(), floorTop)
         canvas.drawBitmap(backgrounds[stage], null, tile, PixelArt.paint)
-        canvas.drawRect(0f, floorTop, width.toFloat(), height.toFloat(), floor)
+        canvas.drawRect(0f, floorTop, width.toFloat(), height.toFloat(), soil)
+        canvas.drawRect(0f, floorTop, width.toFloat(), floorTop + dp(10f), floor)
         for (drop in drops) {
             val foodBmp = foods[drop.kind % foods.size]
             val size = dp(40f)
@@ -218,11 +221,14 @@ private class FoodDropView(
             )
         }
         val (dogW, dogH) = dogSize()
-        canvas.drawBitmap(
+        val frame = ((SystemClock.uptimeMillis() / 150L) % petFrames).toInt()
+        PixelArt.blit(
+            canvas,
             dogBmp,
-            null,
+            frame,
+            dogBmp.width / petFrames,
             android.graphics.RectF(dogX - dogW / 2f, floorTop - dogH, dogX + dogW / 2f, floorTop),
-            PixelArt.paint
+            petSrc
         )
 
         ink.color = 0xFF3B2918.toInt()
@@ -255,9 +261,12 @@ private class FoodDropView(
         }
     }
 
+    private val petFrames = if (dogBmp.width > dogBmp.height * 2) 4 else 1
+
     private fun dogSize(): Pair<Float, Float> {
         val dogH = dp(132f)
-        val dogW = dogH * dogBmp.width / dogBmp.height.coerceAtLeast(1)
+        val frameW = dogBmp.width / petFrames
+        val dogW = dogH * frameW / dogBmp.height.coerceAtLeast(1)
         return dogW to dogH
     }
 
@@ -270,9 +279,13 @@ private class FoodDropView(
 
     private fun loadPet(model: String, portraitRes: Int): Bitmap {
         return try {
-            PixelArt.load(context, "games/drop/$model.png")
+            PixelArt.load(context, "games/pets/${model}_front.png")
         } catch (_: Exception) {
-            raster(portraitRes, dp(108f).toInt())
+            try {
+                PixelArt.load(context, "games/drop/$model.png")
+            } catch (_: Exception) {
+                raster(portraitRes, dp(108f).toInt())
+            }
         }
     }
 

@@ -27,7 +27,8 @@ class RunnerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         audio = GameAudio.run(this)
-        setContentView(RunnerView(this, audio))
+        val model = intent.getStringExtra(FoodDropActivity.EXTRA_MODEL) ?: "pug"
+        setContentView(RunnerView(this, model, audio))
     }
 
     override fun onResume() {
@@ -56,14 +57,14 @@ private class Hurdle(
 
 private class RunnerView(
     context: Context,
+    model: String,
     private val audio: GameAudio
 ) : View(context) {
 
     private val density = resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
-    private val hero = PixelArt.load(context, "games/run/hero.png")
-    private val jumpSheet = PixelArt.load(context, "games/run/jump.png")
+    private val hero = PixelArt.petStrip(context, model, "side", "games/run/hero.png")
     private val bat = PixelArt.load(context, "games/run/bat.png")
     private val foe = PixelArt.load(context, "games/run/foe.png")
     private val groundBmp = PixelArt.load(context, "games/run/ground.png")
@@ -92,8 +93,8 @@ private class RunnerView(
     private val skyPaint = Paint()
     private val hillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF8FCB6A.toInt() }
     private val hillFar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFB7D98A.toInt() }
-    private val groundPaint = Paint().apply { color = 0xFFE7C98A.toInt() }
-    private val groundEdge = Paint().apply { color = 0xFFC9843A.toInt() }
+    private val groundPaint = Paint().apply { color = 0xFF6A4E32.toInt() }
+    private val groundEdge = Paint().apply { color = 0xFF3E6A28.toInt() }
     private val tickPaint = Paint().apply { color = 0xFFD7B56A.toInt() }
     private val bushPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF3E8C12.toInt() }
     private val bushDark = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF2F6C0E.toInt() }
@@ -255,7 +256,7 @@ private class RunnerView(
         hurdles.add(hurdle)
     }
 
-    private fun heroSize() = dp(48f)
+    private fun heroSize() = dp(78f)
 
     private fun dogBox(): RectF {
         val size = heroSize()
@@ -333,13 +334,14 @@ private class RunnerView(
         val dx = dogX()
         val size = heroSize()
         val top = feet - size + bob
-        val sheet = if (onGround) hero else jumpSheet
-        val frameW = 32
-        val index = if (onGround) (clock * 12f).toInt() else if (velocity < 0f) 0 else 1
-        oval.set(dx - size / 2f, top, dx + size / 2f, top + size)
+        val frameW = hero.width / 6
+        val aspect = frameW / hero.height.coerceAtLeast(1).toFloat()
+        val drawW = size * aspect
+        val index = if (onGround) (clock * 10f).toInt() else if (velocity < 0f) 1 else 4
+        oval.set(dx - drawW / 2f, top, dx + drawW / 2f, top + size)
         canvas.save()
         canvas.rotate((velocity / dp(48f)).coerceIn(-26f, 22f), dx, top + size / 2f)
-        PixelArt.blit(canvas, sheet, index, frameW, oval, src)
+        PixelArt.blit(canvas, hero, index, frameW, oval, src)
         canvas.restore()
 
         ink.color = if (night > 0.55f) 0xFFF6E2B8.toInt() else 0xFF3B2918.toInt()

@@ -74,7 +74,7 @@ class Den(context: Context) {
     fun begin(id: String, name: String) {
         val cleaned = name.trim().take(24)
         if (cleaned.isEmpty()) return
-        prefs.edit()
+        val editor = prefs.edit()
             .putBoolean(KEY_ON, true)
             .putString(KEY_ACTIVE, id)
             .putString(KEY_OWNED, id)
@@ -82,7 +82,8 @@ class Den(context: Context) {
             .putInt(KEY_GEMS, 0)
             .putString(nameKey(id), cleaned)
             .putInt(xpKey(id), 0)
-            .apply()
+        stampAdopt(editor, id)
+        editor.apply()
     }
 
     /** Login streak plus a little gold. Opening the app does not raise a level. */
@@ -124,9 +125,69 @@ class Den(context: Context) {
         if (prefs.getString(nameKey(id), null).isNullOrBlank()) {
             editor.putString(nameKey(id), fallbackName)
         }
+        stampAdopt(editor, id)
         editor.apply()
         return "ok"
     }
+
+    fun adoptedOn(id: String): String = prefs.getString(adoptKey(id), "").orEmpty()
+
+    fun frameIndex(): Int = prefs.getInt(KEY_FRAME, -1)
+
+    fun setFrame(index: Int) {
+        prefs.edit().putInt(KEY_FRAME, index).apply()
+    }
+
+    fun exportJson(): String {
+        val bag = org.json.JSONObject()
+        for ((key, value) in prefs.all) {
+            when (value) {
+                is Int -> bag.put(key, value)
+                is Boolean -> bag.put(key, value)
+                is String -> bag.put(key, value)
+                is Long -> bag.put(key, value)
+                is Float -> bag.put(key, value.toDouble())
+            }
+        }
+        return org.json.JSONObject()
+            .put("kind", "clipsmile-den")
+            .put("version", 1)
+            .put("den", bag)
+            .toString()
+    }
+
+    fun importJson(text: String): Boolean {
+        return try {
+            val bag = org.json.JSONObject(text).getJSONObject("den")
+            val editor = prefs.edit().clear()
+            val keys = bag.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                when (val value = bag.get(key)) {
+                    is Boolean -> editor.putBoolean(key, value)
+                    is String -> editor.putString(key, value)
+                    is Int -> editor.putInt(key, value)
+                    is Long -> editor.putLong(key, value)
+                    is Double -> {
+                        if (value % 1.0 == 0.0) editor.putInt(key, value.toInt())
+                        else editor.putFloat(key, value.toFloat())
+                    }
+                }
+            }
+            editor.apply()
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun stampAdopt(editor: android.content.SharedPreferences.Editor, id: String) {
+        if (prefs.getString(adoptKey(id), null).isNullOrBlank()) {
+            editor.putString(adoptKey(id), dayKey(0))
+        }
+    }
+
+    private fun adoptKey(id: String) = "adopt_$id"
 
     fun bump(kind: Kind, amount: Int) {
         if (!onboarded() || amount <= 0) return
@@ -251,10 +312,15 @@ class Den(context: Context) {
         private const val KEY_STREAK = "streak"
         private const val KEY_DAY = "last_day"
         private const val KEY_NOTE = "note"
+        private const val KEY_FRAME = "frame"
 
         fun xpNeed(level: Int): Int = 50 + 40 * level
 
-        fun tasksFor(id: String): List<Task> = tasks.filter { it.animalId == id }
+        fun tasksFor(id: String): List<Task> {
+            val own = tasks.filter { it.animalId == id }
+            if (own.isNotEmpty()) return own
+            return tasks.filter { it.animalId == "pug" }.map { it.copy(id = "${id}_${it.id}", animalId = id) }
+        }
 
         private fun t(
             animal: String,

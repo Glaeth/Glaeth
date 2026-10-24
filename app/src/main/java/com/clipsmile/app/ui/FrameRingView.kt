@@ -9,7 +9,7 @@ import android.view.View
 import kotlin.math.min
 
 /**
- * Oval frame. Higher tiers add an inner ring and corner studs.
+ * A picture frame around the pet, with a lip, corner studs and a top gem.
  */
 class FrameRingView @JvmOverloads constructor(
     context: Context,
@@ -19,7 +19,7 @@ class FrameRingView @JvmOverloads constructor(
     private var look: FrameLook = FrameLooks.all.first()
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val oval = RectF()
+    private val box = RectF()
 
     fun setFrame(value: FrameLook) {
         look = value
@@ -28,42 +28,43 @@ class FrameRingView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         val density = resources.displayMetrics.density
-        val widthPx = look.widthDp * density
-        val margin = widthPx / 2f + 8f * density
-        oval.set(margin, margin, width - margin, height - margin)
-        stroke.strokeWidth = widthPx
+        val outer = (10f + look.tier * 2f) * density
+        val margin = 8f * density
+        box.set(margin, margin, width - margin, height - margin)
+        stroke.strokeWidth = outer
         stroke.color = look.ring
-        canvas.drawOval(oval, stroke)
+        canvas.drawRoundRect(box, 28f * density, 28f * density, stroke)
 
+        box.inset(outer * 0.72f, outer * 0.72f)
+        stroke.strokeWidth = (3.2f + look.tier) * density
+        stroke.color = look.inner
+        canvas.drawRoundRect(box, 18f * density, 18f * density, stroke)
+
+        val gem = min(width, height) * (0.018f + look.tier * 0.004f)
+        fill.color = look.inner
+        val corners = arrayOf(
+            margin + outer to margin + outer,
+            width - margin - outer to margin + outer,
+            margin + outer to height - margin - outer,
+            width - margin - outer to height - margin - outer
+        )
+        for ((x, y) in corners) canvas.drawCircle(x, y, gem, fill)
         if (look.tier >= 1) {
-            val gap = widthPx * 0.55f + 3f * density
-            oval.inset(gap, gap)
-            stroke.strokeWidth = (2.2f * density).coerceAtLeast(2f)
-            stroke.color = look.inner
-            canvas.drawOval(oval, stroke)
-            oval.inset(-gap, -gap)
+            fill.color = look.ring
+            canvas.drawCircle(width / 2f, margin + outer * 0.15f, gem * 1.35f, fill)
+            fill.color = look.inner
+            canvas.drawCircle(width / 2f, margin + outer * 0.15f, gem * 0.62f, fill)
         }
-
         if (look.tier >= 2) {
-            fill.color = if (look.tier >= 3) look.inner else look.ring
-            val cx = width / 2f
-            val cy = height / 2f
-            val rx = width / 2f - margin
-            val ry = height / 2f - margin
-            val gem = min(width, height) * 0.035f + density
-            canvas.drawCircle(cx, cy - ry, gem, fill)
-            canvas.drawCircle(cx, cy + ry, gem, fill)
-            canvas.drawCircle(cx - rx, cy, gem, fill)
-            canvas.drawCircle(cx + rx, cy, gem, fill)
-            if (look.tier >= 3) {
-                fill.color = look.ring
-                val midX = rx * 0.72f
-                val midY = ry * 0.72f
-                canvas.drawCircle(cx - midX, cy - midY, gem * 0.7f, fill)
-                canvas.drawCircle(cx + midX, cy - midY, gem * 0.7f, fill)
-                canvas.drawCircle(cx - midX, cy + midY, gem * 0.7f, fill)
-                canvas.drawCircle(cx + midX, cy + midY, gem * 0.7f, fill)
-            }
+            fill.color = look.ring
+            canvas.drawCircle(width / 2f, height - margin - outer * 0.15f, gem, fill)
+        }
+        stroke.strokeWidth = (1.4f + look.tier * 0.3f) * density
+        stroke.color = look.inner
+        val arm = gem * 2.4f
+        for ((x, y) in corners) {
+            canvas.drawLine(x - arm, y, x + arm, y, stroke)
+            canvas.drawLine(x, y - arm, x, y + arm, stroke)
         }
     }
 }
