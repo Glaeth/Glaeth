@@ -50,6 +50,26 @@ class Den(context: Context) {
 
     fun gems(): Int = prefs.getInt(KEY_GEMS, 0)
 
+    /**
+     * @return ok, used or bad
+     */
+    fun redeem(raw: String): String {
+        val code = raw.trim().uppercase()
+        val reward = PROMO[code] ?: return "bad"
+        val used = promoUsed()
+        if (code in used) return "used"
+        prefs.edit()
+            .putInt(KEY_GEMS, gems() + reward)
+            .putString(KEY_PROMO, (used + code).joinToString(","))
+            .apply()
+        return "ok"
+    }
+
+    private fun promoUsed(): Set<String> = (prefs.getString(KEY_PROMO, "") ?: "")
+        .split(',')
+        .filter { it.isNotBlank() }
+        .toSet()
+
     fun streak(): Int = prefs.getInt(KEY_STREAK, 0)
 
     fun visitedToday(): Boolean = prefs.getString(KEY_DAY, null) == dayKey(0)
@@ -309,6 +329,8 @@ class Den(context: Context) {
         private const val KEY_OWNED = "owned"
         private const val KEY_GOLD = "gold"
         private const val KEY_GEMS = "gems"
+        private const val KEY_PROMO = "promos"
+        private val PROMO = mapOf("MEOWTH" to 100)
         private const val KEY_STREAK = "streak"
         private const val KEY_DAY = "last_day"
         private const val KEY_NOTE = "note"

@@ -79,6 +79,16 @@ class SettingsActivity : AppCompatActivity() {
         binding.importDenButton.setOnClickListener {
             importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
         }
+        binding.promoButton.setOnClickListener {
+            val den = com.clipsmile.app.data.Den(this)
+            val message = when (den.redeem(binding.promoEdit.text?.toString().orEmpty())) {
+                "ok" -> R.string.settings_promo_ok
+                "used" -> R.string.settings_promo_used
+                else -> R.string.settings_promo_bad
+            }
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            if (message == R.string.settings_promo_ok) binding.promoEdit.setText("")
+        }
     }
 
     private fun setupSyncSection() {

@@ -67,7 +67,7 @@ private class RunnerView(
     private val hero = PixelArt.petStrip(context, model, "side", "games/run/hero.png")
     private val bat = PixelArt.load(context, "games/run/bat.png")
     private val foe = PixelArt.load(context, "games/run/foe.png")
-    private val groundBmp = PixelArt.load(context, "games/run/ground.png")
+    private val tree = PixelArt.load(context, "games/swords/tree.png")
     private val props = (0..5).map { PixelArt.load(context, "games/run/props/p$it.png") }
     private val src = android.graphics.Rect()
     private val hurdles = ArrayList<Hurdle>()
@@ -312,15 +312,9 @@ private class RunnerView(
         }
         drawProps(canvas, ground)
 
-        val stripH = dp(22f)
-        val stripW = stripH * (groundBmp.width / groundBmp.height.toFloat())
-        var gx = -(travel % stripW)
-        while (gx < width) {
-            oval.set(gx, ground, gx + stripW, ground + stripH)
-            canvas.drawBitmap(groundBmp, null, oval, PixelArt.paint)
-            gx += stripW
-        }
-        canvas.drawRect(0f, ground + stripH, width.toFloat(), height.toFloat(), groundPaint)
+        drawPark(canvas, ground)
+        canvas.drawRect(0f, ground, width.toFloat(), height.toFloat(), groundPaint)
+        canvas.drawRect(0f, ground, width.toFloat(), ground + dp(10f), groundEdge)
 
         for (hurdle in hurdles) {
             if (hurdle.kind == 0) drawBush(canvas, hurdle, ground) else drawBird(canvas, hurdle, ground)
@@ -332,15 +326,22 @@ private class RunnerView(
             else -> sin(clock * 3f) * dp(2f)
         }
         val dx = dogX()
-        val size = heroSize()
-        val top = feet - size + bob
         val frameW = hero.width / 6
         val aspect = frameW / hero.height.coerceAtLeast(1).toFloat()
-        val drawW = size * aspect
+        val maxH = dp(58f)
+        val maxW = dp(72f)
+        var drawH = maxH
+        var drawW = drawH * aspect
+        if (drawW > maxW) {
+            drawW = maxW
+            drawH = drawW / aspect.coerceAtLeast(0.25f)
+        }
+        if (drawH > drawW * 1.35f) drawH = drawW * 1.35f
+        val top = feet - drawH + bob
         val index = if (onGround) (clock * 10f).toInt() else if (velocity < 0f) 1 else 4
-        oval.set(dx - drawW / 2f, top, dx + drawW / 2f, top + size)
+        oval.set(dx - drawW / 2f, top, dx + drawW / 2f, top + drawH)
         canvas.save()
-        canvas.rotate((velocity / dp(48f)).coerceIn(-26f, 22f), dx, top + size / 2f)
+        canvas.rotate((velocity / dp(48f)).coerceIn(-26f, 22f), dx, top + drawH / 2f)
         PixelArt.blit(canvas, hero, index, frameW, oval, src)
         canvas.restore()
 
@@ -368,6 +369,25 @@ private class RunnerView(
             canvas.drawText("En iyi  $best", width / 2f, topCard + dp(74f), ink)
             canvas.drawText("Dokun, yeniden oyna", width / 2f, topCard + dp(102f), ink)
         }
+    }
+
+    private fun drawPark(canvas: Canvas, ground: Float) {
+        val h = dp(92f)
+        val frameW = 192
+        val w = h * frameW / tree.height.coerceAtLeast(1)
+        val gap = w * 1.7f
+        val shift = (travel * 0.22f) % gap
+        var x = -shift
+        var index = 0
+        while (x < width + w) {
+            oval.set(x, ground - h * 0.92f, x + w, ground + h * 0.02f)
+            PixelArt.blit(canvas, tree, index, frameW, oval, src)
+            x += gap
+            index += 1
+        }
+        val path = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFC4A36A.toInt() }
+        val y = ground + dp(28f)
+        canvas.drawRoundRect(dp(18f), y, width - dp(18f), height - dp(12f), dp(18f), dp(18f), path)
     }
 
     private fun drawProps(canvas: Canvas, ground: Float) {

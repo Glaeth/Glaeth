@@ -289,9 +289,17 @@ private class SwordGateView(
     private fun groundTop() = height - cell() * 0.55f
 
     private fun heroRect(): RectF {
-        val h = cell() * 1.2f
         val frameW = pet.width / 6f
-        val w = h * frameW / pet.height.coerceAtLeast(1)
+        val aspect = frameW / pet.height.coerceAtLeast(1)
+        val maxH = cell() * 0.92f
+        val maxW = cell() * 1.05f
+        var h = maxH
+        var w = h * aspect
+        if (w > maxW) {
+            w = maxW
+            h = w / aspect.coerceAtLeast(0.25f)
+        }
+        if (h > w * 1.35f) h = w * 1.35f
         val bottom = groundTop() - lift
         val left = width * 0.16f
         return RectF(left, bottom - h, left + w, bottom)

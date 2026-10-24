@@ -317,8 +317,13 @@ private class FlappyDogView(
         dogRect.set(dogX - size / 2f, dogY - size / 2f, dogX + size / 2f, dogY + size / 2f)
         val frameW = pet.width / 6
         val aspect = frameW / pet.height.coerceAtLeast(1).toFloat()
-        val petH = dp(58f)
-        val petW = petH * aspect
+        var petH = dp(50f)
+        var petW = petH * aspect
+        if (petW > dp(68f)) {
+            petW = dp(68f)
+            petH = petW / aspect.coerceAtLeast(0.25f)
+        }
+        if (petH > petW * 1.35f) petH = petW * 1.35f
         val frame = if (velocity < -dp(40f)) 2 else ((SystemClock.uptimeMillis() / 90L) % 6L).toInt()
         tile.set(dogX - petW / 2f, dogY - petH / 2f, dogX + petW / 2f, dogY + petH / 2f)
         canvas.save()
