@@ -15,6 +15,12 @@ object PixelArt {
         isAntiAlias = false
     }
 
+    /** The pet strips are shaded meshes, so they stay smooth when scaled. */
+    val smooth = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        isFilterBitmap = true
+        isDither = true
+    }
+
     fun petStrip(context: Context, model: String, kind: String, fallback: String): Bitmap {
         return try {
             load(context, "games/pets/${model}_$kind.png")
@@ -34,6 +40,13 @@ object PixelArt {
         val index = Math.floorMod(frame, count)
         src.set(index * frameWidth, 0, index * frameWidth + frameWidth, sheet.height)
         canvas.drawBitmap(sheet, src, dest, paint)
+    }
+
+    fun blitSmooth(canvas: Canvas, sheet: Bitmap, frame: Int, frameWidth: Int, dest: RectF, src: Rect) {
+        val count = (sheet.width / frameWidth).coerceAtLeast(1)
+        val index = Math.floorMod(frame, count)
+        src.set(index * frameWidth, 0, index * frameWidth + frameWidth, sheet.height)
+        canvas.drawBitmap(sheet, src, dest, smooth)
     }
 
     /** Dark pill so the score stays readable on pixel art. */

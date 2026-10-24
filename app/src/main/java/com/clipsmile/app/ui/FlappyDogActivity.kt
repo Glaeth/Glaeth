@@ -328,7 +328,7 @@ private class FlappyDogView(
         tile.set(dogX - petW / 2f, dogY - petH / 2f, dogX + petW / 2f, dogY + petH / 2f)
         canvas.save()
         canvas.rotate(velocity.coerceIn(-dp(700f), dp(900f)) / dp(40f), dogX, dogY)
-        PixelArt.blit(canvas, pet, frame, frameW, tile, src)
+        PixelArt.blitSmooth(canvas, pet, frame, frameW, tile, src)
         canvas.restore()
 
         ink.color = 0xFF173307.toInt()

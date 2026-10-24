@@ -80,7 +80,6 @@ private class SwordGateView(
     private val cloud = PixelArt.load(context, "games/swords/cloud.png")
     private val dust = PixelArt.load(context, "games/swords/dust.png")
     private val grounds = (0..4).map { PixelArt.load(context, "games/swords/maps/ground$it.png") }
-    private val jumpBtn = PixelArt.load(context, "games/ui/jump.png")
 
     private val foes = ArrayList<Foe>()
     private val bolts = ArrayList<Bolt>()
@@ -114,6 +113,24 @@ private class SwordGateView(
         isFakeBoldText = true
     }
     private val card = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF2173307.toInt() }
+    private val jumpFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF3D7A1.toInt() }
+    private val jumpEdge = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF3B2918.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = dp(2.5f)
+    }
+    private val jumpInk = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF173307.toInt()
+        textAlign = Paint.Align.CENTER
+        isFakeBoldText = true
+    }
+    private val slashPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xE6FFF6D8.toInt()
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeWidth = dp(6f)
+    }
+    private val jumpArrow = Path()
     private val frame = Runnable { tick() }
 
     init {
@@ -228,7 +245,10 @@ private class SwordGateView(
                 foe.x -= pace * dt
             }
             val body = foeBody(foe)
-            val beside = body.left < heroBody.right + dp(22f) &&
+            // Archers hold still out of sword reach. The swing reaches that spot;
+            // warriors still have to walk into the short blade.
+            val reach = if (foe.archer) dp(72f) else dp(22f)
+            val beside = body.left < heroBody.right + reach &&
                 body.left > heroBody.right - dp(10f) &&
                 body.bottom > heroBody.top &&
                 body.top < heroBody.bottom
@@ -291,8 +311,8 @@ private class SwordGateView(
     private fun heroRect(): RectF {
         val frameW = pet.width / 6f
         val aspect = frameW / pet.height.coerceAtLeast(1)
-        val maxH = cell() * 0.92f
-        val maxW = cell() * 1.05f
+        val maxH = cell() * 0.50f
+        val maxW = cell() * 0.56f
         var h = maxH
         var w = h * aspect
         if (w > maxW) {
@@ -422,7 +442,17 @@ private class SwordGateView(
         }
         val hero = heroRect()
         val index = if (attackLeft > 0f) 4 else stepFrame
-        drawSheet(canvas, pet, index, pet.width / 6, hero)
+        PixelArt.blitSmooth(canvas, pet, index, pet.width / 6, hero, src)
+        if (attackLeft in 0.05f..0.28f) {
+            val reach = dp(72f)
+            dest.set(
+                hero.right - dp(4f),
+                hero.centerY() - reach * 0.42f,
+                hero.right + reach,
+                hero.centerY() + reach * 0.42f
+            )
+            canvas.drawArc(dest, -32f, 64f, false, slashPaint)
+        }
         if (night > 0.04f) {
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply {
                 color = (night * 110f).toInt().shl(24)
@@ -438,8 +468,7 @@ private class SwordGateView(
         if (banner.isNotEmpty() && SystemClock.uptimeMillis() < bannerUntil) {
             PixelArt.drawBanner(canvas, banner, width / 2f, dp(60f), ::dp)
         }
-        val button = jumpRect()
-        canvas.drawBitmap(jumpBtn, null, button, PixelArt.paint)
+        drawJump(canvas, jumpRect())
         if (!started && !over) {
             ink.textSize = dp(16f)
             canvas.drawText(context.getString(R.string.game_sword_hint), width / 2f, height * 0.58f, ink)
@@ -454,6 +483,21 @@ private class SwordGateView(
             canvas.drawText("En iyi  $best", width / 2f, top + dp(74f), ink)
             canvas.drawText("Dokun, yeniden oyna", width / 2f, top + dp(102f), ink)
         }
+    }
+
+    private fun drawJump(canvas: Canvas, button: RectF) {
+        canvas.drawRoundRect(button, dp(12f), dp(12f), jumpFill)
+        canvas.drawRoundRect(button, dp(12f), dp(12f), jumpEdge)
+        val cx = button.centerX()
+        val tip = button.top + dp(10f)
+        jumpArrow.reset()
+        jumpArrow.moveTo(cx, tip)
+        jumpArrow.lineTo(cx + dp(9f), tip + dp(11f))
+        jumpArrow.lineTo(cx - dp(9f), tip + dp(11f))
+        jumpArrow.close()
+        canvas.drawPath(jumpArrow, jumpInk)
+        jumpInk.textSize = dp(13f)
+        canvas.drawText("Zıpla", cx, button.bottom - dp(6f), jumpInk)
     }
 
     private fun drawClouds(canvas: Canvas) {

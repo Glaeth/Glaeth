@@ -20,7 +20,7 @@ import kotlin.math.abs
 import kotlin.math.sin
 
 /**
- * A lit toy dog. The first dog plays its sit, roll and paw clip in a loop.
+ * A lit toy dog. The first dog loops the seated part of its clip.
  * The others blink, wag and hop. A tap turns the dog toward the finger.
  */
 class PetCanvas @JvmOverloads constructor(
@@ -226,7 +226,8 @@ class PetCanvas @JvmOverloads constructor(
             if (body != null && morphing != null) {
                 morphing.write(seconds, body.pos)
             } else if (body != null && playing != null) {
-                playing.write(seconds, body.pos, body.nor)
+                // After about 1.5s the clip rolls the pug onto its side. Stay in the sit.
+                playing.write(seconds % 1.5f, body.pos, body.nor)
             }
 
             GLES20.glUseProgram(program)
@@ -262,7 +263,7 @@ class PetCanvas @JvmOverloads constructor(
             val name = part.name
             when {
                 name == "body" && clip != null -> {
-                    // The clip already sits, rolls and offers a paw. A tap still turns the whole dog.
+                    // The seated clip is already posed. A tap still turns the whole dog.
                     ty += happy * 0.045f
                     ry += look * 16f
                     rz += sin(time * 26f) * shake * 8f

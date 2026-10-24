@@ -67,8 +67,6 @@ private class RunnerView(
     private val hero = PixelArt.petStrip(context, model, "side", "games/run/hero.png")
     private val bat = PixelArt.load(context, "games/run/bat.png")
     private val foe = PixelArt.load(context, "games/run/foe.png")
-    private val tree = PixelArt.load(context, "games/swords/tree.png")
-    private val props = (0..5).map { PixelArt.load(context, "games/run/props/p$it.png") }
     private val src = android.graphics.Rect()
     private val hurdles = ArrayList<Hurdle>()
     private val random = Random(SystemClock.uptimeMillis())
@@ -106,6 +104,9 @@ private class RunnerView(
         strokeCap = Paint.Cap.ROUND
     }
     private val sunPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFD56A.toInt() }
+    private val mountain = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cloudPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF2FFFFFF.toInt() }
+    private val ridge = android.graphics.Path()
     private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF3B2918.toInt()
         isFakeBoldText = true
@@ -301,18 +302,7 @@ private class RunnerView(
         canvas.drawCircle(width * 0.82f, dp(64f), dp(22f), sunPaint)
 
         val ground = if (height == 0) 0f else groundTop()
-        val period = (width * 0.85f).coerceAtLeast(dp(180f))
-        val shift = if (period == 0f) 0f else (travel * 0.18f) % period
-        hillFar.color = blend(0xFFC6E3A4, 0xFF2C3A32, night)
-        hillPaint.color = blend(0xFF8FCB6A, 0xFF243028, night)
-        for (index in -1..3) {
-            val center = index * period - shift
-            canvas.drawCircle(center + dp(20f), ground + dp(16f), dp(100f), hillFar)
-            canvas.drawCircle(center + period * 0.48f, ground + dp(24f), dp(78f), hillPaint)
-        }
-        drawProps(canvas, ground)
-
-        drawPark(canvas, ground)
+        drawBackdrop(canvas, ground, night)
         canvas.drawRect(0f, ground, width.toFloat(), height.toFloat(), groundPaint)
         canvas.drawRect(0f, ground, width.toFloat(), ground + dp(10f), groundEdge)
 
@@ -342,7 +332,7 @@ private class RunnerView(
         oval.set(dx - drawW / 2f, top, dx + drawW / 2f, top + drawH)
         canvas.save()
         canvas.rotate((velocity / dp(48f)).coerceIn(-26f, 22f), dx, top + drawH / 2f)
-        PixelArt.blit(canvas, hero, index, frameW, oval, src)
+        PixelArt.blitSmooth(canvas, hero, index, frameW, oval, src)
         canvas.restore()
 
         ink.color = if (night > 0.55f) 0xFFF6E2B8.toInt() else 0xFF3B2918.toInt()
@@ -371,39 +361,45 @@ private class RunnerView(
         }
     }
 
-    private fun drawPark(canvas: Canvas, ground: Float) {
-        val h = dp(92f)
-        val frameW = 192
-        val w = h * frameW / tree.height.coerceAtLeast(1)
-        val gap = w * 1.7f
-        val shift = (travel * 0.22f) % gap
-        var x = -shift
-        var index = 0
-        while (x < width + w) {
-            oval.set(x, ground - h * 0.92f, x + w, ground + h * 0.02f)
-            PixelArt.blit(canvas, tree, index, frameW, oval, src)
-            x += gap
-            index += 1
+    /**
+     * Distant skyline only. Rocks and trees used to scroll through the lane
+     * and sat on top of the jumps, so the run is open sky and far hills.
+     */
+    private fun drawBackdrop(canvas: Canvas, ground: Float, night: Float) {
+        mountain.color = blend(0xFF9BB8CC, 0xFF2A3344, night)
+        val span = dp(260f).coerceAtLeast(1f)
+        val shift = (travel * 0.04f) % span
+        ridge.reset()
+        ridge.moveTo(-span, ground - dp(8f))
+        var x = -span - shift
+        while (x < width + span) {
+            ridge.lineTo(x + span * 0.28f, ground - dp(86f))
+            ridge.lineTo(x + span * 0.55f, ground - dp(48f))
+            ridge.lineTo(x + span * 0.82f, ground - dp(74f))
+            ridge.lineTo(x + span, ground - dp(12f))
+            x += span
         }
-        val path = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFC4A36A.toInt() }
-        val y = ground + dp(28f)
-        canvas.drawRoundRect(dp(18f), y, width - dp(18f), height - dp(12f), dp(18f), dp(18f), path)
-    }
+        ridge.lineTo(width + dp(8f), ground)
+        ridge.lineTo(-span, ground)
+        ridge.close()
+        canvas.drawPath(ridge, mountain)
 
-    private fun drawProps(canvas: Canvas, ground: Float) {
-        val gap = dp(180f)
-        val shift = (travel * 0.35f) % gap
-        var x = -shift
-        var index = 0
-        while (x < width + dp(80f)) {
-            val prop = props[index % props.size]
-            val h = dp(if (index % 3 == 0) 78f else 54f)
-            val w = h * prop.width / prop.height.coerceAtLeast(1)
-            oval.set(x, ground - h, x + w, ground)
-            canvas.drawBitmap(prop, null, oval, PixelArt.paint)
-            x += gap
-            index += 1
+        hillFar.color = blend(0xFFC6E3A4, 0xFF2C3A32, night)
+        hillPaint.color = blend(0xFF8FCB6A, 0xFF243028, night)
+        val period = (width * 1.1f).coerceAtLeast(dp(220f))
+        val hillShift = if (period == 0f) 0f else (travel * 0.07f) % period
+        for (index in -1..2) {
+            val center = index * period - hillShift
+            canvas.drawCircle(center + dp(30f), ground + dp(36f), dp(130f), hillFar)
+            canvas.drawCircle(center + period * 0.55f, ground + dp(48f), dp(96f), hillPaint)
         }
+
+        cloudPaint.color = if (night > 0.45f) 0x66D5DDEA else 0xF2FFFFFF.toInt()
+        val drift = (travel * 0.015f) % (width + dp(120f))
+        oval.set(width * 0.72f - drift, dp(26f), width * 0.72f - drift + dp(78f), dp(52f))
+        canvas.drawOval(oval, cloudPaint)
+        oval.set(width * 0.28f - drift * 0.6f, dp(48f), width * 0.28f - drift * 0.6f + dp(56f), dp(70f))
+        canvas.drawOval(oval, cloudPaint)
     }
 
     private fun drawBush(canvas: Canvas, hurdle: Hurdle, ground: Float) {

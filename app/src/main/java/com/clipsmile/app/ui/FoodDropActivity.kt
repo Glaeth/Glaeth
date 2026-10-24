@@ -4,8 +4,10 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Shader
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.MotionEvent
@@ -68,7 +70,6 @@ private class FoodDropView(
 
     private val dogBmp = loadPet(model, portraitRes)
     private val foods = loadFoods(foodRes)
-    private val backgrounds = (0..4).map { PixelArt.load(context, "games/flap/t$it/bg.png") }
     private val tile = RectF()
     private val drops = ArrayList<Drop>()
     private val random = Random(SystemClock.uptimeMillis())
@@ -88,8 +89,12 @@ private class FoodDropView(
         color = 0xFF3B2918.toInt()
         isFakeBoldText = true
     }
-    private val floor = Paint().apply { color = 0xFF5C8A3C.toInt() }
+    private val floor = Paint().apply { color = 0xFF4E8A45.toInt() }
     private val soil = Paint().apply { color = 0xFF6A4E32.toInt() }
+    private val skyPaint = Paint()
+    private val hillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF7EBF6A.toInt() }
+    private val hillFar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFB7D7A4.toInt() }
+    private val cloudPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF4FFFFFF.toInt() }
     private val petSrc = android.graphics.Rect()
     private val life = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFE35D5D.toInt() }
     private val lifeGone = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66A8783C }
@@ -204,10 +209,8 @@ private class FoodDropView(
     }
 
     override fun onDraw(canvas: Canvas) {
-        val stage = (score / 150) % backgrounds.size
         val floorTop = height - dp(36f)
-        tile.set(0f, 0f, width.toFloat(), floorTop)
-        canvas.drawBitmap(backgrounds[stage], null, tile, PixelArt.paint)
+        drawMeadow(canvas, floorTop)
         canvas.drawRect(0f, floorTop, width.toFloat(), height.toFloat(), soil)
         canvas.drawRect(0f, floorTop, width.toFloat(), floorTop + dp(10f), floor)
         for (drop in drops) {
@@ -222,7 +225,7 @@ private class FoodDropView(
         }
         val (dogW, dogH) = dogSize()
         val frame = ((SystemClock.uptimeMillis() / 150L) % petFrames).toInt()
-        PixelArt.blit(
+        PixelArt.blitSmooth(
             canvas,
             dogBmp,
             frame,
@@ -259,6 +262,21 @@ private class FoodDropView(
             canvas.drawText("En iyi  $best", width / 2f, top + dp(74f), ink)
             canvas.drawText("Dokun, yeniden oyna", width / 2f, top + dp(102f), ink)
         }
+    }
+
+    private fun drawMeadow(canvas: Canvas, floorTop: Float) {
+        skyPaint.shader = LinearGradient(
+            0f, 0f, 0f, floorTop,
+            0xFF8ED0F2.toInt(),
+            0xFFE4F4D8.toInt(),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, width.toFloat(), floorTop, skyPaint)
+        canvas.drawOval(RectF(width * 0.12f, dp(36f), width * 0.12f + dp(86f), dp(68f)), cloudPaint)
+        canvas.drawOval(RectF(width * 0.62f, dp(22f), width * 0.62f + dp(70f), dp(48f)), cloudPaint)
+        canvas.drawCircle(width * 0.18f, floorTop + dp(8f), dp(86f), hillFar)
+        canvas.drawCircle(width * 0.78f, floorTop + dp(16f), dp(110f), hillPaint)
+        canvas.drawCircle(width * 0.48f, floorTop + dp(24f), dp(64f), hillFar)
     }
 
     private val petFrames = if (dogBmp.width > dogBmp.height * 2) 4 else 1
