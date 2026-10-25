@@ -682,19 +682,23 @@ class PetCanvas @JvmOverloads constructor(
             "kipir" to -90f,
             "tekir" to -90f,
             "adim" to -90f,
-            "tuylu" to -90f,
             "yavru" to -90f,
-            "sirtlan" to -90f,
-            "munch" to -90f,
+            "sirtlan" to 45f,
             "dissiz" to -90f,
             "kurt" to -90f,
             "sosis" to 90f,
             "cizgi" to -90f,
             "shiba" to -80f,
-            "smurf" to -22f
+            "smurf" to -22f,
+            "oiia" to -40f,
+            "meowth" to -40f,
+            "baba" to -25f,
+            "gece" to -30f,
+            "pop" to -50f,
+            "tuylu" to -90f
         )
 
-        /** Degrees around X after the yaw. Lifts a face that the sculpt points at the floor. */
+        /** Degrees around X after the yaw. Lifts a face the sculpt points at the floor. */
         private val FACE_PITCH = mapOf(
             "kipir" to -22f,
             "tekir" to -22f
@@ -783,8 +787,8 @@ class PetCanvas @JvmOverloads constructor(
                     rim = pow(1.0 - max(dot(N, V), 0.0), 2.2) * 0.04;
                 } else {
                     albedo = uColor * vCol;
-                    wrap = diff * 0.34 + 0.58;
-                    rim = pow(1.0 - max(dot(N, V), 0.0), 2.0) * 0.30;
+                    wrap = diff * 0.28 + 0.78;
+                    rim = pow(1.0 - max(dot(N, V), 0.0), 2.0) * 0.42;
                 }
                 float hemi = N.y * 0.10 + 0.92;
                 float spec = pow(max(dot(N, normalize(L + V)), 0.0), 22.0) * uSpec;
