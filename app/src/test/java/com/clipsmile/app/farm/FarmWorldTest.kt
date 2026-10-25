@@ -182,6 +182,43 @@ class FarmWorldTest {
     }
 
     @Test
+    fun oldCottageSlabShrinksButSoilSurvives() {
+        val farm = (0 until FarmWorld.H).joinToString(";") { y ->
+            (0 until FarmWorld.W).joinToString(",") { x ->
+                when {
+                    y == 8 && x == 4 -> "1"
+                    y <= 4 && x in 3..8 -> "4"
+                    x == 6 && y >= 5 -> "3"
+                    x == 5 && y == 5 -> "5"
+                    else -> "0"
+                }
+            }
+        }
+        val empty = (0 until FarmWorld.H).joinToString(";") {
+            (0 until FarmWorld.W).joinToString(",") { "0" }
+        }
+        val house = (0 until FarmWorld.HH).joinToString(";") {
+            (0 until FarmWorld.HW).joinToString(",") { "0" }
+        }
+        val raw = listOf(
+            "v1", 1, 438, 90, 160, 4, 2, 0, "HOE", "turnip",
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0,
+            "turnip_seed:8", farm, empty, empty, house, "chair"
+        ).joinToString("|")
+        val world = FarmWorld(raw)
+        assertEquals(FarmWorld.BLOCK, world.farm[3][5])
+        assertEquals(FarmWorld.GRASS, world.farm[3][3])
+        assertEquals(FarmWorld.GRASS, world.farm[3][8])
+        assertEquals(FarmWorld.GRASS, world.farm[0][6])
+        assertEquals(FarmWorld.DOOR, world.farm[5][FarmWorld.DOOR_X])
+        assertEquals(FarmWorld.PATH, world.farm[6][6])
+        assertEquals(FarmWorld.PATH, world.farm[6][5])
+        assertEquals(FarmWorld.TILLED, world.farm[8][4])
+        assertEquals(6, world.px)
+        assertEquals(7, world.py)
+    }
+
+    @Test
     fun brokenSaveStartsAFreshFarm() {
         val world = FarmWorld("nope")
         assertEquals(1, world.day)

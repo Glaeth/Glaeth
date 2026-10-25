@@ -70,7 +70,7 @@ private class FoodDropView(
 
     private val dogBmp = loadPet(model, portraitRes)
     private val foods = loadFoods(foodRes)
-    private val plains = PixelArt.load(context, "farm/tiles.png")
+    private val plains = PixelArt.load(context, "farm/ground.png")
     private val pumpkins = PixelArt.load(context, "farm/pumpkin.png")
     private val tile = RectF()
     private val tileSrc = android.graphics.Rect()
@@ -242,7 +242,7 @@ private class FoodDropView(
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(38f), ink)
-        PixelArt.drawScore(canvas, score, width / 2f, dp(6f), ::dp)
+        PixelArt.drawScore(canvas, context, score, width / 2f, dp(6f), ::dp)
         if (banner.isNotEmpty() && SystemClock.uptimeMillis() < bannerUntil) {
             PixelArt.drawBanner(canvas, banner, width / 2f, dp(58f), ::dp)
         }
@@ -296,9 +296,10 @@ private class FoodDropView(
         canvas.drawCircle(width * 0.78f, floorTop - dp(18f), dp(90f), hillPaint)
         val cell = dp(28f)
         val source = when (scene) {
-            2, 5 -> 448 to 144
-            4 -> 0 to 96
-            else -> 0 to 64
+            2 -> 112 to 0
+            4 -> 96 to 80
+            5 -> 144 to 48
+            else -> 96 to 48
         }
         var y = floorTop - cell * 3f
         while (y < floorTop) {

@@ -335,7 +335,7 @@ private class FlappyDogView(
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
-        PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
+        PixelArt.drawScore(canvas, context, score, width / 2f, dp(8f), ::dp)
         if (banner.isNotEmpty() && SystemClock.uptimeMillis() < bannerUntil) {
             PixelArt.drawBanner(canvas, banner, width / 2f, dp(60f), ::dp)
         }

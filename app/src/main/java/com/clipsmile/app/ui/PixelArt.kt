@@ -49,33 +49,28 @@ object PixelArt {
         canvas.drawBitmap(sheet, src, dest, smooth)
     }
 
-    /** Dark pill so the score stays readable on pixel art. */
-    fun drawScore(canvas: Canvas, score: Int, centerX: Float, top: Float, dp: (Float) -> Float) {
-        val number = score.toString()
-        val caption = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFE7A3.toInt()
-            textAlign = Paint.Align.CENTER
-            textSize = dp(11f)
-            isFakeBoldText = true
-        }
+    private var scoreBar: Bitmap? = null
+
+    private fun scoreBar(context: Context): Bitmap {
+        val cached = scoreBar
+        if (cached != null && !cached.isRecycled) return cached
+        return load(context, "hud/bar_bg.png").also { scoreBar = it }
+    }
+
+    /** Ornate status bar from the pixel HUD pack. The number sits in the dark trough. */
+    fun drawScore(canvas: Canvas, context: Context, score: Int, centerX: Float, top: Float, dp: (Float) -> Float) {
+        val bar = scoreBar(context)
+        val barW = dp(214f)
+        val barH = barW * bar.height / bar.width.toFloat()
+        val left = centerX - barW / 2f
+        canvas.drawBitmap(bar, null, RectF(left, top, left + barW, top + barH), paint)
         val value = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFF8E8.toInt()
+            color = 0xFFFFF1C9.toInt()
             textAlign = Paint.Align.CENTER
-            textSize = dp(26f)
+            textSize = dp(16f)
             isFakeBoldText = true
         }
-        val width = maxOf(value.measureText(number), caption.measureText("SKOR")) + dp(28f)
-        val rect = RectF(centerX - width / 2f, top, centerX + width / 2f, top + dp(48f))
-        canvas.drawRoundRect(rect, dp(14f), dp(14f), Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xF218120C.toInt()
-        })
-        canvas.drawRoundRect(rect, dp(14f), dp(14f), Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFFFFC857.toInt()
-            style = Paint.Style.STROKE
-            strokeWidth = dp(2f)
-        })
-        canvas.drawText("SKOR", centerX, top + dp(16f), caption)
-        canvas.drawText(number, centerX, top + dp(40f), value)
+        canvas.drawText(score.toString(), left + barW * 0.58f, top + barH * 0.70f, value)
     }
 
     /** Segment bar. Filled segments sit on the left. */

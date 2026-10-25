@@ -59,7 +59,8 @@ private class FarmView(
     private val prefs = context.getSharedPreferences("clipsmile_pet", Context.MODE_PRIVATE)
     private val world = FarmWorld(prefs.getString(KEY, null))
     private val pet = PixelArt.petStrip(context, model, "front", "games/drop/pug.png")
-    private val tiles = PixelArt.load(context, "farm/tiles.png")
+    private val ground = PixelArt.load(context, "farm/ground.png")
+    private val house = PixelArt.load(context, "farm/house.png")
     private val crops = PixelArt.load(context, "farm/pumpkin.png")
     private val furniture = PixelArt.load(context, "farm/furniture.png")
     private val barBg = PixelArt.load(context, "hud/bar_bg.png")
@@ -76,9 +77,6 @@ private class FarmView(
     private val frame = Runnable { tick() }
 
     private val sky = Paint().apply { color = 0xFF8EC8E8.toInt() }
-    private val soil = Paint().apply { color = 0xFF6A4E32.toInt() }
-    private val wall = Paint().apply { color = 0xFF6E4A32.toInt() }
-    private val floor = Paint().apply { color = 0xFFC4A574.toInt() }
     private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF3B2918.toInt()
         isFakeBoldText = true
@@ -242,7 +240,7 @@ private class FarmView(
         if (panel == Panel.NONE) drawMap(canvas) else drawPanel(canvas)
         drawControls(canvas)
         if (flash.isNotEmpty() && SystemClock.uptimeMillis() < flashUntil) {
-            PixelArt.drawBanner(canvas, flash, width / 2f, dp(96f), ::dp)
+            PixelArt.drawBanner(canvas, flash, width / 2f, dp(124f), ::dp)
         }
     }
 
@@ -265,23 +263,70 @@ private class FarmView(
         canvas.drawText("Enerji ${world.stamina}", width - dp(12f), dp(44f), ink)
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(12f)
-        val quest = if (world.notice.length > 52) world.notice.take(50) + "…" else world.notice
-        canvas.drawText(quest, dp(12f), dp(64f), ink)
+        val questBottom = drawWrapped(canvas, world.notice, dp(12f), dp(60f), width - dp(24f))
         val season = if (world.raining()) "Yağmurlu" else "Açık"
-        canvas.drawText("$season   ${FarmWorld.label(world.seed)} tohumu ${world.count(world.seed + "_seed")}", dp(12f), dp(82f), ink)
+        canvas.drawText(
+            "$season   ${FarmWorld.label(world.seed)} tohumu ${world.count(world.seed + "_seed")}",
+            dp(12f),
+            questBottom + dp(16f),
+            ink
+        )
+    }
+
+    private fun drawWrapped(canvas: Canvas, text: String, x: Float, y: Float, maxWidth: Float): Float {
+        val words = text.split(" ")
+        var line = ""
+        var lineY = y
+        var drawn = 0
+        for (word in words) {
+            val trial = if (line.isEmpty()) word else "$line $word"
+            if (line.isNotEmpty() && ink.measureText(trial) > maxWidth) {
+                val shown = ellipsize(line, maxWidth, force = drawn == 1)
+                canvas.drawText(shown, x, lineY, ink)
+                drawn++
+                if (drawn == 2) return lineY
+                line = word
+                lineY += dp(15f)
+            } else {
+                line = trial
+            }
+        }
+        if (line.isNotEmpty() && drawn < 2) {
+            canvas.drawText(ellipsize(line, maxWidth, force = false), x, lineY, ink)
+        }
+        return lineY
+    }
+
+    private fun ellipsize(text: String, maxWidth: Float, force: Boolean): String {
+        val withMark = if (force && !text.endsWith("…")) "$text…" else text
+        if (ink.measureText(withMark) <= maxWidth) return withMark
+        var cut = text.removeSuffix("…")
+        while (cut.length > 4 && ink.measureText("$cut…") > maxWidth) cut = cut.dropLast(1)
+        return "$cut…"
     }
 
     private fun drawMap(canvas: Canvas) {
         val indoors = world.indoors
         val cols = if (indoors) FarmWorld.HW else FarmWorld.W
         val rows = if (indoors) FarmWorld.HH else FarmWorld.H
-        val top = dp(92f)
+        val top = dp(108f)
         val bottom = buttons["up"]?.top ?: (height - dp(150f))
-        val cell = minOf(width / if (indoors) cols.toFloat() else 8f, (bottom - top) / if (indoors) rows.toFloat() else 9f)
-        var camX = world.px - (width / cell) / 2f
-        var camY = world.py - ((bottom - top) / cell) / 2f
-        camX = camX.coerceIn(0f, (cols - width / cell).coerceAtLeast(0f))
-        camY = camY.coerceIn(0f, (rows - (bottom - top) / cell).coerceAtLeast(0f))
+        val cell = minOf(
+            width / cols.toFloat(),
+            (bottom - top) / if (indoors) rows.toFloat() else 10f
+        )
+        val viewW = width / cell
+        val viewH = (bottom - top) / cell
+        val camX = if (cols <= viewW + 0.01f) {
+            (cols - viewW) / 2f
+        } else {
+            (world.px - viewW / 2f).coerceIn(0f, cols - viewW)
+        }
+        val camY = if (rows <= viewH + 0.01f) {
+            (rows - viewH) / 2f
+        } else {
+            (world.py - viewH / 2f).coerceIn(0f, rows - viewH)
+        }
         canvas.save()
         canvas.clipRect(0f, top, width.toFloat(), bottom)
         for (y in 0 until rows) {
@@ -293,6 +338,7 @@ private class FarmView(
                 if (indoors) drawRoomTile(canvas, x, y) else drawFarmTile(canvas, x, y)
             }
         }
+        if (!indoors) drawCottage(canvas, camX, camY, top, cell)
         val fx = world.px + world.facingX
         val fy = world.py + world.facingY
         dest.set((fx - camX) * cell, top + (fy - camY) * cell, (fx + 1 - camX) * cell, top + (fy + 1 - camY) * cell)
@@ -302,17 +348,29 @@ private class FarmView(
     }
 
     private fun drawFarmTile(canvas: Canvas, x: Int, y: Int) {
-        val ground = world.farm[y][x]
-        when (ground) {
-            FarmWorld.BLOCK -> {
-                canvas.drawRect(dest, wall)
-                canvas.drawRect(dest.left, dest.top, dest.right, dest.top + dest.height() * 0.28f, soil)
+        val tile = world.farm[y][x]
+        val spot = when (tile) {
+            FarmWorld.DOOR, FarmWorld.PATH -> 9 to 8
+            FarmWorld.WATERED -> if ((x + y) % 2 == 0) 6 to 5 else 8 to 5
+            FarmWorld.TILLED -> if ((x * 2 + y) % 2 == 0) 7 to 0 else 9 to 0
+            else -> {
+                when ((x * 3 + y * 5) % 4) {
+                    0 -> 6 to 3
+                    1 -> 8 to 3
+                    2 -> 10 to 3
+                    else -> 7 to 3
+                }
             }
-            FarmWorld.DOOR -> blit16(canvas, 304, 64)
-            FarmWorld.PATH -> blit16(canvas, 304, 64)
-            FarmWorld.WATERED -> blit16(canvas, 0, 96)
-            FarmWorld.TILLED -> blit16(canvas, 448, 144)
-            else -> blit16(canvas, 0, 64)
+        }
+        blitGround(canvas, spot.first, spot.second)
+        if (tile == FarmWorld.GRASS) {
+            val flower = when ((x * 5 + y * 7) % 11) {
+                0 -> 0 to 3
+                1 -> 3 to 3
+                3 -> 2 to 4
+                else -> null
+            }
+            if (flower != null) blitGround(canvas, flower.first, flower.second)
         }
         val crop = world.crop[y][x]
         if (crop != 0) {
@@ -328,17 +386,28 @@ private class FarmView(
         }
     }
 
+    private fun drawCottage(canvas: Canvas, camX: Float, camY: Float, top: Float, cell: Float) {
+        val saved = RectF(dest)
+        val widthCells = 3.25f
+        val heightCells = widthCells * house.height / house.width.toFloat()
+        val center = (5.5f - camX) * cell
+        val foot = top + (6f - camY) * cell
+        dest.set(center - cell * widthCells / 2f, foot - cell * heightCells, center + cell * widthCells / 2f, foot)
+        canvas.drawBitmap(house, null, dest, PixelArt.paint)
+        dest.set(saved)
+    }
+
     private fun drawRoomTile(canvas: Canvas, x: Int, y: Int) {
         val border = x == 0 || y == 0 || x == FarmWorld.HW - 1 || y == FarmWorld.HH - 1
         if (x == FarmWorld.DOOR_X && y == FarmWorld.HH - 1) {
-            blit16(canvas, 448, 144)
+            blitGround(canvas, 6, 7)
             return
         }
         if (border) {
-            canvas.drawRect(dest, wall)
+            blitGround(canvas, 7, 0)
             return
         }
-        canvas.drawRect(dest, floor)
+        blitGround(canvas, 9, 8)
         val piece = world.house[y][x]
         if (piece != 0) {
             val box = when (piece) {
@@ -374,13 +443,13 @@ private class FarmView(
 
     private fun petFrames(): Int = if (pet.width > pet.height * 2) 4 else 1
 
-    private fun blit16(canvas: Canvas, x: Int, y: Int) {
-        src.set(x, y, x + 16, y + 16)
-        canvas.drawBitmap(tiles, src, dest, PixelArt.paint)
+    private fun blitGround(canvas: Canvas, col: Int, row: Int) {
+        src.set(col * 16, row * 16, col * 16 + 16, row * 16 + 16)
+        canvas.drawBitmap(ground, src, dest, PixelArt.paint)
     }
 
     private fun drawPanel(canvas: Canvas) {
-        val top = dp(92f)
+        val top = dp(108f)
         val bottom = (buttons["up"]?.top ?: height - dp(150f)) - dp(8f)
         canvas.drawRoundRect(dp(12f), top, width - dp(12f), bottom, dp(16f), dp(16f), card)
         canvas.drawRoundRect(dp(12f), top, width - dp(12f), bottom, dp(16f), dp(16f), edge)

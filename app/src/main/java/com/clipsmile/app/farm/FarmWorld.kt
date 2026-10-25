@@ -38,6 +38,7 @@ class FarmWorld(raw: String? = null) {
 
     init {
         if (raw.isNullOrBlank() || !restore(raw)) fresh()
+        settleYard()
     }
 
     fun level(): Int = 1 + xp / 50
@@ -317,8 +318,10 @@ class FarmWorld(raw: String? = null) {
         for (y in 0 until H) {
             for (x in 0 until W) {
                 farm[y][x] = when {
-                    y <= 4 && x in 3..8 -> BLOCK
+                    x == DOOR_X && y == 5 -> DOOR
+                    y in 1..4 && x in 4..6 -> BLOCK
                     x == 6 && y >= 5 -> PATH
+                    x == DOOR_X && y == 6 -> PATH
                     else -> GRASS
                 }
                 crop[y][x] = 0
@@ -332,6 +335,34 @@ class FarmWorld(raw: String? = null) {
     }
 
     fun maxStamina() = 90 + (level() - 1) * 4
+
+    /**
+     * The first build drew the cottage as a solid slab. Shrink that footprint
+     * so an already-saved day still has a door, a path, and soil that can be hoed.
+     */
+    private fun settleYard() {
+        for (y in 0 until H) {
+            for (x in 0 until W) {
+                val door = x == DOOR_X && y == 5
+                val cottage = y in 1..4 && x in 4..6
+                val lane = (x == 6 && y >= 5) || (x == DOOR_X && y == 6)
+                when {
+                    door -> farm[y][x] = DOOR
+                    cottage -> farm[y][x] = BLOCK
+                    farm[y][x] == BLOCK -> farm[y][x] = GRASS
+                    lane && farm[y][x] == GRASS -> farm[y][x] = PATH
+                }
+                if (door || cottage) {
+                    crop[y][x] = 0
+                    stage[y][x] = 0
+                }
+            }
+        }
+        if (!indoors && px in 0 until W && py in 0 until H && solid(px, py)) {
+            px = 6
+            py = 7
+        }
+    }
 
     private fun width() = if (indoors) HW else W
     private fun height() = if (indoors) HH else H

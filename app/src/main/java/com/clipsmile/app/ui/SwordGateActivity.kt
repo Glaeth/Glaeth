@@ -683,7 +683,7 @@ private class SwordGateView(
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
-        PixelArt.drawScore(canvas, score, width / 2f, dp(4f), ::dp)
+        PixelArt.drawScore(canvas, context, score, width / 2f, dp(4f), ::dp)
         drawBars(canvas)
         drawTreeButton(canvas)
         drawHotbar(canvas)
