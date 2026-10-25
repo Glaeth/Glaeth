@@ -372,10 +372,15 @@ class PetCanvas @JvmOverloads constructor(
                 "dissiz" -> 0.36f
                 "pop" -> 0.52f
                 "ucat" -> 0.58f
+                "kurama" -> 0.50f
                 else -> if (height > 0.74f) 0.66f else height
             }
             var scale = targetHeight / height
-            val spanCap = if (id == "dissiz") 1.05f else 0.90f
+            val spanCap = when (id) {
+                "dissiz" -> 1.05f
+                "kurama" -> 1.45f
+                else -> 0.90f
+            }
             if (span * scale > spanCap) scale = spanCap / span
             fitScale = scale
             fitYaw = FACE_YAW[id] ?: 0f
