@@ -1,5 +1,6 @@
 package com.clipsmile.app.ui
 
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -57,7 +58,7 @@ class CollectionActivity : AppCompatActivity() {
             val open = den.owns(dog.stableId())
             val atHome = open && dog.stableId() == selected
             val look = FrameLooks.forLevel(if (open) den.level(dog.stableId()) else 1)
-            row.portrait.setImageResource(dog.portraitRes)
+            row.portrait.setImageBitmap(faceOf(dog))
             row.portrait.alpha = if (open) 1f else 0.35f
             row.foodIcon.setImageResource(dog.foodRes)
             row.foodIcon.alpha = if (open) 1f else 0.4f
@@ -67,13 +68,10 @@ class CollectionActivity : AppCompatActivity() {
                 setColor(if (open) look.glow else 0x22A89880)
                 setStroke((if (open) look.widthDp else 3f).dp(), if (open) look.ring else 0xFFC4B6A6.toInt())
             }
-            val name = if (open) {
-                den.displayName(dog.stableId(), getString(dog.nameRes))
-            } else {
-                getString(dog.nameRes)
-            }
+            val species = dog.displayName(this)
+            val name = if (open) den.displayName(dog.stableId(), species) else species
             row.name.text = name
-            row.breed.setText(dog.titleRes)
+            row.breed.text = dog.displayTitle(this)
             row.levelChip.text = if (open) {
                 getString(R.string.collection_level_chip, den.level(dog.stableId()))
             } else {
@@ -103,7 +101,7 @@ class CollectionActivity : AppCompatActivity() {
                     Toast.makeText(this, getString(R.string.collection_selected, name), Toast.LENGTH_SHORT).show()
                     showDogs()
                 }
-                row.name.setOnClickListener { rename(dog.stableId(), getString(dog.nameRes)) }
+                row.name.setOnClickListener { rename(dog.stableId(), dog.displayName(this)) }
             }
         }
         if (DogRoster.all.size % 2 == 1) {
@@ -111,6 +109,12 @@ class CollectionActivity : AppCompatActivity() {
             spacer.layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
             line?.addView(spacer)
         }
+    }
+
+    private fun faceOf(dog: DogCompanion) = try {
+        PixelArt.load(this, dog.portraitAsset.ifBlank { "faces/${dog.stableId()}.png" })
+    } catch (_: Exception) {
+        BitmapFactory.decodeResource(resources, dog.portraitRes)
     }
 
     private fun rename(id: String, fallback: String) {

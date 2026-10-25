@@ -20,8 +20,10 @@ import kotlin.math.abs
 import kotlin.math.sin
 
 /**
- * A lit toy dog. The first dog loops the seated part of its clip.
- * The others blink, wag and hop. A tap turns the dog toward the finger.
+ * A lit pet on the rug. Every animal uses the same calm breath.
+ * The pug's skeletal clip is not played: that loop was an eye blink.
+ * A root yaw and a fit scale face the mesh at the camera and keep the head in frame.
+ * A tap still turns the pet toward the finger.
  */
 class PetCanvas @JvmOverloads constructor(
     context: Context,
@@ -116,7 +118,6 @@ class PetCanvas @JvmOverloads constructor(
 
         private var loadedName: String? = null
         private var parts: List<Part> = emptyList()
-        private var clip: DogClip? = null
         private var morph: PetMorph? = null
         private var clipStart = 0L
         private var eyeX = 0.22f
@@ -142,6 +143,13 @@ class PetCanvas @JvmOverloads constructor(
         private var whiteTex = 0
         private var coatTex = 0
         private var coatFor: String? = null
+        private var fitYaw = 0f
+        private var fitPitch = 0f
+        private var fitScale = 1f
+        private var fitOffX = 0f
+        private var fitOffY = 0f
+        private var fitOffZ = 0f
+        private var fitLift = 0f
         private val viewProj = FloatArray(16)
         private val view = FloatArray(16)
         private val proj = FloatArray(16)
@@ -178,7 +186,6 @@ class PetCanvas @JvmOverloads constructor(
             uTex = GLES20.glGetUniformLocation(program, "uTex")
             uUseTex = GLES20.glGetUniformLocation(program, "uUseTex")
             loadedName = null
-            clip = null
             coatFor = null
             whiteTex = solidTexture()
             uploadGround()
@@ -222,12 +229,8 @@ class PetCanvas @JvmOverloads constructor(
             val body = parts.firstOrNull()
             val seconds = (now - clipStart) / 1000f
             val morphing = morph
-            val playing = clip
             if (body != null && morphing != null) {
                 morphing.write(seconds, body.pos)
-            } else if (body != null && playing != null) {
-                // After about 1.5s the clip rolls the pug onto its side. Stay in the sit.
-                playing.write(seconds % 1.5f, body.pos, body.nor)
             }
 
             GLES20.glUseProgram(program)
@@ -262,20 +265,15 @@ class PetCanvas @JvmOverloads constructor(
             var sz = part.restS[2]
             val name = part.name
             when {
-                name == "body" && clip != null -> {
-                    // The seated clip is already posed. A tap still turns the whole dog.
-                    ty += happy * 0.045f
-                    ry += look * 16f
-                    rz += sin(time * 26f) * shake * 8f
-                }
                 name == "body" -> {
-                    val breath = sin(time * 2.2f)
-                    val idle = sin(time * 1.6f)
-                    sy *= 1f + breath * 0.035f - happy * 0.06f
-                    sx *= 1f - breath * 0.02f + happy * 0.05f
-                    ty += idle * 0.012f + happy * 0.08f
-                    rx += idle * 1.6f
-                    ry += sin(time * 0.7f) * 5f + look * 14f
+                    val breath = sin(time * 2.1f)
+                    val idle = sin(time * 1.5f)
+                    sy *= 1f + breath * 0.055f - happy * 0.06f
+                    sx *= 1f - breath * 0.025f + happy * 0.05f
+                    sz *= 1f - breath * 0.02f
+                    ty += idle * 0.022f + happy * 0.08f
+                    rx += idle * 2.4f
+                    ry += sin(time * 0.85f) * 7f + look * 14f
                     rz += sin(time * 26f) * shake * 10f
                 }
                 name == "head" -> {
@@ -312,7 +310,70 @@ class PetCanvas @JvmOverloads constructor(
             Matrix.rotateM(local, 0, rz, 0f, 0f, 1f)
             Matrix.rotateM(local, 0, ry, 0f, 1f, 0f)
             Matrix.rotateM(local, 0, rx, 1f, 0f, 0f)
-            Matrix.scaleM(local, 0, sx, sy, sz)
+            if (part.parent < 0) {
+                // Android applies the last call first: center, then scale, then face the camera.
+                Matrix.rotateM(local, 0, fitPitch, 1f, 0f, 0f)
+                Matrix.rotateM(local, 0, fitYaw, 0f, 1f, 0f)
+                Matrix.translateM(local, 0, 0f, fitLift, 0f)
+                Matrix.scaleM(local, 0, sx * fitScale, sy * fitScale, sz * fitScale)
+                Matrix.translateM(local, 0, fitOffX, fitOffY, fitOffZ)
+            } else {
+                Matrix.scaleM(local, 0, sx, sy, sz)
+            }
+        }
+
+        private fun prepareFit(asset: String, part: Part?) {
+            fitYaw = 0f
+            fitPitch = 0f
+            fitScale = 1f
+            fitOffX = 0f
+            fitOffY = 0f
+            fitOffZ = 0f
+            fitLift = 0f
+            if (part == null) return
+            val id = asset.substringAfterLast('/').removeSuffix(".json")
+            if (id == "pug" || id == "cat") return
+            val buf = part.pos
+            buf.position(0)
+            val count = buf.capacity() / 3
+            if (count <= 0) return
+            var minX = Float.POSITIVE_INFINITY
+            var minY = Float.POSITIVE_INFINITY
+            var minZ = Float.POSITIVE_INFINITY
+            var maxX = Float.NEGATIVE_INFINITY
+            var maxY = Float.NEGATIVE_INFINITY
+            var maxZ = Float.NEGATIVE_INFINITY
+            repeat(count) {
+                val x = buf.get()
+                val y = buf.get()
+                val z = buf.get()
+                if (x < minX) minX = x
+                if (x > maxX) maxX = x
+                if (y < minY) minY = y
+                if (y > maxY) maxY = y
+                if (z < minZ) minZ = z
+                if (z > maxZ) maxZ = z
+            }
+            buf.position(0)
+            val height = (maxY - minY).coerceAtLeast(0.001f)
+            val span = maxOf(maxX - minX, maxZ - minZ).coerceAtLeast(0.001f)
+            val targetHeight = when (id) {
+                "smurf" -> 0.60f
+                "dissiz" -> 0.36f
+                "pop" -> 0.52f
+                "ucat" -> 0.58f
+                else -> if (height > 0.74f) 0.66f else height
+            }
+            var scale = targetHeight / height
+            val spanCap = if (id == "dissiz") 1.05f else 0.90f
+            if (span * scale > spanCap) scale = spanCap / span
+            fitScale = scale
+            fitYaw = FACE_YAW[id] ?: 0f
+            fitPitch = FACE_PITCH[id] ?: 0f
+            fitOffX = -((minX + maxX) / 2f)
+            fitOffY = -minY
+            fitOffZ = -((minZ + maxZ) / 2f)
+            fitLift = 0.02f
         }
 
         private fun ensureModel() {
@@ -320,13 +381,13 @@ class PetCanvas @JvmOverloads constructor(
             if (name == loadedName) return
             parts = load(name)
             loadedName = name
+            prepareFit(name, parts.firstOrNull())
             eyeX = 0.18f
             eyeY = 0.50f
             eyeZ = 2.05f
             lookY = 0.30f
             applyCamera()
             morph = loadMorph(name)
-            clip = if (morph == null) loadClip(name) else null
             clipStart = nowMillis()
             val coat = parts.firstOrNull { it.texture != null }?.texture
             if (coat != coatFor) {
@@ -343,15 +404,6 @@ class PetCanvas @JvmOverloads constructor(
             val frames = model.removeSuffix(".json") + ".frames"
             return try {
                 context.assets.open(frames).use { PetMorph.open(it) }
-            } catch (_: Exception) {
-                null
-            }
-        }
-
-        private fun loadClip(model: String): DogClip? {
-            val anim = model.removeSuffix(".json") + ".anim"
-            return try {
-                context.assets.open(anim).use { DogClip.open(it) }
             } catch (_: Exception) {
                 null
             }
@@ -623,6 +675,30 @@ class PetCanvas @JvmOverloads constructor(
 
     companion object {
         private val IDENTITY = FloatArray(16).also { Matrix.setIdentityM(it, 0) }
+
+        /** Degrees around Y so the head points at the camera. Pets already facing us stay at 0. */
+        private val FACE_YAW = mapOf(
+            "capy" to -90f,
+            "kipir" to -90f,
+            "tekir" to -90f,
+            "adim" to -90f,
+            "tuylu" to -90f,
+            "yavru" to -90f,
+            "sirtlan" to -90f,
+            "munch" to -90f,
+            "dissiz" to -90f,
+            "kurt" to -90f,
+            "sosis" to 90f,
+            "cizgi" to -90f,
+            "shiba" to -80f,
+            "smurf" to -22f
+        )
+
+        /** Degrees around X after the yaw. Lifts a face that the sculpt points at the floor. */
+        private val FACE_PITCH = mapOf(
+            "kipir" to -22f,
+            "tekir" to -22f
+        )
 
         private fun floats(array: org.json.JSONArray): FloatArray {
             return FloatArray(array.length()) { array.getDouble(it).toFloat() }

@@ -78,7 +78,7 @@ class Den(context: Context) {
     fun xp(id: String): Int = prefs.getInt(xpKey(id), 0)
 
     fun displayName(id: String, fallback: String): String =
-        prefs.getString(nameKey(id), null)?.takeIf { it.isNotBlank() } ?: fallback
+        keptName(id, prefs.getString(nameKey(id), null), fallback)
 
     fun setName(id: String, value: String) {
         val cleaned = value.trim().take(24)
@@ -131,8 +131,8 @@ class Den(context: Context) {
         if (owns(id)) prefs.edit().putString(KEY_ACTIVE, id).apply()
     }
 
-    /** @return ok, owned, gold or gems */
-    fun buy(id: String, goldPrice: Int, gemPrice: Int, fallbackName: String): String {
+    /** @return ok, owned, gold or gems. The name is chosen on the next screen. */
+    fun buy(id: String, goldPrice: Int, gemPrice: Int): String {
         if (!onboarded() || owns(id)) return if (owns(id)) "owned" else "gold"
         val editor = prefs.edit()
         if (gemPrice > 0) {
@@ -143,9 +143,6 @@ class Den(context: Context) {
             editor.putInt(KEY_GOLD, gold() - goldPrice)
         }
         editor.putString(KEY_OWNED, (owned() + id).joinToString(","))
-        if (prefs.getString(nameKey(id), null).isNullOrBlank()) {
-            editor.putString(nameKey(id), fallbackName)
-        }
         stampAdopt(editor, id)
         editor.apply()
         return "ok"
@@ -342,6 +339,16 @@ class Den(context: Context) {
         private const val KEY_FRAME = "frame"
 
         fun xpNeed(level: Int): Int = 50 + 40 * level
+
+        /**
+         * A stored "Çirkin" on any animal except the pug is the old shop bug.
+         * Show the species name until the player types their own.
+         */
+        fun keptName(id: String, stored: String?, fallback: String): String {
+            val cleaned = stored?.trim()?.takeIf { it.isNotEmpty() } ?: return fallback
+            if (id != "pug" && cleaned == "Çirkin") return fallback
+            return cleaned
+        }
 
         fun tasksFor(id: String): List<Task> {
             val own = tasks.filter { it.animalId == id }

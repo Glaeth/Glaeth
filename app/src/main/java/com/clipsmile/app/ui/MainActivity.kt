@@ -30,6 +30,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.core.content.ContextCompat
@@ -39,9 +40,9 @@ import com.clipsmile.app.R
 import com.clipsmile.app.data.Den
 import com.clipsmile.app.data.PetProgress
 import com.clipsmile.app.databinding.ActivityMainBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.clipsmile.app.service.ClipboardWatcherService
 import com.clipsmile.app.util.ClipCapturePipeline
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
 
@@ -184,9 +185,9 @@ class MainActivity : AppCompatActivity() {
 
     private val sections = object : HomeSections.Callbacks {
         override fun buy(dog: DogCompanion) {
-            val result = den.buy(dog.stableId(), dog.goldPrice, dog.gemPrice, getString(dog.nameRes))
+            val result = den.buy(dog.stableId(), dog.goldPrice, dog.gemPrice)
             val message = when (result) {
-                "ok" -> getString(R.string.store_got, getString(dog.nameRes))
+                "ok" -> getString(R.string.store_got, dog.displayName(this@MainActivity))
                 "gems" -> getString(R.string.store_need_gems)
                 "owned" -> getString(R.string.store_owned)
                 else -> getString(R.string.store_need_gold)
@@ -195,6 +196,7 @@ class MainActivity : AppCompatActivity() {
             if (result == "ok") {
                 bindHome()
                 showTab(tab)
+                askPetName(dog)
             }
         }
 
@@ -203,7 +205,10 @@ class MainActivity : AppCompatActivity() {
             bindHome()
             Toast.makeText(
                 this@MainActivity,
-                getString(R.string.collection_selected, den.displayName(dog.stableId(), getString(dog.nameRes))),
+                getString(
+                    R.string.collection_selected,
+                    den.displayName(dog.stableId(), dog.displayName(this@MainActivity))
+                ),
                 Toast.LENGTH_SHORT
             ).show()
             showTab(tab)
@@ -238,6 +243,46 @@ class MainActivity : AppCompatActivity() {
         }
         com.clipsmile.app.widget.PetWidgetProvider.updateAll(this)
         ClipboardWatcherService.refresh(this)
+    }
+
+    private fun askPetName(dog: DogCompanion) {
+        val hint = dog.displayName(this)
+        val input = EditText(this).apply {
+            setTextColor(0xFF3B2918.toInt())
+            setHintTextColor(0xFF8A6844.toInt())
+            this.hint = hint
+            setBackgroundResource(R.drawable.bg_hud_pill)
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setSingleLine()
+            textSize = 18f
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.pick_name_title)
+            .setView(input)
+            .setNegativeButton(R.string.action_cancel) { _, _ ->
+                den.setName(dog.stableId(), hint)
+                bindHome()
+            }
+            .setPositiveButton(R.string.action_save_name, null)
+            .create()
+        dialog.setOnCancelListener {
+            den.setName(dog.stableId(), hint)
+            bindHome()
+        }
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val name = input.text?.toString().orEmpty().trim()
+                if (name.isEmpty()) {
+                    Toast.makeText(this, R.string.pick_need_name, Toast.LENGTH_SHORT).show()
+                } else {
+                    den.setName(dog.stableId(), name)
+                    bindHome()
+                    if (tab != HomeSections.Tab.HOME) showTab(tab)
+                    dialog.dismiss()
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun bindHome() {

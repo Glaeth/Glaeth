@@ -346,6 +346,7 @@
     <string name="settings_promo_clrmnt">99999 altın ve 99999 mor kristal eklendi.</string>
     <string name="settings_promo_used">Bu kod daha önce kullanıldı.</string>
     <string name="settings_promo_bad">Kod tanınmadı.</string>
+    <string name="settings_credits_title">Kaynaklar</string>
     <string name="settings_sync_section_title">İnternete Gönderme</string>
     <string name="settings_sync_description">Açıldığında, kopyaladığınız her şey internet üzerinden aşağıdaki adrese anında gönderilir. Bu adresi tarayıcınızda açarak ya da ücretsiz \"ntfy\" uygulamasıyla takip ederek başka bir cihazdan, her yerden ulaşabilirsiniz.</string>
     <string name="settings_sync_channel_label">Kanal adı</string>

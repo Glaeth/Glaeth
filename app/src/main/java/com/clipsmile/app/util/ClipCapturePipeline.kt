@@ -2,13 +2,13 @@ package com.clipsmile.app.util
 
 import android.content.Context
 import com.clipsmile.app.data.ClipRepository
-import com.clipsmile.app.data.RemoteSyncManager
+import com.clipsmile.app.data.RemoteSyncPrefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * Single path for "a new piece of text was just copied": persist it once,
- * mirror it to the internet channel if that is turned on.
+ * Single path for "a new piece of text was just copied": persist it on the device.
+ * Clipboard text is never uploaded.
  */
 object ClipCapturePipeline {
 
@@ -26,8 +26,7 @@ object ClipCapturePipeline {
         val appContext = context.applicationContext
         val saved = ClipRepository.getInstance(appContext).saveIfNew(text)
         if (!saved && !forwardDuplicates) return
-        if (saved) {
-            RemoteSyncManager.notifyNewClip(appContext, text)
-        }
+        val sync = RemoteSyncPrefs(appContext)
+        if (sync.isEnabled) sync.isEnabled = false
     }
 }

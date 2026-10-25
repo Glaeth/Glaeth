@@ -13,6 +13,8 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.clipsmile.app.farm.FarmWorld
+import kotlin.math.abs
+import kotlin.math.hypot
 
 /**
  * A vertical farm day. The pet works the plot Nine Elma left behind.
@@ -75,6 +77,15 @@ private class FarmView(
     private var clock = 0f
     private var lastMs = 0L
     private val frame = Runnable { tick() }
+    private var stickPointer = -1
+    private var stickHeld = false
+    private var stickCx = 0f
+    private var stickCy = 0f
+    private var stickR = 1f
+    private var knobX = 0f
+    private var knobY = 0f
+    private var walkClock = 0f
+    private var wasWalking = false
 
     private val sky = Paint().apply { color = 0xFF8EC8E8.toInt() }
     private val ink = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -114,12 +125,38 @@ private class FarmView(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action != MotionEvent.ACTION_DOWN) return true
-        val hit = buttons.entries.firstOrNull { it.value.contains(event.x, event.y) }?.key
-        if (hit == null) {
-            if (panel != Panel.NONE) panel = Panel.NONE
-            return true
+        if (width > 0) layoutButtons()
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                val index = event.actionIndex
+                val x = event.getX(index)
+                val y = event.getY(index)
+                val hit = buttons.entries.firstOrNull { it.value.contains(x, y) }?.key
+                if (hit != null) press(hit)
+                else if (panel == Panel.NONE && hypot(x - stickCx, y - stickCy) <= stickR * 1.2f) {
+                    stickPointer = event.getPointerId(index)
+                    stickHeld = true
+                    moveStick(x, y)
+                } else if (panel != Panel.NONE) {
+                    panel = Panel.NONE
+                }
+            }
+            MotionEvent.ACTION_MOVE -> if (stickHeld) {
+                val index = event.findPointerIndex(stickPointer)
+                if (index >= 0) moveStick(event.getX(index), event.getY(index))
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
+                val index = event.actionIndex
+                if (event.getPointerId(index) == stickPointer || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+                    releaseStick()
+                }
+            }
         }
+        invalidate()
+        return true
+    }
+
+    private fun press(hit: String) {
         when {
             hit == "back" -> (context as? Activity)?.finish()
             hit == "close" -> panel = Panel.NONE
@@ -128,29 +165,56 @@ private class FarmView(
             hit == "sleep" -> act(world.sleep())
             hit == "use" -> if (panel == Panel.NONE) act(world.use())
             hit == "sellall" -> act(world.sellAllCrops())
-            hit == "up" -> step(0, -1)
-            hit == "down" -> step(0, 1)
-            hit == "left" -> step(-1, 0)
-            hit == "right" -> step(1, 0)
             hit.startsWith("tool_") -> world.tool = when (hit.removePrefix("tool_")) {
                 "can" -> FarmWorld.Tool.CAN
                 "seed" -> FarmWorld.Tool.SEED
                 "hand" -> FarmWorld.Tool.HAND
                 else -> FarmWorld.Tool.HOE
             }
+            hit.startsWith("furn_") -> holdFurniture(hit.removePrefix("furn_"))
             hit.startsWith("buy_") -> act(world.buy(hit.removePrefix("buy_")))
             hit.startsWith("eat_") -> act(world.eat(hit.removePrefix("eat_")))
             hit.startsWith("pick_") -> pick(hit.removePrefix("pick_"))
         }
-        invalidate()
-        return true
+    }
+
+    private fun holdFurniture(item: String) {
+        world.furnish = item
+        world.tool = FarmWorld.Tool.HAND
+        val label = FarmWorld.label(item)
+        flash(
+            if (world.count(item) > 0) "$label seçildi. Evde önündeki kareye Kullan."
+            else "$label çantada yok. Sandıktan al."
+        )
+    }
+
+    private fun moveStick(x: Float, y: Float) {
+        var dx = x - stickCx
+        var dy = y - stickCy
+        val mag = hypot(dx, dy)
+        val max = stickR * 0.72f
+        if (mag > max && mag > 0f) {
+            dx *= max / mag
+            dy *= max / mag
+        }
+        knobX = stickCx + dx
+        knobY = stickCy + dy
+    }
+
+    private fun releaseStick() {
+        stickHeld = false
+        stickPointer = -1
+        knobX = stickCx
+        knobY = stickCy
+        wasWalking = false
+        walkClock = 0f
     }
 
     private fun step(dx: Int, dy: Int) {
         if (panel != Panel.NONE) return
         val message = world.move(dx, dy)
         if (message.isNotEmpty()) flash(message)
-        else passTime(4)
+        else passTime(1)
     }
 
     private fun act(message: String) {
@@ -214,6 +278,26 @@ private class FarmView(
         val now = SystemClock.uptimeMillis()
         val dt = if (lastMs == 0L) 0.016f else ((now - lastMs).coerceAtMost(40L)) / 1000f
         lastMs = now
+        if (stickHeld && panel == Panel.NONE && width > 0) {
+            val dx = knobX - stickCx
+            val dy = knobY - stickCy
+            val walking = hypot(dx, dy) > stickR * 0.32f
+            if (walking) {
+                if (!wasWalking) walkClock = 0.2f
+                walkClock += dt
+                if (walkClock >= 0.2f) {
+                    walkClock = 0f
+                    val stepX = if (abs(dx) > abs(dy)) if (dx > 0f) 1 else -1 else 0
+                    val stepY = if (abs(dy) >= abs(dx)) if (dy > 0f) 1 else -1 else 0
+                    step(stepX, stepY)
+                }
+            } else {
+                walkClock = 0f
+            }
+            wasWalking = walking
+        } else if (!stickHeld) {
+            wasWalking = false
+        }
         if (panel == Panel.NONE && width > 0) {
             clock += dt
             // One game minute every 1.2 real seconds, so a day lasts about twenty minutes.
@@ -238,6 +322,7 @@ private class FarmView(
         layoutButtons()
         drawHud(canvas)
         if (panel == Panel.NONE) drawMap(canvas) else drawPanel(canvas)
+        drawStick(canvas)
         drawControls(canvas)
         if (flash.isNotEmpty() && SystemClock.uptimeMillis() < flashUntil) {
             PixelArt.drawBanner(canvas, flash, width / 2f, dp(124f), ::dp)
@@ -310,7 +395,7 @@ private class FarmView(
         val cols = if (indoors) FarmWorld.HW else FarmWorld.W
         val rows = if (indoors) FarmWorld.HH else FarmWorld.H
         val top = dp(108f)
-        val bottom = buttons["up"]?.top ?: (height - dp(150f))
+        val bottom = stickCy - stickR - dp(8f)
         val cell = minOf(
             width / cols.toFloat(),
             (bottom - top) / if (indoors) rows.toFloat() else 10f
@@ -409,21 +494,51 @@ private class FarmView(
         }
         blitGround(canvas, 9, 8)
         val piece = world.house[y][x]
-        if (piece != 0) {
-            val box = when (piece) {
-                1 -> Rect(309, 12, 332, 48)
-                2 -> Rect(84, 27, 124, 48)
-                4 -> Rect(112, 240, 127, 272)
-                else -> Rect(208, 39, 224, 64)
-            }
-            val sprite = RectF(
-                dest.centerX() - dest.width() * 0.7f,
-                dest.bottom - dest.height() * 1.3f,
-                dest.centerX() + dest.width() * 0.7f,
-                dest.bottom - dest.height() * 0.05f
-            )
-            canvas.drawBitmap(furniture, box, sprite, PixelArt.paint)
+        if (piece == 0) return
+        if (piece == 4) {
+            drawLamp(canvas)
+            return
         }
+        val box = when (piece) {
+            1 -> Rect(309, 12, 332, 48)
+            2 -> Rect(225, 11, 304, 48)
+            else -> Rect(208, 39, 224, 64)
+        }
+        val aspect = box.width().toFloat() / box.height().coerceAtLeast(1)
+        var spriteH = dest.height() * 1.95f
+        var spriteW = spriteH * aspect
+        val maxW = dest.width() * 2.15f
+        if (spriteW > maxW) {
+            spriteW = maxW
+            spriteH = spriteW / aspect
+        }
+        val sprite = RectF(
+            dest.centerX() - spriteW / 2f,
+            dest.bottom - spriteH - dest.height() * 0.04f,
+            dest.centerX() + spriteW / 2f,
+            dest.bottom - dest.height() * 0.04f
+        )
+        canvas.drawOval(
+            dest.centerX() - spriteW * 0.38f,
+            dest.bottom - dest.height() * 0.22f,
+            dest.centerX() + spriteW * 0.38f,
+            dest.bottom - dest.height() * 0.04f,
+            Paint().apply { color = 0x553B2918 }
+        )
+        canvas.drawBitmap(furniture, box, sprite, PixelArt.paint)
+    }
+
+    private fun drawLamp(canvas: Canvas) {
+        val cx = dest.centerX()
+        val foot = dest.bottom - dest.height() * 0.06f
+        val shade = Paint().apply { color = 0xFFF2D36B.toInt() }
+        val pole = Paint().apply { color = 0xFF6B4630.toInt() }
+        val glow = Paint().apply { color = 0x66FFE08A }
+        canvas.drawOval(cx - dest.width() * 0.28f, foot - dest.height() * 0.16f, cx + dest.width() * 0.28f, foot, glow)
+        canvas.drawRect(cx - dp(2.5f), foot - dest.height() * 1.15f, cx + dp(2.5f), foot - dest.height() * 0.12f, pole)
+        canvas.drawOval(cx - dest.width() * 0.22f, foot - dest.height() * 0.18f, cx + dest.width() * 0.22f, foot - dest.height() * 0.04f, pole)
+        canvas.drawOval(cx - dest.width() * 0.42f, foot - dest.height() * 1.55f, cx + dest.width() * 0.42f, foot - dest.height() * 1.05f, shade)
+        canvas.drawRect(cx - dest.width() * 0.34f, foot - dest.height() * 1.35f, cx + dest.width() * 0.34f, foot - dest.height() * 1.12f, shade)
     }
 
     private fun drawActor(canvas: Canvas, camX: Float, camY: Float, top: Float, cell: Float) {
@@ -450,7 +565,7 @@ private class FarmView(
 
     private fun drawPanel(canvas: Canvas) {
         val top = dp(108f)
-        val bottom = (buttons["up"]?.top ?: height - dp(150f)) - dp(8f)
+        val bottom = stickCy - stickR - dp(12f)
         canvas.drawRoundRect(dp(12f), top, width - dp(12f), bottom, dp(16f), dp(16f), card)
         canvas.drawRoundRect(dp(12f), top, width - dp(12f), bottom, dp(16f), dp(16f), edge)
         buttons["close"] = RectF(width - dp(56f), top + dp(6f), width - dp(18f), top + dp(32f))
@@ -490,6 +605,16 @@ private class FarmView(
         }
     }
 
+    private fun drawStick(canvas: Canvas) {
+        if (panel != Panel.NONE) return
+        val base = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xCC3B2918.toInt() }
+        val knob = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFF6E2B8.toInt() }
+        canvas.drawCircle(stickCx, stickCy, stickR, base)
+        canvas.drawCircle(stickCx, stickCy, stickR, edge)
+        canvas.drawCircle(knobX, knobY, stickR * 0.42f, knob)
+        canvas.drawCircle(knobX, knobY, stickR * 0.42f, edge)
+    }
+
     private fun drawControls(canvas: Canvas) {
         for ((id, rect) in buttons) {
             if (id == "back" || id == "close" || id.startsWith("buy_") || id.startsWith("pick_") || id.startsWith("eat_") || id == "sellall") continue
@@ -498,6 +623,10 @@ private class FarmView(
                 "tool_can" -> world.tool == FarmWorld.Tool.CAN
                 "tool_seed" -> world.tool == FarmWorld.Tool.SEED
                 "tool_hand" -> world.tool == FarmWorld.Tool.HAND
+                "furn_bed" -> world.tool == FarmWorld.Tool.HAND && world.furnish == "bed"
+                "furn_table" -> world.tool == FarmWorld.Tool.HAND && world.furnish == "table"
+                "furn_chair" -> world.tool == FarmWorld.Tool.HAND && world.furnish == "chair"
+                "furn_lamp" -> world.tool == FarmWorld.Tool.HAND && world.furnish == "lamp"
                 else -> false
             }
             canvas.drawRoundRect(rect, dp(10f), dp(10f), Paint().apply {
@@ -506,12 +635,8 @@ private class FarmView(
             canvas.drawRoundRect(rect, dp(10f), dp(10f), edge)
             ink.color = 0xFF173307.toInt()
             ink.textAlign = Paint.Align.CENTER
-            ink.textSize = dp(12f)
+            ink.textSize = dp(if (id.startsWith("furn_")) 11f else 12f)
             val label = when (id) {
-                "up" -> "↑"
-                "down" -> "↓"
-                "left" -> "←"
-                "right" -> "→"
                 "use" -> "Kullan"
                 "shop" -> "Sandık"
                 "bag" -> "Çanta"
@@ -520,6 +645,10 @@ private class FarmView(
                 "tool_can" -> "Su"
                 "tool_seed" -> "Tohum"
                 "tool_hand" -> "El"
+                "furn_bed" -> "Yatak ${world.count("bed")}"
+                "furn_table" -> "Masa ${world.count("table")}"
+                "furn_chair" -> "Sandalye ${world.count("chair")}"
+                "furn_lamp" -> "Lamba ${world.count("lamp")}"
                 else -> ""
             }
             canvas.drawText(label, rect.centerX(), rect.centerY() + dp(4f), ink)
@@ -538,16 +667,27 @@ private class FarmView(
         }
         val s = dp(42f)
         val base = toolTop - dp(8f)
-        buttons["left"] = RectF(dp(10f), base - s * 2, dp(10f) + s, base - s)
-        buttons["right"] = RectF(dp(16f) + s, base - s * 2, dp(16f) + s * 2, base - s)
-        buttons["up"] = RectF(dp(13f) + s * 0.15f, base - s * 3 - dp(4f), dp(13f) + s * 1.7f, base - s * 2 - dp(4f))
-        buttons["down"] = RectF(dp(13f) + s * 0.15f, base - s + dp(4f), dp(13f) + s * 1.7f, base + dp(4f))
+        stickR = dp(54f)
+        stickCx = dp(72f)
+        stickCy = base - s * 1.7f
+        if (!stickHeld) {
+            knobX = stickCx
+            knobY = stickCy
+        }
         val actionW = dp(78f)
         val right = width - dp(8f)
         buttons["use"] = RectF(right - actionW, base - s * 3 - dp(4f), right, base - s * 2 - dp(4f))
         buttons["shop"] = RectF(right - actionW, base - s * 2 + dp(2f), right - actionW / 2f - dp(2f), base - s)
         buttons["bag"] = RectF(right - actionW / 2f + dp(2f), base - s * 2 + dp(2f), right, base - s)
         buttons["sleep"] = RectF(right - actionW, base - s + dp(4f), right, base + dp(2f))
+        val furnLeft = stickCx + stickR + dp(14f)
+        val furnRight = right - actionW - dp(8f)
+        val furnTop = toolTop - dp(46f)
+        val furnW = ((furnRight - furnLeft) / 4f).coerceAtLeast(dp(36f))
+        listOf("bed", "table", "chair", "lamp").forEachIndexed { index, name ->
+            val left = furnLeft + index * furnW
+            buttons["furn_$name"] = RectF(left, furnTop, left + furnW - dp(4f), toolTop - dp(6f))
+        }
     }
 
     private enum class Panel { NONE, SHOP, BAG }

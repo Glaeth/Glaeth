@@ -315,6 +315,7 @@ class FarmWorld(raw: String? = null) {
         bag["chair"] = 1
         bag["table"] = 1
         bag["bed"] = 1
+        bag["lamp"] = 1
         for (y in 0 until H) {
             for (x in 0 until W) {
                 farm[y][x] = when {

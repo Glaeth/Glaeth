@@ -116,7 +116,7 @@ object DogRoster {
 
     fun homeName(context: Context): String {
         val dog = selected(context)
-        val fallback = context.getString(dog.nameRes)
+        val fallback = dog.displayName(context)
         val den = Den(context)
         return if (den.onboarded()) den.displayName(dog.stableId(), fallback) else fallback
     }
