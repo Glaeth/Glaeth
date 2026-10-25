@@ -102,6 +102,9 @@ object HomeSections {
         column.addView(button(context, context.getString(R.string.game_sword_short)) {
             callbacks.play(SwordGateActivity::class.java)
         })
+        column.addView(button(context, context.getString(R.string.game_farm_short)) {
+            callbacks.play(FarmActivity::class.java)
+        })
         column.addView(button(context, context.getString(R.string.achievements_title)) {
             callbacks.achievements()
         })
@@ -109,6 +112,7 @@ object HomeSections {
         column.addView(body(context, context.getString(R.string.game_best, GameScores.best(context, GameScores.BEST_FLAP))))
         column.addView(body(context, context.getString(R.string.game_best, GameScores.best(context, GameScores.BEST_RUN))))
         column.addView(body(context, context.getString(R.string.game_best_named, context.getString(R.string.game_sword_short), GameScores.best(context, GameScores.BEST_SWORD))))
+        column.addView(body(context, context.getString(R.string.game_farm_best, GameScores.best(context, GameScores.BEST_FARM))))
     }
 
     private fun animalRow(
@@ -130,7 +134,8 @@ object HomeSections {
         }
         row.addView(ImageView(context).apply {
             setImageBitmap(face(context, dog))
-            scaleType = ImageView.ScaleType.FIT_CENTER
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setPadding(dp(context, 3), dp(context, 3), dp(context, 3), dp(context, 3))
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(0xFFFFF6E4.toInt())

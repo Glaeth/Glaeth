@@ -10,6 +10,9 @@ object Achievements {
     const val FLAP = "flap"
     const val RUN = "run"
     const val SWORD = "sword"
+    const val FARM = "farm"
+    const val FARM_DAY = "farmday"
+    const val FARM_LV = "farmlv"
     const val PET = "pet"
     const val MEAL = "meal"
     const val WASH = "wash"
@@ -48,6 +51,13 @@ object Achievements {
         Badge("sword_20", SWORD, 20, 50, R.string.ach_sword_20_title, R.string.ach_sword_20_detail),
         Badge("sword_40", SWORD, 40, 80, R.string.ach_sword_40_title, R.string.ach_sword_40_detail),
         Badge("sword_80", SWORD, 80, 120, R.string.ach_sword_80_title, R.string.ach_sword_80_detail),
+        Badge("farm_1", FARM, 1, 15, R.string.ach_farm_1_title, R.string.ach_farm_1_detail),
+        Badge("farm_10", FARM, 10, 30, R.string.ach_farm_10_title, R.string.ach_farm_10_detail),
+        Badge("farm_40", FARM, 40, 70, R.string.ach_farm_40_title, R.string.ach_farm_40_detail),
+        Badge("farmday_3", FARM_DAY, 3, 20, R.string.ach_farm_day_3_title, R.string.ach_farm_day_3_detail),
+        Badge("farmday_10", FARM_DAY, 10, 40, R.string.ach_farm_day_10_title, R.string.ach_farm_day_10_detail),
+        Badge("farmlv_3", FARM_LV, 3, 25, R.string.ach_farm_lv_3_title, R.string.ach_farm_lv_3_detail),
+        Badge("farmlv_8", FARM_LV, 8, 60, R.string.ach_farm_lv_8_title, R.string.ach_farm_lv_8_detail),
         Badge("pet_5", PET, 5, 20, R.string.ach_pet_5_title, R.string.ach_pet_5_detail),
         Badge("pet_15", PET, 15, 40, R.string.ach_pet_15_title, R.string.ach_pet_15_detail),
         Badge("pet_40", PET, 40, 70, R.string.ach_pet_40_title, R.string.ach_pet_40_detail),
@@ -66,6 +76,7 @@ object Achievements {
         FLAP -> R.string.ach_section_flap
         RUN -> R.string.ach_section_run
         SWORD -> R.string.ach_section_sword
+        FARM, FARM_DAY, FARM_LV -> R.string.ach_section_farm
         PET, MEAL, WASH -> R.string.ach_section_care
         else -> R.string.ach_section_run
     }

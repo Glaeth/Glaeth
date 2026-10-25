@@ -81,13 +81,15 @@ class SettingsActivity : AppCompatActivity() {
         }
         binding.promoButton.setOnClickListener {
             val den = com.clipsmile.app.data.Den(this)
-            val message = when (den.redeem(binding.promoEdit.text?.toString().orEmpty())) {
+            val code = den.redeem(binding.promoEdit.text?.toString().orEmpty())
+            val message = when (code) {
                 "ok" -> R.string.settings_promo_ok
+                "ok_gold" -> R.string.settings_promo_clrmnt
                 "used" -> R.string.settings_promo_used
                 else -> R.string.settings_promo_bad
             }
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-            if (message == R.string.settings_promo_ok) binding.promoEdit.setText("")
+            if (code == "ok" || code == "ok_gold") binding.promoEdit.setText("")
         }
     }
 

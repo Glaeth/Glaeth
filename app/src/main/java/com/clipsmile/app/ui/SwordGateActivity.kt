@@ -53,10 +53,21 @@ private class Foe(
     var x: Float,
     val archer: Boolean,
     var shooting: Boolean = false,
-    var shootIn: Float = 0.8f
+    var shootIn: Float = 0.8f,
+    var slowLeft: Float = 0f,
+    var rootLeft: Float = 0f
 )
 
 private class Bolt(var x: Float, var y: Float)
+
+private class Spark(
+    var x: Float,
+    var y: Float,
+    var vx: Float,
+    val skill: String,
+    var life: Float,
+    var hits: Int
+)
 
 private class Puff(var x: Float, var y: Float, var life: Float = 0.35f)
 
@@ -84,6 +95,18 @@ private class SwordGateView(
     private val foes = ArrayList<Foe>()
     private val bolts = ArrayList<Bolt>()
     private val puffs = ArrayList<Puff>()
+    private val sparks = ArrayList<Spark>()
+    private val pending = ArrayList<Foe>()
+    private val skills = SwordSkills.load(context)
+    private val cool = HashMap<String, Float>()
+    private val coolMax = HashMap<String, Float>()
+    private val icons = HashMap<String, Bitmap>()
+    private val fxSheets = HashMap<String, Bitmap>()
+    private val slotBmp = PixelArt.load(context, "hud/slot.png")
+    private val barBg = PixelArt.load(context, "hud/bar_bg.png")
+    private val barHp = PixelArt.load(context, "hud/bar_hp.png")
+    private val xpBg = PixelArt.load(context, "hud/xp_bg.png")
+    private val xpFill = PixelArt.load(context, "hud/xp_fill.png")
     private val random = Random(SystemClock.uptimeMillis())
     private val src = Rect()
     private val dest = RectF()
@@ -103,6 +126,11 @@ private class SwordGateView(
     private var jumpV = 0f
     private var banner = ""
     private var bannerUntil = 0L
+    private var menu = false
+    private var heldSlot = -1
+    private var surge = 0f
+    private var surgeLeft = 0f
+    private var wide = 0f
 
     private val sky = Paint().apply { color = 0xFF8EC8E8.toInt() }
     private val hillFar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF9FCB86.toInt() }
@@ -136,6 +164,10 @@ private class SwordGateView(
     init {
         keepScreenOn = true
         setBackgroundColor(0xFF8EC8E8.toInt())
+        for (skill in SwordSkills.all) {
+            icons[skill.id] = PixelArt.load(context, skill.icon)
+            if (skill.fx !in fxSheets) fxSheets[skill.fx] = PixelArt.load(context, skill.fx)
+        }
     }
 
     override fun onAttachedToWindow() {
@@ -144,14 +176,30 @@ private class SwordGateView(
     }
 
     override fun onDetachedFromWindow() {
+        SwordSkills.save(context, skills)
         removeCallbacks(frame)
         super.onDetachedFromWindow()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (event.action != MotionEvent.ACTION_DOWN) return true
-        if (event.x < dp(56f) && event.y < dp(56f)) {
+        if (!menu && event.x < dp(48f) && event.y < dp(40f)) {
             (context as? Activity)?.finish()
+            return true
+        }
+        if (menuButton().contains(event.x, event.y)) {
+            menu = !menu
+            heldSlot = -1
+            if (over) postOnAnimation(frame)
+            return true
+        }
+        if (menu) {
+            pokeTree(event.x, event.y)
+            return true
+        }
+        val slot = hotSlot(event.x, event.y)
+        if (slot >= 0) {
+            cast(slot)
             return true
         }
         if (over) {
@@ -180,6 +228,11 @@ private class SwordGateView(
         foes.clear()
         bolts.clear()
         puffs.clear()
+        sparks.clear()
+        pending.clear()
+        surge = 0f
+        surgeLeft = 0f
+        wide = 0f
         started = false
         over = false
         score = 0
@@ -200,15 +253,23 @@ private class SwordGateView(
         val dt = if (lastMs == 0L) 0.016f else ((now - lastMs).coerceAtMost(34L)) / 1000f
         lastMs = now
         clock += dt
-        if (!over && width > 0 && height > 0) step(dt)
+        if (!over && !menu && width > 0 && height > 0) step(dt)
         invalidate()
-        if (!over) postOnAnimation(frame)
+        if (!over || menu) postOnAnimation(frame)
     }
 
     private fun step(dt: Float) {
         if (started) scroll += dp(42f) * dt
         if (attackLeft > 0f) attackLeft -= dt
         if (immune > 0f) immune -= dt
+        if (wide > 0f) wide -= dt
+        if (surgeLeft > 0f) {
+            surgeLeft -= dt
+            surge = dp(86f) * (surgeLeft / 0.2f).coerceIn(0f, 1f)
+        } else {
+            surge = 0f
+        }
+        for (id in cool.keys.toList()) cool[id] = (cool[id] ?: 0f) - dt
         jumpV -= dp(1900f) * dt
         lift = (lift + jumpV * dt).coerceAtLeast(0f)
         if (lift == 0f && jumpV < 0f) jumpV = 0f
@@ -229,10 +290,11 @@ private class SwordGateView(
         val foeSize = cell() * 0.92f
         val stop = heroBody.right + dp(46f) - foeSize * 0.32f
         val slash = if (attackLeft in 0.08f..0.24f) slashRect(heroBody) else null
-        val dead = ArrayList<Foe>()
         val armed = clock > 0.55f
         for (foe in foes) {
-            if (foe.archer && foe.x <= stop) {
+            if (foe.rootLeft > 0f) {
+                foe.rootLeft -= dt
+            } else if (foe.archer && foe.x <= stop) {
                 foe.shooting = true
                 foe.x = stop
                 foe.shootIn -= dt
@@ -242,12 +304,15 @@ private class SwordGateView(
                     bolts.add(Bolt(chest.left, chest.centerY()))
                 }
             } else {
-                foe.x -= pace * dt
+                val drag = if (foe.slowLeft > 0f) 0.42f else 1f
+                if (foe.slowLeft > 0f) foe.slowLeft -= dt
+                foe.x -= pace * drag * dt
             }
             val body = foeBody(foe)
             // Archers hold still out of sword reach. The swing reaches that spot;
             // warriors still have to walk into the short blade.
-            val reach = if (foe.archer) dp(72f) else dp(22f)
+            val extra = if (wide > 0f) dp(18f) + skills.rankOf("slash") * dp(12f) else 0f
+            val reach = (if (foe.archer) dp(72f) else dp(22f)) + extra
             val beside = body.left < heroBody.right + reach &&
                 body.left > heroBody.right - dp(10f) &&
                 body.bottom > heroBody.top &&
@@ -256,24 +321,23 @@ private class SwordGateView(
                 body.right > heroBody.left + dp(8f) &&
                 body.bottom > heroBody.top + dp(6f) &&
                 body.top < heroBody.bottom - dp(4f)
-            if (slash != null && beside) {
-                dead.add(foe)
-                puffs.add(Puff(body.centerX(), body.centerY()))
-                val previous = score
-                score += 1
-                audio.point()
-                val reward = GameRewards.onScore(context, previous, score, 150, 8, 300, 12, "Kılıç")
-                if (!reward.isNullOrBlank()) {
-                    banner = reward
-                    bannerUntil = SystemClock.uptimeMillis() + 1300L
-                    audio.reward()
+            val dashed = surge > dp(8f) &&
+                body.left < heroBody.right + dp(8f) &&
+                body.right > heroBody.left &&
+                body.bottom > heroBody.top &&
+                body.top < heroBody.bottom
+            if ((slash != null && beside) || dashed) {
+                fell(foe, body)
+            } else if (armed && !foe.archer && touching && surge <= dp(8f)) {
+                if (wound()) {
+                    foes.removeAll(pending)
+                    pending.clear()
+                    return
                 }
-                Achievements.celebrate(context, Achievements.SWORD, score)
-            } else if (armed && !foe.archer && touching) {
-                if (wound()) return
             }
         }
-        foes.removeAll(dead)
+        foes.removeAll(pending)
+        pending.clear()
 
         val spent = ArrayList<Bolt>()
         for (bolt in bolts) {
@@ -284,12 +348,162 @@ private class SwordGateView(
                 puffs.add(Puff(box.centerX(), box.centerY()))
                 audio.point()
             } else if (armed && RectF.intersects(box, heroBody)) {
-                if (wound()) return
+                if (wound()) {
+                    foes.removeAll(pending)
+                    pending.clear()
+                    return
+                }
             } else if (bolt.x < -dp(20f)) {
                 spent.add(bolt)
             }
         }
         bolts.removeAll(spent)
+        val gone = ArrayList<Spark>()
+        for (spark in sparks) {
+            spark.x += spark.vx * dt
+            spark.life -= dt
+            if (spark.life <= 0f || spark.x > width + dp(20f)) {
+                gone.add(spark)
+                continue
+            }
+            for (foe in foes) {
+                if (foe in pending) continue
+                val body = foeBody(foe)
+                if (spark.x < body.left || spark.x > body.right || spark.y < body.top || spark.y > body.bottom) continue
+                if (spark.skill == "ice") {
+                    foe.slowLeft = 1.8f + skills.rankOf("ice") * 0.7f
+                    puffs.add(Puff(body.centerX(), body.centerY()))
+                } else {
+                    fell(foe, body)
+                }
+                spark.hits -= 1
+                if (spark.hits <= 0) {
+                    gone.add(spark)
+                    break
+                }
+            }
+        }
+        sparks.removeAll(gone)
+        foes.removeAll(pending)
+        pending.clear()
+    }
+
+    private fun fell(foe: Foe, body: RectF) {
+        if (foe in pending) return
+        pending.add(foe)
+        puffs.add(Puff(body.centerX(), body.centerY()))
+        val previous = score
+        score += 1
+        val leveled = skills.addKill()
+        SwordSkills.save(context, skills)
+        audio.point()
+        val reward = GameRewards.onScore(context, previous, score, 150, 8, 300, 12, "Kılıç")
+        banner = when {
+            leveled -> "Seviye ${skills.level()}  +1 puan"
+            !reward.isNullOrBlank() -> reward
+            else -> banner
+        }
+        if (leveled || !reward.isNullOrBlank()) {
+            bannerUntil = SystemClock.uptimeMillis() + 1300L
+            if (!reward.isNullOrBlank()) audio.reward()
+        }
+        Achievements.celebrate(context, Achievements.SWORD, score)
+    }
+
+    private fun cast(slot: Int) {
+        if (over) return
+        val id = skills.bar[slot]
+        val rank = skills.rankOf(id)
+        if (rank <= 0 || (cool[id] ?: 0f) > 0f) return
+        val wait = (5.4f - rank * 0.7f).coerceAtLeast(2.2f)
+        cool[id] = wait
+        coolMax[id] = wait
+        started = true
+        val hero = if (width > 0) heroRect() else return
+        when (id) {
+            "fire" -> sparks.add(Spark(hero.right, hero.centerY(), dp(460f), id, 0.9f, rank))
+            "ice" -> sparks.add(Spark(hero.right, hero.centerY(), dp(400f), id, 0.9f, 1))
+            "heal" -> {
+                hp = (hp + if (rank >= 3) 2 else 1).coerceAtMost(3)
+                puffs.add(Puff(hero.centerX(), hero.centerY(), 0.45f))
+            }
+            "ward" -> {
+                immune = maxOf(immune, 0.85f + rank * 0.4f)
+                puffs.add(Puff(hero.centerX(), hero.centerY(), 0.45f))
+            }
+            "bolt" -> {
+                val target = foes.maxByOrNull { if (it.archer) it.x + 10000f else it.x }
+                if (target != null) {
+                    fell(target, foeBody(target))
+                    if (rank >= 3) {
+                        val other = foes.filter { it !in pending }.maxByOrNull { it.x }
+                        if (other != null) fell(other, foeBody(other))
+                    }
+                    foes.removeAll(pending)
+                    pending.clear()
+                }
+            }
+            "vine" -> {
+                val target = foes.filter { !it.archer }.minByOrNull { it.x }
+                if (target != null) target.rootLeft = 1.4f + rank * 0.45f
+            }
+            "slash" -> wide = 0.55f
+            "dash" -> {
+                surgeLeft = 0.2f
+                surge = dp(86f)
+            }
+        }
+        audio.jump()
+        banner = SwordSkills.skill(id)?.name ?: id
+        bannerUntil = SystemClock.uptimeMillis() + 700L
+    }
+
+    private fun pokeTree(x: Float, y: Float) {
+        val top = dp(108f)
+        val rowH = dp(46f)
+        SwordSkills.all.forEachIndexed { index, skill ->
+            val row = RectF(dp(12f), top + index * rowH, width - dp(12f), top + (index + 1) * rowH)
+            if (!row.contains(x, y)) return@forEachIndexed
+            val raise = RectF(row.right - dp(86f), row.top + dp(6f), row.right - dp(4f), row.bottom - dp(6f))
+            if (raise.contains(x, y)) {
+                banner = skills.raise(skill.id)
+                bannerUntil = SystemClock.uptimeMillis() + 1000L
+                SwordSkills.save(context, skills)
+            } else if (heldSlot >= 0) {
+                banner = skills.assign(heldSlot, skill.id)
+                bannerUntil = SystemClock.uptimeMillis() + 1000L
+                heldSlot = -1
+                SwordSkills.save(context, skills)
+            }
+        }
+        for (slot in 0 until 3) {
+            if (!hotRect(slot).contains(x, y)) continue
+            if (heldSlot < 0) {
+                heldSlot = slot
+            } else if (heldSlot == slot) {
+                skills.clear(slot)
+                heldSlot = -1
+                SwordSkills.save(context, skills)
+            } else {
+                skills.swap(heldSlot, slot)
+                heldSlot = -1
+                SwordSkills.save(context, skills)
+            }
+        }
+    }
+
+    private fun menuButton() = RectF(dp(8f), dp(48f), dp(64f), dp(104f))
+
+    private fun hotRect(index: Int): RectF {
+        val side = dp(48f)
+        val left = dp(8f) + index * (side + dp(6f))
+        val top = height - side - dp(12f)
+        return RectF(left, top, left + side, top + side)
+    }
+
+    private fun hotSlot(x: Float, y: Float): Int {
+        for (index in 0 until 3) if (hotRect(index).contains(x, y)) return index
+        return -1
     }
 
     private fun endRound() {
@@ -321,7 +535,7 @@ private class SwordGateView(
         }
         if (h > w * 1.35f) h = w * 1.35f
         val bottom = groundTop() - lift
-        val left = width * 0.16f
+        val left = width * 0.16f + surge
         return RectF(left, bottom - h, left + w, bottom)
     }
 
@@ -443,6 +657,12 @@ private class SwordGateView(
         val hero = heroRect()
         val index = if (attackLeft > 0f) 4 else stepFrame
         PixelArt.blitSmooth(canvas, pet, index, pet.width / 6, hero, src)
+        for (spark in sparks) {
+            val sheet = fxSheets[SwordSkills.skill(spark.skill)?.fx] ?: continue
+            val size = dp(34f)
+            dest.set(spark.x - size / 2f, spark.y - size / 2f, spark.x + size / 2f, spark.y + size / 2f)
+            blitCell(canvas, sheet, ((0.9f - spark.life) * 12f).toInt(), dest)
+        }
         if (attackLeft in 0.05f..0.28f) {
             val reach = dp(72f)
             dest.set(
@@ -463,12 +683,16 @@ private class SwordGateView(
         ink.textAlign = Paint.Align.LEFT
         ink.textSize = dp(22f)
         canvas.drawText("←", dp(16f), dp(40f), ink)
-        PixelArt.drawScore(canvas, score, width / 2f, dp(8f), ::dp)
-        PixelArt.drawHealth(canvas, hp, 3, width - dp(12f), dp(18f), ::dp)
+        PixelArt.drawScore(canvas, score, width / 2f, dp(4f), ::dp)
+        drawBars(canvas)
+        drawTreeButton(canvas)
+        drawHotbar(canvas)
         if (banner.isNotEmpty() && SystemClock.uptimeMillis() < bannerUntil) {
-            PixelArt.drawBanner(canvas, banner, width / 2f, dp(60f), ::dp)
+            PixelArt.drawBanner(canvas, banner, width / 2f, dp(108f), ::dp)
         }
         drawJump(canvas, jumpRect())
+        ink.textAlign = Paint.Align.CENTER
+        ink.color = 0xFF173307.toInt()
         if (!started && !over) {
             ink.textSize = dp(16f)
             canvas.drawText(context.getString(R.string.game_sword_hint), width / 2f, height * 0.58f, ink)
@@ -483,6 +707,133 @@ private class SwordGateView(
             canvas.drawText("En iyi  $best", width / 2f, top + dp(74f), ink)
             canvas.drawText("Dokun, yeniden oyna", width / 2f, top + dp(102f), ink)
         }
+        if (menu) drawTree(canvas)
+    }
+
+    private fun drawBars(canvas: Canvas) {
+        val barW = dp(118f)
+        val barH = dp(16f)
+        val right = width - dp(8f)
+        val top = dp(52f)
+        dest.set(right - barW, top, right, top + barH)
+        canvas.drawBitmap(barBg, null, dest, PixelArt.paint)
+        val hpRatio = (hp / 3f).coerceIn(0f, 1f)
+        if (hpRatio > 0f) {
+            src.set(0, 0, (barHp.width * hpRatio).toInt().coerceAtLeast(1), barHp.height)
+            val fill = RectF(
+                dest.left + dp(3f),
+                dest.top + dp(3f),
+                dest.left + dp(3f) + (dest.width() - dp(6f)) * hpRatio,
+                dest.bottom - dp(3f)
+            )
+            canvas.drawBitmap(barHp, src, fill, PixelArt.paint)
+        }
+        val xpTop = top + barH + dp(3f)
+        dest.set(right - barW, xpTop, right, xpTop + barH)
+        canvas.drawBitmap(xpBg, null, dest, PixelArt.paint)
+        val xpRatio = skills.progress().coerceIn(0f, 1f)
+        if (xpRatio > 0f) {
+            src.set(0, 0, (xpFill.width * xpRatio).toInt().coerceAtLeast(1), xpFill.height)
+            val fill = RectF(
+                dest.left + dp(4f),
+                dest.top + dp(3f),
+                dest.left + dp(4f) + (dest.width() - dp(8f)) * xpRatio,
+                dest.bottom - dp(3f)
+            )
+            canvas.drawBitmap(xpFill, src, fill, PixelArt.paint)
+        }
+        ink.textAlign = Paint.Align.RIGHT
+        ink.textSize = dp(11f)
+        ink.color = 0xFF173307.toInt()
+        canvas.drawText("Sv ${skills.level()}   puan ${skills.points()}", right, xpTop + barH + dp(13f), ink)
+    }
+
+    private fun drawTreeButton(canvas: Canvas) {
+        val button = menuButton()
+        canvas.drawBitmap(slotBmp, null, button, PixelArt.paint)
+        ink.textAlign = Paint.Align.CENTER
+        ink.color = 0xFF3B2918.toInt()
+        ink.textSize = dp(9f)
+        canvas.drawText("Yetenek", button.centerX(), button.bottom - dp(6f), ink)
+    }
+
+    private fun drawHotbar(canvas: Canvas) {
+        for (index in 0 until 3) {
+            val rect = hotRect(index)
+            canvas.drawBitmap(slotBmp, null, rect, PixelArt.paint)
+            val id = skills.bar[index]
+            val icon = icons[id]
+            if (icon != null) {
+                val pad = dp(8f)
+                dest.set(rect.left + pad, rect.top + pad, rect.right - pad, rect.bottom - pad)
+                canvas.drawBitmap(icon, null, dest, PixelArt.paint)
+                val max = coolMax[id] ?: 1f
+                val left = ((cool[id] ?: 0f) / max).coerceIn(0f, 1f)
+                if (left > 0f) {
+                    canvas.drawRect(rect.left, rect.top, rect.right, rect.top + rect.height() * left, Paint().apply {
+                        color = 0x88000000.toInt()
+                    })
+                }
+            }
+            if (heldSlot == index) canvas.drawRect(rect, markPaint())
+        }
+    }
+
+    private fun drawTree(canvas: Canvas) {
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply { color = 0xCC1B140C.toInt() })
+        ink.textAlign = Paint.Align.LEFT
+        ink.color = 0xFFFFF6E4.toInt()
+        ink.textSize = dp(16f)
+        canvas.drawText("Yetenekler   Sv ${skills.level()}   puan ${skills.points()}", dp(16f), dp(78f), ink)
+        ink.textSize = dp(11f)
+        canvas.drawText("Yuvayı seç, yeteneğe dokun. Aynı yuva boşaltır, iki yuva yer değiştirir.", dp(16f), dp(98f), ink)
+        val top = dp(108f)
+        val rowH = dp(46f)
+        SwordSkills.all.forEachIndexed { index, skill ->
+            val row = RectF(dp(12f), top + index * rowH, width - dp(12f), top + (index + 1) * rowH - dp(3f))
+            canvas.drawRoundRect(row, dp(8f), dp(8f), jumpFill)
+            val icon = icons[skill.id]
+            if (icon != null) {
+                dest.set(row.left + dp(6f), row.top + dp(6f), row.left + dp(36f), row.bottom - dp(6f))
+                canvas.drawBitmap(icon, null, dest, PixelArt.smooth)
+            }
+            ink.color = 0xFF3B2918.toInt()
+            ink.textAlign = Paint.Align.LEFT
+            ink.textSize = dp(13f)
+            val rank = skills.rankOf(skill.id)
+            canvas.drawText("${skill.name}  ${if (rank == 0) "kilit" else "sv $rank"}", row.left + dp(42f), row.top + dp(18f), ink)
+            ink.textSize = dp(10f)
+            canvas.drawText(skill.blurb, row.left + dp(42f), row.top + dp(34f), ink)
+            val button = RectF(row.right - dp(86f), row.top + dp(8f), row.right - dp(6f), row.bottom - dp(8f))
+            canvas.drawRoundRect(button, dp(6f), dp(6f), jumpFill)
+            ink.textAlign = Paint.Align.CENTER
+            ink.textSize = dp(11f)
+            val label = when {
+                rank >= SwordSkills.MAX_RANK -> "Dolu"
+                skills.canRaise(skill.id) && rank == 0 -> "Aç"
+                skills.canRaise(skill.id) -> "Yükselt"
+                else -> "Kilit"
+            }
+            canvas.drawText(label, button.centerX(), button.centerY() + dp(4f), ink)
+        }
+        drawHotbar(canvas)
+        drawTreeButton(canvas)
+    }
+
+    private fun markPaint() = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFFFE08A.toInt()
+        style = Paint.Style.STROKE
+        strokeWidth = dp(3f)
+    }
+
+    private fun blitCell(canvas: Canvas, sheet: Bitmap, index: Int, at: RectF) {
+        val cols = (sheet.width / 16).coerceAtLeast(1)
+        val rows = (sheet.height / 16).coerceAtLeast(1)
+        val cell = Math.floorMod(index, cols * rows)
+        val col = cell % cols
+        val row = cell / cols
+        src.set(col * 16, row * 16, col * 16 + 16, row * 16 + 16)
+        canvas.drawBitmap(sheet, src, at, PixelArt.paint)
     }
 
     private fun drawJump(canvas: Canvas, button: RectF) {

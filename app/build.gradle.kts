@@ -12,8 +12,8 @@ android {
         applicationId = "com.clipsmile.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 35
-        versionName = "3.14"
+        versionCode = 36
+        versionName = "3.15"
 
         vectorDrawables {
             useSupportLibrary = true

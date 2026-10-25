@@ -70,7 +70,10 @@ private class FoodDropView(
 
     private val dogBmp = loadPet(model, portraitRes)
     private val foods = loadFoods(foodRes)
+    private val plains = PixelArt.load(context, "farm/tiles.png")
+    private val pumpkins = PixelArt.load(context, "farm/pumpkin.png")
     private val tile = RectF()
+    private val tileSrc = android.graphics.Rect()
     private val drops = ArrayList<Drop>()
     private val random = Random(SystemClock.uptimeMillis())
 
@@ -164,11 +167,12 @@ private class FoodDropView(
         if (width == 0) return
         spawnIn -= dt
         if (spawnIn <= 0f) {
-            spawnIn = (0.92f - score * 0.018f).coerceAtLeast(0.38f)
+            spawnIn = (0.98f - score * 0.0045f).coerceAtLeast(0.55f)
             val margin = dp(30f)
             val x = margin + random.nextFloat() * (width - margin * 2)
             val kind = (score / 150) % foods.size
-            drops.add(Drop(x, -dp(16f), dp(210f) + score * dp(9f), kind))
+            val speed = (dp(155f) + score * dp(1.35f)).coerceAtMost(dp(330f))
+            drops.add(Drop(x, -dp(16f), speed, kind))
         }
         val floorTop = height - dp(36f)
         val (dogW, dogH) = dogSize()
@@ -265,18 +269,57 @@ private class FoodDropView(
     }
 
     private fun drawMeadow(canvas: Canvas, floorTop: Float) {
-        skyPaint.shader = LinearGradient(
-            0f, 0f, 0f, floorTop,
-            0xFF8ED0F2.toInt(),
-            0xFFE4F4D8.toInt(),
-            Shader.TileMode.CLAMP
-        )
+        val scene = (score / 50) % 6
+        val skyTop = when (scene) {
+            1 -> 0xFFB7E3FF.toInt()
+            2 -> 0xFF7EB6D8.toInt()
+            3 -> 0xFFE38B62.toInt()
+            4 -> 0xFF1C2744.toInt()
+            5 -> 0xFF9FD0E8.toInt()
+            else -> 0xFF8ED0F2.toInt()
+        }
+        val skyBottom = when (scene) {
+            1 -> 0xFFFFF1C9.toInt()
+            2 -> 0xFFD7C4A2.toInt()
+            3 -> 0xFF6A4A6A.toInt()
+            4 -> 0xFF31406A.toInt()
+            5 -> 0xFFE7C56A.toInt()
+            else -> 0xFFE4F4D8.toInt()
+        }
+        skyPaint.shader = LinearGradient(0f, 0f, 0f, floorTop, skyTop, skyBottom, Shader.TileMode.CLAMP)
         canvas.drawRect(0f, 0f, width.toFloat(), floorTop, skyPaint)
-        canvas.drawOval(RectF(width * 0.12f, dp(36f), width * 0.12f + dp(86f), dp(68f)), cloudPaint)
-        canvas.drawOval(RectF(width * 0.62f, dp(22f), width * 0.62f + dp(70f), dp(48f)), cloudPaint)
-        canvas.drawCircle(width * 0.18f, floorTop + dp(8f), dp(86f), hillFar)
-        canvas.drawCircle(width * 0.78f, floorTop + dp(16f), dp(110f), hillPaint)
-        canvas.drawCircle(width * 0.48f, floorTop + dp(24f), dp(64f), hillFar)
+        if (scene != 4) {
+            canvas.drawOval(RectF(width * 0.12f, dp(36f), width * 0.12f + dp(86f), dp(68f)), cloudPaint)
+            canvas.drawOval(RectF(width * 0.62f, dp(22f), width * 0.62f + dp(70f), dp(48f)), cloudPaint)
+        }
+        canvas.drawCircle(width * 0.18f, floorTop - dp(28f), dp(70f), hillFar)
+        canvas.drawCircle(width * 0.78f, floorTop - dp(18f), dp(90f), hillPaint)
+        val cell = dp(28f)
+        val source = when (scene) {
+            2, 5 -> 448 to 144
+            4 -> 0 to 96
+            else -> 0 to 64
+        }
+        var y = floorTop - cell * 3f
+        while (y < floorTop) {
+            var x = -cell
+            while (x < width) {
+                tileSrc.set(source.first, source.second, source.first + 16, source.second + 16)
+                tile.set(x, y, x + cell, y + cell)
+                canvas.drawBitmap(plains, tileSrc, tile, PixelArt.paint)
+                x += cell
+            }
+            y += cell
+        }
+        if (scene == 5) {
+            val plant = dp(34f)
+            for (index in 0 until 4) {
+                val left = width * (0.12f + index * 0.22f)
+                tileSrc.set(14 * 16, 0, 15 * 16, pumpkins.height.coerceAtMost(32))
+                tile.set(left, floorTop - plant * 1.6f, left + plant, floorTop - dp(4f))
+                canvas.drawBitmap(pumpkins, tileSrc, tile, PixelArt.paint)
+            }
+        }
     }
 
     private val petFrames = if (dogBmp.width > dogBmp.height * 2) 4 else 1

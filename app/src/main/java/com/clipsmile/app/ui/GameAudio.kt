@@ -180,6 +180,17 @@ class GameAudio(
             R.raw.sfx_reward
         )
 
+        fun farm(context: Context) = GameAudio(
+            context,
+            R.raw.music_farm,
+            R.raw.sfx_drop_catch,
+            R.raw.sfx_flap_point,
+            R.raw.sfx_drop_miss,
+            R.raw.sfx_drop_catch,
+            R.raw.sfx_drop_miss,
+            rewardRes = R.raw.sfx_reward
+        )
+
         fun run(context: Context) = GameAudio(
             context,
             R.raw.music_run,

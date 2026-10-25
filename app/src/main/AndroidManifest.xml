@@ -68,6 +68,12 @@
             android:theme="@style/Theme.ClipSmile.Room" />
 
         <activity
+            android:name=".ui.FarmActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ClipSmile.Room" />
+
+        <activity
             android:name=".ui.FramesActivity"
             android:exported="false"
             android:label="@string/frames_title"

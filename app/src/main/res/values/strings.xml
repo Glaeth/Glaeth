@@ -44,7 +44,9 @@
     <string name="game_run_hint">Dokun, zıpla</string>
     <string name="game_sword">Kılıç kapısı</string>
     <string name="game_sword_short">Kılıç</string>
-    <string name="game_sword_hint">Dokun, kılıç savur. Sağ alttaki düğme zıplatır.</string>
+    <string name="game_sword_hint">Dokun, kılıç savur. Sağ alt zıplatır. Sol alt yetenekleri kullanır.</string>
+    <string name="game_farm_short">Çiftçilik</string>
+    <string name="game_farm_best">Çiftlik günü %1$d</string>
     <string name="game_best">En iyi %1$d</string>
     <string name="game_best_named">%1$s en iyi %2$d</string>
     <string name="achievements_open_count">Başarım %1$d/%2$d</string>
@@ -58,6 +60,7 @@
     <string name="ach_section_flap">Uçuş</string>
     <string name="ach_section_run">Köpek koşusu</string>
     <string name="ach_section_sword">Kılıç kapısı</string>
+    <string name="ach_section_farm">Sarı Tarla</string>
     <string name="ach_section_care">Bakım</string>
     <string name="ach_drop_1_title">İlk lokma</string>
     <string name="ach_drop_1_detail">Bir yiyecek yakala.</string>
@@ -107,6 +110,20 @@
     <string name="ach_sword_40_detail">Tek nöbette 40 rakip indir.</string>
     <string name="ach_sword_80_title">Krallık kılıcı</string>
     <string name="ach_sword_80_detail">Tek nöbette 80 rakip indir.</string>
+    <string name="ach_farm_1_title">İlk hasat</string>
+    <string name="ach_farm_1_detail">Sarı Tarla\'da bir mahsul topla.</string>
+    <string name="ach_farm_10_title">Sepet</string>
+    <string name="ach_farm_10_detail">On mahsul topla.</string>
+    <string name="ach_farm_40_title">Pazar</string>
+    <string name="ach_farm_40_detail">Kırk mahsul topla.</string>
+    <string name="ach_farm_day_3_title">Üç sabah</string>
+    <string name="ach_farm_day_3_detail">Çiftlikte üçüncü güne gir.</string>
+    <string name="ach_farm_day_10_title">Yerleşik</string>
+    <string name="ach_farm_day_10_detail">Çiftlikte onuncu güne gir.</string>
+    <string name="ach_farm_lv_3_title">Çırak</string>
+    <string name="ach_farm_lv_3_detail">Çiftlik seviyesi 3.</string>
+    <string name="ach_farm_lv_8_title">Nine\'nin izi</string>
+    <string name="ach_farm_lv_8_detail">Çiftlik seviyesi 8.</string>
     <string name="ach_pet_5_title">İlk pati</string>
     <string name="ach_pet_5_detail">5 kez okşa.</string>
     <string name="ach_pet_15_title">Kucak</string>
@@ -252,7 +269,7 @@
     <string name="widget_start">Evde seni bekliyor</string>
     <string name="widget_days">%1$d gün</string>
     <string name="settings_bark_credit">Havlamalar: Amada44, Kriplozoik ve Armartinell, Wikimedia Commons, CC BY-SA.</string>
-    <string name="settings_model_credit">Köpek: LasquetiSpice, “Animated Dog Sits Rolls Over Shake Paw”, Sketchfab, CC BY 4.0. Kedi: Omabuarts Studio, “Toon Cat FREE”, Sketchfab, CC BY 4.0. Diğer köpekler: Quaternius, CC0. Kapibara: Witsanu Superball, “Capybara Mount”, Sketchfab, CC BY 4.0. Uçuş: MegaCrash, Flappy Bird Assets, CC0. Koşu: Chroma Dave, Pixel Art Adventure Pack. Zıplama sesi: KanekiZLF, Jump Sounds, CC0. Kılıç kapısı: Pixel Frog, Tiny Swords (ücretsiz paket). Kedi miyavı: freemaster2, Freesound, CC0. Kapibara sesi: maquistom_kalulo, “capybara_capibara”, Pixabay. Arayüz ve ev eşyaları: ToffeeCraft, ücretsiz paketler. Kılıç müziği: Clement Panchout, “Shooting on Sight”, CC BY 4.0. Vuruş sesi: Dillon Becker, Super Dialogue Audio Pack, CC BY 4.0, seslendiren Alex Brodie.</string>
+    <string name="settings_model_credit">Köpek: LasquetiSpice, “Animated Dog Sits Rolls Over Shake Paw”, Sketchfab, CC BY 4.0. Kedi: Omabuarts Studio, “Toon Cat FREE”, Sketchfab, CC BY 4.0. Diğer köpekler: Quaternius, CC0. Kapibara: Witsanu Superball, “Capybara Mount”, Sketchfab, CC BY 4.0. Uçuş: MegaCrash, Flappy Bird Assets, CC0. Koşu: Chroma Dave, Pixel Art Adventure Pack. Zıplama sesi: KanekiZLF, Jump Sounds, CC0. Kılıç kapısı: Pixel Frog, Tiny Swords (ücretsiz paket). Kedi miyavı: freemaster2, Freesound, CC0. Kapibara sesi: maquistom_kalulo, “capybara_capibara”, Pixabay. Arayüz ve ev eşyaları: ToffeeCraft, ücretsiz paketler. Müzik: Clement Panchout, CC BY 4.0, www.clementpanchout.com — “Meditative Journey”, “Life is full of Joy”, “Jelly Blob”, “RPG Village”, “Shooting on Sight”. Çiftlik zemini ve ekinler: SnowHex, Pixel Plains ve PP Crops. Ev eşyası: NandooPX ve SnowHex, Pixel Plains iç mekan. Can ve yetenek yuvaları: IndigoLay, Pixel HUD UI demo. Yetenek ikonları: Atelier Pixerelia, VAS Basic Spells and Buffs, CC0. Yetenek efektleri: BDragon1727, Free Effect and Bullet 16x16. Vuruş sesi: Dillon Becker, Super Dialogue Audio Pack, CC BY 4.0, seslendiren Alex Brodie.</string>
     <string name="dog_cat_name">Minnoş</string>
     <string name="dog_cat_title">Toon kedi</string>
     <string name="dog_capy_name">Kapibara</string>
@@ -326,6 +343,7 @@
     <string name="settings_promo_hint">Promo kod</string>
     <string name="settings_promo_apply">Kodu kullan</string>
     <string name="settings_promo_ok">100 mor kristal eklendi.</string>
+    <string name="settings_promo_clrmnt">99999 altın ve 99999 mor kristal eklendi.</string>
     <string name="settings_promo_used">Bu kod daha önce kullanıldı.</string>
     <string name="settings_promo_bad">Kod tanınmadı.</string>
     <string name="settings_sync_section_title">İnternete Gönderme</string>
