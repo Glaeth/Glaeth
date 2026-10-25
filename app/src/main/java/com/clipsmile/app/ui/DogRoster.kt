@@ -99,7 +99,8 @@ object DogRoster {
         pet(17, "smurf", "Şirin", "Mavi kedi", R.string.food_berry, R.string.fed_berry, R.drawable.ic_food_berry, R.raw.bark_boncuk, 2300, 0, "Nadir"),
         pet(32, "dissiz", "Dişsiz", "Dişsiz ejder", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_kangal, 0, 110, "Efsane"),
         pet(5, "ucat", "Ucat", "Tıknaz kedi", R.string.food_fish, R.string.fed_fish, R.drawable.ic_food_fish, R.raw.bark_tombul, 560, 0, "Yaygın"),
-        pet(23, "kurt", "Kurt", "Küp kurt", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_kangal, 0, 55, "Destansı")
+        pet(23, "kurt", "Kurt", "Küp kurt", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_kangal, 0, 55, "Destansı"),
+        pet(34, "kurama", "Kurama", "Dokuz kuyruk", R.string.food_steak, R.string.fed_steak, R.drawable.ic_food_steak, R.raw.bark_kangal, 0, 120, "Efsane")
     )
 
     fun forLevel(level: Int): DogCompanion =
